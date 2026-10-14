@@ -62,7 +62,7 @@ O sistema SHALL mover as crianças marcadas para o arquivo e de volta à lista a
 - **THEN** `canRestore` é falso, e `canCreate`, `canDelete`, `canSearch` e `canArchive` são falsos
 
 ### Requirement: Exclusão de crianças
-O sistema SHALL excluir as crianças marcadas e todas as suas visitas numa única transação, como `Children.Delete`, e em seguida SHALL remover mães, pais e endereços que não estejam vinculados a nenhuma criança.
+O sistema SHALL excluir as crianças marcadas e todas as suas visitas numa única transação, como `Children.Delete`, e em seguida SHALL remover mães, pais e endereços que não estejam vinculados a nenhuma criança, exceto os ligados à ficha aberta e ainda não salva, que SHALL ser preservados.
 
 #### Scenario: Excluir criança com visitas
 - **WHEN** a usuária exclui uma criança que tem 2 visitas

@@ -53,6 +53,8 @@
 - [x] 7.1 Implement as views de `Sources/AnthroPlusApp/IndividualAssessment/` (lista com marcação e barra de ações, ficha com seções Criança, Mãe, Pai, Endereço e Acompanhamento, avisos inline nos campos numéricos e botão Salvar desabilitado por `canSave`, tabela de visitas, painel de resultado com cores de `SeverityClassifier`, folhas de visita, busca, mãe, pai e endereço, diálogo de alterações não salvas) e ligue o módulo à seção `.individualAssessment` de `AppModel`; verified when `scripts/build-app.sh` termina com código 0 e `codesign --verify build/AnthroPlus.app` passa (N/A non-executable para o visual)
 - [x] 7.2 Refactor das views para não conter regra de negócio (toda regra nos modelos de `AnthroFeatures`); full suite stays green (`swift test`)
 
+- [x] 7.3 Correções da verificação (`openspec-verify-change`): ficha não arquiva nem restaura ao salvar e falha se a criança foi excluída; arquivo não abre a ficha; arquivar pergunta e fecha a ficha aberta; excluir fecha a ficha; limpeza de órfãos preserva os cadastros ligados ao rascunho; Cancelar confirma; lista atualizada depois de Salvar e seguir; sessão do módulo no `AppModel` para fechar a janela sem perder a ficha; diálogos com `presenting:`; ID e intervalo como campos numéricos; nascimento padrão de seis anos e pai ou mãe novos com nascimento desconhecido; verified when [tests: ModelSeamTests] pass e a suíte completa fica verde
+
 ## 8. Verification
 
 - [x] 8.1 Mutation check for child-registry: trocar em `ChildRepository.maxDisplayID()` a consulta para `WHERE is_archived = 0`, ver `autoDisplayIDIncludesArchivedChildren` falhar, reverter
