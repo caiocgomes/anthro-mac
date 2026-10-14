@@ -9,42 +9,42 @@
 
 ## 1. Modelo e XML
 
-- [ ] 1.1 Implement `AdditionalData`, `AdditionalDataSection` e `AdditionalDataVariable` com buscas por identificador; verified when the unit tests de `section(_:)` e `variable(section:variable:)` pass
-- [ ] 1.2 Implement `AdditionalDataXML.encode` escrito à mão (ordem de atributos, `Txt` aberto e fechado, `Num`/`Date`/`Cat`/`Data` autofechados com espaço, escape, ponto decimal, data `dd-MM-yyyy HH:mm:ss`), unit tests first para escape de `&`, `<`, `>` e `"`; verified when [tests: templateRoundTripIsByteIdentical, emptyDataAndEmptySectionSerializeSelfClosing, numberUsesPointAndDateUsesOriginalFormat] pass
-- [ ] 1.3 Implement `AdditionalDataXML.decode` com `XMLParser` (atributos obrigatórios, valores inválidos como `nil`, elementos desconhecidos ignorados, vírgula ou ponto, `nil` e "" como vazio); verified when [tests: decodesOriginalIndividualTemplate, invalidValuesBecomeNilAndUnknownElementsAreSkipped, missingDescrAttributeThrows, nilOrEmptyXMLDecodesToEmptyData, decoderAcceptsCommaDecimals] pass with `swift test --filter AdditionalDataXMLScenarioTests`
-- [ ] 1.4 Implement `AdditionalDataTemplates.individualAssessmentDefaultXML` e `AdditionalDataColumns.structure`; verified when [tests: defaultTemplateAddsSevenColumns, duplicateAndForbiddenKeysGetNumericSuffix] pass
-- [ ] 1.5 Refactor `Sources/AnthroCore/AdditionalData/`; `swift test` stays green
+- [x] 1.1 Implement `AdditionalData`, `AdditionalDataSection` e `AdditionalDataVariable` com buscas por identificador; verified when the unit tests de `section(_:)` e `variable(section:variable:)` pass
+- [x] 1.2 Implement `AdditionalDataXML.encode` escrito à mão (ordem de atributos, `Txt` aberto e fechado, `Num`/`Date`/`Cat`/`Data` autofechados com espaço, escape, ponto decimal, data `dd-MM-yyyy HH:mm:ss`), unit tests first para escape de `&`, `<`, `>` e `"`; verified when [tests: templateRoundTripIsByteIdentical, emptyDataAndEmptySectionSerializeSelfClosing, numberUsesPointAndDateUsesOriginalFormat] pass
+- [x] 1.3 Implement `AdditionalDataXML.decode` com `XMLParser` (atributos obrigatórios, valores inválidos como `nil`, elementos desconhecidos ignorados, vírgula ou ponto, `nil` e "" como vazio); verified when [tests: decodesOriginalIndividualTemplate, invalidValuesBecomeNilAndUnknownElementsAreSkipped, missingDescrAttributeThrows, nilOrEmptyXMLDecodesToEmptyData, decoderAcceptsCommaDecimals] pass with `swift test --filter AdditionalDataXMLScenarioTests`
+- [x] 1.4 Implement `AdditionalDataTemplates.individualAssessmentDefaultXML` e `AdditionalDataColumns.structure`; verified when [tests: defaultTemplateAddsSevenColumns, duplicateAndForbiddenKeysGetNumericSuffix] pass
+- [x] 1.5 Refactor `Sources/AnthroCore/AdditionalData/`; `swift test` stays green
 
 ## 2. Persistência do modelo da avaliação individual
 
-- [ ] 2.1 Implement `Migration004_additional_data.swift` com `INSERT OR IGNORE` do modelo padrão e registro em `Migrations.all`; verified when [tests: migrationFourCreatesTemplateTable, templateXMLIsNotNull] pass
-- [ ] 2.2 Implement `AdditionalDataTemplateRepository`; verified when [tests: migrationFourSeedsIndividualTemplate, editedTemplateSurvivesReopen] pass
-- [ ] 2.3 Refactor `AdditionalDataTemplateRepository`; `swift test` stays green
+- [x] 2.1 Implement `Migration004_additional_data.swift` com `INSERT OR IGNORE` do modelo padrão e registro em `Migrations.all`; verified when [tests: migrationFourCreatesTemplateTable, templateXMLIsNotNull] pass
+- [x] 2.2 Implement `AdditionalDataTemplateRepository`; verified when [tests: migrationFourSeedsIndividualTemplate, editedTemplateSurvivesReopen] pass
+- [x] 2.3 Refactor `AdditionalDataTemplateRepository`; `swift test` stays green
 
 ## 3. Editor de definição
 
-- [ ] 3.1 Implement `AdditionalDataEditorModel` (incluir seção e variável, seleção, `canAddVariable`, excluir), unit tests first para a seleção após exclusão; verified when [tests: addVariableFromSelectedVariableAppendsToItsSection, addVariableRequiresSelection, deletingSectionRemovesItsVariables] pass
-- [ ] 3.2 Implement `setIdentifier`, `setDescription`, `setKind`, `setMinimum`, `setMaximum` e as validações de `apply()`; verified when [tests: identifierIsTrimmedAndEmptyDescriptionIsNil, emptySectionIdentifierThrowsOnApply, duplicateVariableInSectionThrowsOnApply, sameVariableInDifferentSectionsIsAccepted, changingKindKeepsPositionAndIdentifier, textToNumberStartsWithoutLimits, minimumAboveMaximumIsClamped, maximumBelowMinimumIsClampedAndEmptyAllowed] pass with `swift test --filter AdditionalDataEditorScenarioTests`
-- [ ] 3.3 Refactor `AdditionalDataEditorModel`; `swift test` stays green
+- [x] 3.1 Implement `AdditionalDataEditorModel` (incluir seção e variável, seleção, `canAddVariable`, excluir), unit tests first para a seleção após exclusão; verified when [tests: addVariableFromSelectedVariableAppendsToItsSection, addVariableRequiresSelection, deletingSectionRemovesItsVariables] pass
+- [x] 3.2 Implement `setIdentifier`, `setDescription`, `setKind`, `setMinimum`, `setMaximum` e as validações de `apply()`; verified when [tests: identifierIsTrimmedAndEmptyDescriptionIsNil, emptySectionIdentifierThrowsOnApply, duplicateVariableInSectionThrowsOnApply, sameVariableInDifferentSectionsIsAccepted, changingKindKeepsPositionAndIdentifier, textToNumberStartsWithoutLimits, minimumAboveMaximumIsClamped, maximumBelowMinimumIsClampedAndEmptyAllowed] pass with `swift test --filter AdditionalDataEditorScenarioTests`
+- [x] 3.3 Refactor `AdditionalDataEditorModel`; `swift test` stays green
 
 ## 4. Formulário de valores e rótulos
 
-- [ ] 4.1 Implement `AdditionalDataLabels` com os 11 identificadores e a descrição do modelo padrão; verified when [tests: userIdentifierIsShownAsTypedAndKeptInXML] pass and unit tests for each of the 12 labels pass
-- [ ] 4.2 Implement `AdditionalDataValuesModel` (campos em ordem, texto aparado, número avaliado por `MeasurementInput.evaluate` com o intervalo da variável e 2 casas, `outcome`, `warnings`, `canSave`, data opcional, `AdditionalDataValueError`), sem parser próprio; verified when [tests: valuesFormStoresTrimmedTextAndDate, clearedTextBecomesNilAndOpenCloseElement, numberWithCommaIsParsedAndShownWithTwoDecimals, outOfRangeAndInvalidNumbersWarnAndBlockSave, defaultTemplateLabelsAreTranslated] pass
-- [ ] 4.3 Refactor `AdditionalDataValuesModel`; `swift test` stays green
+- [x] 4.1 Implement `AdditionalDataLabels` com os 11 identificadores e a descrição do modelo padrão; verified when [tests: userIdentifierIsShownAsTypedAndKeptInXML] pass and unit tests for each of the 12 labels pass
+- [x] 4.2 Implement `AdditionalDataValuesModel` (campos em ordem, texto aparado, número avaliado por `MeasurementInput.evaluate` com o intervalo da variável e 2 casas, `outcome`, `warnings`, `canSave`, data opcional, `AdditionalDataValueError`), sem parser próprio; verified when [tests: valuesFormStoresTrimmedTextAndDate, clearedTextBecomesNilAndOpenCloseElement, numberWithCommaIsParsedAndShownWithTwoDecimals, outOfRangeAndInvalidNumbersWarnAndBlockSave, defaultTemplateLabelsAreTranslated] pass
+- [x] 4.3 Refactor `AdditionalDataValuesModel`; `swift test` stays green
 
 ## 5. Integração com a avaliação individual
 
-- [ ] 5.1 Implement `IndividualAdditionalDataModel` (`makeEditor`, `commit`, `dataForNewVisit`); verified when [tests: newVisitGetsCurrentTemplateCopy, cancellingEditorKeepsTemplate] pass
-- [ ] 5.2 Implement em `VisitEditorModel` (change 4) a propriedade `additionalData`, montada a partir do modelo para visita nova (lido do banco por `ChildDetailModel.makeVisitEditor`, D12) e do XML para visita existente, com `canSave` exigindo `additionalData.canSave` e gravando o XML pela regra de D11, unit tests first para XML `nil` e ilegível preservados; verified when [tests: savedVisitKeepsStructureAfterTemplateChange] pass and the change 4 suite stays green
-- [ ] 5.3 Refactor a integração; `swift test` stays green
+- [x] 5.1 Implement `IndividualAdditionalDataModel` (`makeEditor`, `commit`, `dataForNewVisit`); verified when [tests: newVisitGetsCurrentTemplateCopy, cancellingEditorKeepsTemplate] pass
+- [x] 5.2 Implement em `VisitEditorModel` (change 4) a propriedade `additionalData`, montada a partir do modelo para visita nova (lido do banco por `ChildDetailModel.makeVisitEditor`, D12) e do XML para visita existente, com `canSave` exigindo `additionalData.canSave` e gravando o XML pela regra de D11, unit tests first para XML `nil` e ilegível preservados; verified when [tests: savedVisitKeepsStructureAfterTemplateChange] pass and the change 4 suite stays green
+- [x] 5.3 Refactor a integração; `swift test` stays green
 
 ## 6. Integração com o inquérito
 
-- [ ] 6.1 Implement em `RecordEditorModel` a propriedade `additionalData` (definição do inquérito para registro novo, XML do registro para existente), `canSave` exigindo `additionalData.canSave` e a gravação do XML em `makeRecord()` pela regra de D11, unit tests first para número carregado fora do limite que não bloqueia; verified when [tests: newRecordStoresValuesFromSurveyDefinition, existingRecordFormUsesRecordStructure, invalidAdditionalValueBlocksRecordSave] pass
-- [ ] 6.2 Implement em `SurveyDetailModel` `additionalDataDefinition`, `makeAdditionalDataDefinitionEditor` e `applyAdditionalDataDefinition` com marcação de pendência e reconstrução das colunas; verified when [tests: surveyDefinitionIsAppliedMarkedAndSaved, existingRecordKeepsOldVariableAfterDefinitionChange] pass
-- [ ] 6.3 Implement o caso `.additional` em `SurveyTableColumn`, `SurveyRecordRow.text` para colunas adicionais, ordenação tipada (data cronológica) e inclusão em `columns`, filtro e cópia; verified when [tests: additionalCellsRenderTextNumberAndDate, missingAdditionalVariableRendersEmpty, additionalDateColumnSortsChronologically, additionalColumnIsFilterableAndCopied] pass and the change 5 suite stays green
-- [ ] 6.4 Refactor a integração com o inquérito; `swift test` stays green
+- [x] 6.1 Implement em `RecordEditorModel` a propriedade `additionalData` (definição do inquérito para registro novo, XML do registro para existente), `canSave` exigindo `additionalData.canSave` e a gravação do XML em `makeRecord()` pela regra de D11, unit tests first para número carregado fora do limite que não bloqueia; verified when [tests: newRecordStoresValuesFromSurveyDefinition, existingRecordFormUsesRecordStructure, invalidAdditionalValueBlocksRecordSave] pass
+- [x] 6.2 Implement em `SurveyDetailModel` `additionalDataDefinition`, `makeAdditionalDataDefinitionEditor` e `applyAdditionalDataDefinition` com marcação de pendência e reconstrução das colunas; verified when [tests: surveyDefinitionIsAppliedMarkedAndSaved, existingRecordKeepsOldVariableAfterDefinitionChange] pass
+- [x] 6.3 Implement o caso `.additional` em `SurveyTableColumn`, `SurveyRecordRow.text` para colunas adicionais, ordenação tipada (data cronológica) e inclusão em `columns`, filtro e cópia; verified when [tests: additionalCellsRenderTextNumberAndDate, missingAdditionalVariableRendersEmpty, additionalDateColumnSortsChronologically, additionalColumnIsFilterableAndCopied] pass and the change 5 suite stays green
+- [x] 6.4 Refactor a integração com o inquérito; `swift test` stays green
 
 ## 7. Interface SwiftUI
 
