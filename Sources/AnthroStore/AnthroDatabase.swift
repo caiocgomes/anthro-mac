@@ -7,6 +7,7 @@ private let transientDestructor = unsafeBitCast(-1, to: sqlite3_destructor_type.
 public final class AnthroDatabase: @unchecked Sendable {
     public let url: URL
     private var handle: OpaquePointer?
+    private var depth = 0
 
     private init(handle: OpaquePointer, url: URL) {
         self.handle = handle
@@ -86,12 +87,33 @@ public final class AnthroDatabase: @unchecked Sendable {
         sqlite3_last_insert_rowid(handle)
     }
 
+    /// Transação reentrante (design D4b): a externa usa `BEGIN IMMEDIATE`/`COMMIT`; cada aninhada, um `SAVEPOINT`.
+    /// Erro desfaz só o trecho do nível em que ocorreu e é propagado.
     public func transaction<T>(_ body: () throws -> T) throws -> T {
-        try body()
+        let level = depth
+        try executeScript(level == 0 ? "BEGIN IMMEDIATE" : "SAVEPOINT sp_\(level)")
+        depth += 1
+        let result: T
+        do {
+            result = try body()
+        } catch {
+            depth -= 1
+            try? executeScript(level == 0 ? "ROLLBACK" : "ROLLBACK TO sp_\(level); RELEASE sp_\(level)")
+            throw error
+        }
+        depth -= 1
+        do {
+            try executeScript(level == 0 ? "COMMIT" : "RELEASE sp_\(level)")
+        } catch {
+            try? executeScript(level == 0 ? "ROLLBACK" : "ROLLBACK TO sp_\(level); RELEASE sp_\(level)")
+            throw error
+        }
+        return result
     }
 
+    /// Nível de aninhamento atual: 0 fora de transação, 1 na externa, 2 na primeira aninhada.
     public var transactionDepth: Int {
-        0
+        depth
     }
 
     public func integrityCheck() throws -> Bool {
