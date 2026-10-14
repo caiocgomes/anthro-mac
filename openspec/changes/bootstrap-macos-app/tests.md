@@ -293,7 +293,8 @@
 
 ## Verificação visual da janela
 
-- 2026-10-14, build daba3d4: `open build/AnthroPlus.app` abriu a janela principal (CGWindowList: pid 94945, janela 5469, 1100 por 720) e criou `~/Library/Application Support/AnthroPlus/anthroplus.sqlite`. Captura de tela e árvore de acessibilidade pelo REA negadas pelo macOS (Gravação de Tela e Acessibilidade não concedidas ao Warp); inspeção visual pendente até a permissão.
+- 2026-10-14, build daba3d4: `open build/AnthroPlus.app` abriu a janela principal (CGWindowList: pid 94945, janela 5469, 1100 por 720) e criou `~/Library/Application Support/AnthroPlus/anthroplus.sqlite`. Captura de tela e árvore de acessibilidade pelo REA negadas nessa hora (Gravação de Tela e Acessibilidade não concedidas ao Warp).
+- 2026-10-14, build 7f90b7f, com as permissões liberadas: captura do REA (`ev_48e96fd210210a5bef2fb573003a9a5301b270d64b1092d441166ea21fb31d89`) mostra a sidebar com os três módulos e nomes inteiros, o estado vazio e a toolbar; árvore de acessibilidade em `ev_d357e067b942936d96bf72b832df4a8638ff8e6e9edfd14dcb02a22571d10a09`.
 
 ## Test Changes After Red
 
