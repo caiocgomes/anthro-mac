@@ -47,10 +47,14 @@ public enum SurveyTableColumn: Hashable, Sendable {
     case fixed(SurveyColumn)
     case additional(AdditionalDataColumn)
 
+    /// Fixas pelo título em pt-BR; adicionais pelo rótulo traduzido da variável mais o sufixo da chave (" 2"...).
     public var title: String {
         switch self {
-        case .fixed(let column): column.title
-        case .additional: ""
+        case .fixed(let column):
+            column.title
+        case .additional(let column):
+            AdditionalDataLabels.display(column.variableID)
+                + (column.key.hasPrefix(column.variableID) ? String(column.key.dropFirst(column.variableID.count)) : "")
         }
     }
 }

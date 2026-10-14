@@ -8,6 +8,8 @@ public struct SurveyRecordRow: Sendable, Equatable {
     public let result: AnthropometricResult
     private let flaggedIndicators: Set<Indicator>
     public let flag: PlausibilityFlag
+    /// Dados adicionais do registro; XML ilegível conta como sem dados (células vazias).
+    private let additionalValues: AdditionalData
 
     public init(record: SurveyRecord, engine: AnthroEngine, options: SurveyOptions) {
         self.record = record
@@ -17,12 +19,13 @@ public struct SurveyRecordRow: Sendable, Equatable {
             SurveyPlausibility.isFlagged($0, result: result, options: options)
         })
         flag = SurveyPlausibility.flag(result: result, options: options)
+        additionalValues = (try? AdditionalDataXML.decode(record.additionalDataXML)) ?? AdditionalData()
     }
 
     public func text(_ column: SurveyTableColumn) -> String {
         switch column {
         case .fixed(let fixed): text(fixed)
-        case .additional: ""
+        case .additional(let column): additionalText(column)
         }
     }
 
@@ -65,6 +68,22 @@ public struct SurveyRecordRow: Sendable, Equatable {
         case .flag: Self.flagText(flag)
         case .weightingFactor: "\(record.weightingFactor)".replacingOccurrences(of: ".", with: ",")
         case .estimatedDateOfBirth: Self.yesNo(record.dateOfBirthIsApprox)
+        }
+    }
+
+    /// Variável do registro com a seção e o identificador da coluna (`FindSection`, `FindVariable`).
+    func additionalVariable(_ column: AdditionalDataColumn) -> AdditionalDataVariable? {
+        additionalValues.variable(section: column.sectionID, variable: column.variableID)
+    }
+
+    /// `dgvRecords_CellValueNeeded` a partir da coluna 19: texto como está, número com vírgula e as casas que tiver,
+    /// data dd/MM/aaaa; variável ausente ou sem valor fica vazia.
+    private func additionalText(_ column: AdditionalDataColumn) -> String {
+        switch additionalVariable(column)?.kind {
+        case .text(let value): value ?? ""
+        case .number(let value, _, _): value.map { "\($0)".replacingOccurrences(of: ".", with: ",") } ?? ""
+        case .date(let value): value.map(Self.date) ?? ""
+        case nil: ""
         }
     }
 

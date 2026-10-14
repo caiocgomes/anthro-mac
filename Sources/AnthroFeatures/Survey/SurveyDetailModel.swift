@@ -23,6 +23,10 @@ public final class SurveyDetailModel {
     public private(set) var sortColumn: SurveyTableColumn? = nil
     public private(set) var sortAscending: Bool = false
     public private(set) var selectedResult: AnthropometricResult? = nil
+    /// Definição de dados adicionais em edição; a coluna `additional_data_def` só muda ao salvar.
+    public private(set) var additionalDataDefinition = AdditionalData()
+    private var definitionXML: String?
+    private var additionalColumns: [AdditionalDataColumn] = []
 
     /// Registro com chave estável em memória (registros novos ainda não têm `id`).
     private struct Entry {
@@ -50,11 +54,13 @@ public final class SurveyDetailModel {
         self.repository = repository
         self.engine = engine
         self.today = today
+        setDefinition(survey.additionalDataDefinitionXML)
         load(records)
     }
 
+    /// As 19 colunas fixas e uma por variável da definição (`BindRecordsToGrid` com `GetDataStructure`).
     public var columns: [SurveyTableColumn] {
-        SurveyColumn.allCases.map { .fixed($0) }
+        SurveyColumn.allCases.map { .fixed($0) } + additionalColumns.map { .additional($0) }
     }
 
     /// `NSMain_LabelNbRecords` sobre os registros visíveis.
@@ -189,15 +195,23 @@ public final class SurveyDetailModel {
 
     // MARK: Dados adicionais
 
-    public var additionalDataDefinition: AdditionalData {
-        AdditionalData()
-    }
-
+    /// `tsbAddData_Click`: editor sobre uma cópia da definição; cancelar é não aplicar.
     public func makeAdditionalDataDefinitionEditor() -> AdditionalDataEditorModel {
-        AdditionalDataEditorModel(definition: AdditionalData())
+        AdditionalDataEditorModel(definition: additionalDataDefinition)
     }
 
-    public func applyAdditionalDataDefinition(_ editor: AdditionalDataEditorModel) throws {}
+    /// Definição aplicada marca pendência e refaz as colunas (`SetModified` e `BindRecordsToGrid`); os registros
+    /// existentes guardam os seus próprios dados (D6).
+    public func applyAdditionalDataDefinition(_ editor: AdditionalDataEditorModel) throws {
+        let applied = try editor.apply()
+        setDefinition(AdditionalDataXML.encode(applied))
+        if let sortColumn, !columns.contains(sortColumn) {
+            self.sortColumn = nil
+            sortAscending = false
+        }
+        hasUnsavedChanges = true
+        publish()
+    }
 
     // MARK: Salvar e descartar
 
@@ -205,6 +219,7 @@ public final class SurveyDetailModel {
     public func save() throws {
         let saved = try repository.save(currentSurvey, records: entries.map(\.row.record))
         survey = saved.survey
+        setDefinition(saved.survey.additionalDataDefinitionXML)
         name = saved.survey.name
         notes = saved.survey.notes ?? ""
         for (index, record) in saved.records.enumerated() {
@@ -225,6 +240,7 @@ public final class SurveyDetailModel {
         name = survey.name
         notes = survey.notes ?? ""
         options = survey.options
+        setDefinition(survey.additionalDataDefinitionXML)
         rebuildRows()
         hasUnsavedChanges = false
     }
@@ -237,7 +253,16 @@ public final class SurveyDetailModel {
         current.name = name
         current.notes = notes
         current.options = options
+        current.additionalDataDefinitionXML = definitionXML
         return current
+    }
+
+    /// Guarda o texto da definição e as colunas derivadas; definição ilegível não gera colunas.
+    private func setDefinition(_ xml: String?) {
+        definitionXML = xml
+        additionalDataDefinition = (try? AdditionalDataXML.decode(xml)) ?? AdditionalData()
+        additionalColumns = AdditionalDataColumns.structure(of: additionalDataDefinition,
+                                                            forbiddenKeys: SurveyColumn.allCases.map(\.title))
     }
 
     private func load(_ records: [SurveyRecord]) {
@@ -284,7 +309,38 @@ public final class SurveyDetailModel {
 /// mas z indefinido entra como o menor valor, porque o original guarda `decimal.MinValue` no campo.
 private enum SurveySortKey: Comparable {
     case value(Decimal)
+    case date(Date)
+    case text(String)
     case missing
+
+    /// Números, depois datas, depois textos, ausentes no fim; texto pela comparação localizada (`string.CompareTo`).
+    static func < (lhs: SurveySortKey, rhs: SurveySortKey) -> Bool {
+        switch (lhs, rhs) {
+        case let (.value(a), .value(b)): a < b
+        case let (.date(a), .date(b)): a < b
+        case let (.text(a), .text(b)): a.localizedCompare(b) == .orderedAscending
+        default: lhs.rank < rhs.rank
+        }
+    }
+
+    static func == (lhs: SurveySortKey, rhs: SurveySortKey) -> Bool {
+        switch (lhs, rhs) {
+        case let (.value(a), .value(b)): a == b
+        case let (.date(a), .date(b)): a == b
+        case let (.text(a), .text(b)): a.localizedCompare(b) == .orderedSame
+        case (.missing, .missing): true
+        default: false
+        }
+    }
+
+    private var rank: Int {
+        switch self {
+        case .value: 0
+        case .date: 1
+        case .text: 2
+        case .missing: 3
+        }
+    }
 
     init(_ row: SurveyRecordRow, _ column: SurveyTableColumn) {
         let record = row.record
@@ -315,8 +371,13 @@ private enum SurveySortKey: Comparable {
             case .weightingFactor: self = .value(record.weightingFactor)
             case .estimatedDateOfBirth: self = flag(record.dateOfBirthIsApprox)
             }
-        case .additional:
-            self = .missing
+        case .additional(let column):
+            switch row.additionalVariable(column)?.kind {
+            case .text(let value?): self = .text(value)
+            case .number(let value?, _, _): self = .value(value)
+            case .date(let value?): self = .date(value)
+            default: self = .missing
+            }
         }
     }
 
