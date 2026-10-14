@@ -2,7 +2,7 @@
 
 ## Red Gate Replay
 
-- **Red commit**: `143cda8` (`git log --format=%h --grep='^test(red)' -n 1`); 14 commits depois dele (`git rev-list --count 143cda8..HEAD`); nenhuma tarefa aberta em tasks.md.
+- **Red commit**: `143cda8` (`git log --format=%h --grep='^test(red)' -n 1`); 14 commits depois dele no momento da checagem (`git rev-list --count 143cda8..HEAD`); nenhuma tarefa aberta em tasks.md.
 - **How replayed**: worktree temporário em `143cda8` (`git worktree add --detach`), `swift test --filter ScenarioTests`, worktree removido em seguida. Os dois testes da migração foram reproduzidos também na fase 1, no mesmo worktree, com o SQL da migração 3 esvaziado, como descrito em Conventions de tests.md.
 - **Result**: 82 testes de cenário; 80 falharam por asserção (`Expectation failed`), nenhum por erro lançado, falha de compilação ou queda do processo. Os 2 da migração (`migrationThreeCreatesSurveyTables`, `invalidSexIsRejectedByConstraint`) passam no SHA vermelho porque a migração 3 entrou nele como dado de partida (precedente da migração 2 na change 4, registrado em tests.md antes do vermelho); contra a migração vazia, os dois falharam por asserção (`tables ... .contains("surveys")` e `"no such table: surveys".contains("CHECK constraint failed")`). Trechos de cada falha no ledger de tests.md.
 - **Portão vermelho**: registrado sem parada (tarefa 0.4), por decisão do Caio de 14/10/2026: a parada vale só para as changes que fixam números clínicos (`port-anthro-engine` e `add-survey-analysis`).
@@ -17,7 +17,7 @@
 
 | Capability | Mutation applied | Test that caught it | Reverted |
 |------------|------------------|---------------------|----------|
-| survey-management | `referenceWeightForAgeUpperMonths` de 108 para 120 em `SurveyPlausibility` | `weightForAgeAbove108MonthsIsNeverFlagged` (`flagged(.weightForAge, result) → true == false`) | sim (`git checkout`) |
+| survey-management | `referenceWeightForAgeUpperMonths` de 108 para 120 em `SurveyPlausibility` | `weightForAgeAbove108MonthsIsNeverFlagged` (`flagged(.weightForAge, result) -> true == false`) | sim (`git checkout`) |
 | survey-management | ramo de intervalo de datas de `SurveyFilterEvaluator` devolvendo `false` incondicionalmente | `dateRangeWithOpenUpperBound` (`[] == ["2021-01-01"]`) | sim |
 | survey-management | booleanos de `SurveyOptions.xml()` como `true`/`false` minúsculos | `defaultOptionsSerializeToExactXML` | sim |
 | survey-management (migração, tarefa 2.1) | `CHECK (sex IN (1, 2))` removido da migração 3 | `invalidSexIsRejectedByConstraint` (`"no error".contains("CHECK constraint failed")`) | sim |
@@ -48,6 +48,7 @@ TDD path: superpowers
 - **WARNING, corrigidos nesta verificação** (commit `83175ec`):
   - Folha de edição aberta (novo registro, opções) e ⌘1 a ⌘3 ou ⌘Q: o menu continua ativo com a folha anexada, o guarda do módulo não enxerga o que está na folha e o registro digitado se perdia sem pergunta (o mesmo caminho existia nas folhas da ficha da Avaliação individual). Agora `AppModel.isEditingInSheet` bloqueia a troca de módulo e o atalho (`SheetGuardUnitTests`), o menu Módulos fica desabilitado e encerrar avisa e cancela. A ligação nas views (modificador `editingSheet()` com o `AppModel` no ambiente) compila, mas não foi exercida na interface.
   - Editor de opções: campos de limite de z e de faixas só confirmavam ao sair do foco, e Aplicar podia ignorar o último número; e, com linhas identificadas por índice, um campo em foco podia mostrar o valor de outra faixa depois de remover uma. Os campos agora enviam ao editor durante a digitação (sem reescrever valores gravados ao abrir a folha) e as linhas são recriadas ao incluir ou remover faixa. Sem teste automatizado (camada de view).
+- **WARNING, corrigido depois da revisão**: na lista de inquéritos, o nome era o rótulo da caixa de marcação, e no macOS clicar no nome marcava a caixa em vez de abrir o inquérito. Agora a caixa não tem rótulo e o nome fica ao lado, como na lista de crianças. Sem teste automatizado (camada de view).
 - **WARNING, latente e encaminhado**: registro com nascimento, data da pesquisa e idade em meses perderia a idade digitada ao ser reeditado. Hoje é inalcançável (o editor nunca grava os dois); a importação da change 8 pode produzi-lo, e a regra de normalização na importação ficou em D14.
 - **SUGGESTION**: se a gravação der certo e só a releitura da lista falhar, a mensagem diz que não foi possível salvar, embora o dado esteja gravado (`SurveyDetailPane.save`, `SurveyModuleModel.settle`).
 - **Conferido e correto pela revisão**: ida e volta de registro existente pelo editor sem mudança, chaves estáveis e `editorKeys` no inquérito aberto, seleção da tabela zerada a cada mudança da lista visível, `save()` atribuindo ids por posição, repositório transacional com exclusão dos registros removidos e ordem por `position`, ciclo de pendências do módulo (inclusive falha ao salvar e inquérito nunca salvo) e a reatribuição do guarda do `AppModel` pelos hosts.

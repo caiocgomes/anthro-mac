@@ -22,13 +22,17 @@ struct SurveyListView: View {
                                         set: { id in if let id, !list.showsArchive { perform { _ = try module.open(id: id) } } })) {
                     ForEach(list.surveys) { survey in
                         if let id = survey.id {
-                            Toggle(isOn: Binding(get: { list.checkedIDs.contains(id) },
-                                                 set: { checked in
-                                                     if checked { list.checkedIDs.insert(id) } else { list.checkedIDs.remove(id) }
-                                                 })) {
+                            // Caixa sem rótulo e nome à parte, como a lista de crianças: clicar no nome abre o
+                            // inquérito; só a caixa marca.
+                            HStack(spacing: 8) {
+                                Toggle("", isOn: Binding(get: { list.checkedIDs.contains(id) },
+                                                         set: { checked in
+                                                             if checked { list.checkedIDs.insert(id) } else { list.checkedIDs.remove(id) }
+                                                         }))
+                                    .toggleStyle(.checkbox)
+                                    .labelsHidden()
                                 Text(survey.name).lineLimit(1)
                             }
-                            .toggleStyle(.checkbox)
                             .tag(id)
                         }
                     }
