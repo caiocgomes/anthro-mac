@@ -1,16 +1,41 @@
 import AnthroFeatures
 import SwiftUI
 
+/// Estado do módulo guardado no `AppModel`: sobrevive ao fechamento da janela, então a ficha em edição não se perde.
+@MainActor
+final class IndividualAssessmentSession {
+    let database: AnthroDatabase
+    let list: ChildListModel
+    let detail: ChildDetailModel
+    var isLoaded = false
+
+    init(database: AnthroDatabase, settings: AppSettings, tables: GrowthReferenceTables) {
+        self.database = database
+        list = ChildListModel(database: database, settings: settings)
+        detail = ChildDetailModel(database: database, settings: settings, engine: AnthroEngine(tables: tables))
+    }
+}
+
 /// Módulo Avaliação individual: lista de crianças à esquerda e ficha à direita, como `IAMain`.
 struct IndividualAssessmentHostView: View {
     let model: AppModel
 
     var body: some View {
         if let database = model.store.database, let tables = try? GrowthReferenceTables.bundled() {
-            IndividualAssessmentView(app: model, database: database, tables: tables)
+            IndividualAssessmentView(app: model, session: session(database: database, tables: tables), tables: tables)
         } else {
             ContentUnavailableView(L10n.Calculator.tablesUnavailable, systemImage: "exclamationmark.triangle")
         }
+    }
+
+    private func session(database: AnthroDatabase, tables: GrowthReferenceTables) -> IndividualAssessmentSession {
+        if let existing = model.moduleSessions[.individualAssessment] as? IndividualAssessmentSession {
+            return existing
+        }
+        let created = IndividualAssessmentSession(database: database, settings: model.settings, tables: tables)
+        model.moduleSessions[.individualAssessment] = created
+        model.unsavedChangesGuard = created.detail
+        return created
     }
 }
 
@@ -18,50 +43,43 @@ struct IndividualAssessmentHostView: View {
 enum PendingNavigation: Equatable {
     case open(Int64)
     case new
+    case archiveChecked
 }
 
 struct IndividualAssessmentView: View {
     let app: AppModel
-    let database: AnthroDatabase
+    let session: IndividualAssessmentSession
     let tables: GrowthReferenceTables
 
-    @State private var list: ChildListModel
-    @State private var detail: ChildDetailModel
     @State private var selectedChildID: Int64?
     @State private var pending: PendingNavigation?
     @State private var errorMessage: String?
 
-    init(app: AppModel, database: AnthroDatabase, tables: GrowthReferenceTables) {
-        self.app = app
-        self.database = database
-        self.tables = tables
-        _list = State(initialValue: ChildListModel(database: database, settings: app.settings))
-        _detail = State(initialValue: ChildDetailModel(database: database, settings: app.settings,
-                                                       engine: AnthroEngine(tables: tables)))
-    }
+    private var list: ChildListModel { session.list }
+    private var detail: ChildDetailModel { session.detail }
 
     var body: some View {
         HSplitView {
             ChildListPane(list: list, selectedChildID: selectedChildID, onSelect: { request(.open($0)) },
-                          onNew: { request(.new) }, onError: show)
+                          onNew: { request(.new) }, onArchive: archiveChecked, onDelete: deleteChecked, onError: show)
                 .frame(minWidth: 220, idealWidth: 270, maxWidth: 360, maxHeight: .infinity)
-            ChildDetailPane(detail: detail, database: database, tables: tables, onSaved: childSaved, onError: show)
+            ChildDetailPane(detail: detail, database: session.database, tables: tables, onSaved: childSaved,
+                            onError: show)
                 .frame(minWidth: 440, maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(\.locale, Locale(identifier: "pt_BR"))
         .task {
-            app.unsavedChangesGuard = detail
-            perform { try list.load() }
+            selectedChildID = detail.draft?.id
+            guard !session.isLoaded else { return }
+            session.isLoaded = true
+            perform { try list.load(keeping: detail.linkedRecords) }
         }
-        .onDisappear {
-            if app.unsavedChangesGuard === detail { app.unsavedChangesGuard = nil }
-        }
-        .unsavedChangesDialog(isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } })) { decision in
-            guard let target = pending else { return }
-            pending = nil
+        .unsavedChangesDialog(pending: $pending) { decision, target in
             perform {
-                if try detail.proceedAfterUnsavedChanges(decision) { try navigate(target) }
+                guard try detail.proceedAfterUnsavedChanges(decision) else { return }
+                if decision == .save { try list.showActive() }
+                try navigate(target)
             }
         }
         .alert(L10n.IndividualAssessment.saveFailed,
@@ -72,7 +90,7 @@ struct IndividualAssessmentView: View {
         }
     }
 
-    /// `IAMain.AskForSave` antes de trocar de criança ou criar outra.
+    /// `IAMain.AskForSave` antes de trocar de criança, criar outra ou arquivar a criança aberta.
     private func request(_ target: PendingNavigation) {
         if detail.hasUnsavedChanges {
             pending = target
@@ -89,7 +107,35 @@ struct IndividualAssessmentView: View {
         case .new:
             detail.startNew()
             selectedChildID = nil
+        case .archiveChecked:
+            let closesOpenChild = detail.draft?.id.map(list.checkedIDs.contains) ?? false
+            try list.archiveChecked()
+            if closesOpenChild { closeDetail() }
         }
+    }
+
+    /// `tsbChildrenArchive_Click`: pergunta antes se a criança aberta está entre as marcadas e tem pendências.
+    private func archiveChecked() {
+        let opensChecked = detail.draft?.id.map(list.checkedIDs.contains) ?? false
+        if opensChecked {
+            request(.archiveChecked)
+        } else {
+            perform { try navigate(.archiveChecked) }
+        }
+    }
+
+    /// `tsbChildrenDelete_Click`: a criança aberta que for excluída fecha a ficha sem perguntar (será apagada).
+    private func deleteChecked() {
+        perform {
+            let closesOpenChild = detail.draft?.id.map(list.checkedIDs.contains) ?? false
+            if closesOpenChild { closeDetail() }
+            try list.deleteChecked(keeping: detail.linkedRecords)
+        }
+    }
+
+    private func closeDetail() {
+        detail.close()
+        selectedChildID = nil
     }
 
     private func childSaved(_ id: Int64) {
@@ -112,7 +158,7 @@ struct IndividualAssessmentView: View {
     }
 }
 
-/// Mensagem em pt-BR para os erros de validação; os demais mostram a descrição técnica.
+/// Mensagem em pt-BR para os erros de validação e de banco.
 enum IAErrorText {
     static func message(for error: Error) -> String {
         switch error {
@@ -120,20 +166,25 @@ enum IAErrorText {
         case VisitValidationError.duplicateDate: L10n.IndividualAssessment.duplicateDate
         case VisitValidationError.invalidMeasurement, ParentValidationError.invalidMeasurement:
             L10n.IndividualAssessment.invalidMeasurement
-        default: String(describing: error)
+        case StoreError.recordNotFound: L10n.IndividualAssessment.recordGone
+        default: "\(L10n.IndividualAssessment.databaseError) \(error)"
         }
     }
 }
 
 extension View {
-    /// Diálogo Salvar, Descartar ou Cancelar de `IAMain.AskForSave`.
-    func unsavedChangesDialog(isPresented: Binding<Bool>, onDecision: @escaping (UnsavedChangesDecision) -> Void) -> some View {
-        alert(L10n.IndividualAssessment.unsavedTitle, isPresented: isPresented) {
-            Button(L10n.IndividualAssessment.save) { onDecision(.save) }
+    /// Diálogo Salvar, Descartar ou Cancelar de `IAMain.AskForSave`; a ação recebe o pedido apresentado, então a ordem
+    /// em que o SwiftUI limpa a binding não troca Salvar por Cancelar.
+    func unsavedChangesDialog<Pending>(pending: Binding<Pending?>,
+                                       onDecision: @escaping (UnsavedChangesDecision, Pending) -> Void) -> some View {
+        alert(L10n.IndividualAssessment.unsavedTitle,
+              isPresented: Binding(get: { pending.wrappedValue != nil }, set: { if !$0 { pending.wrappedValue = nil } }),
+              presenting: pending.wrappedValue) { value in
+            Button(L10n.IndividualAssessment.save) { onDecision(.save, value) }
                 .keyboardShortcut(.defaultAction)
-            Button(L10n.IndividualAssessment.discard, role: .destructive) { onDecision(.discard) }
-            Button(L10n.IndividualAssessment.cancel, role: .cancel) { onDecision(.cancel) }
-        } message: {
+            Button(L10n.IndividualAssessment.discard, role: .destructive) { onDecision(.discard, value) }
+            Button(L10n.IndividualAssessment.cancel, role: .cancel) { onDecision(.cancel, value) }
+        } message: { _ in
             Text(L10n.IndividualAssessment.unsavedMessage)
         }
     }

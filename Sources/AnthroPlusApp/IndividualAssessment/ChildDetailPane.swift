@@ -31,6 +31,7 @@ struct ChildDetailPane: View {
     @State private var sheet: DetailSheet?
     @State private var chart: ChartPresentation?
     @State private var confirmingVisitDelete = false
+    @State private var confirmingCancel = false
 
     var body: some View {
         if let draft = detail.draft {
@@ -66,6 +67,14 @@ struct ChildDetailPane: View {
             }
             .sheet(item: $sheet) { sheet in sheetContent(sheet) }
             .sheet(item: $chart) { presentation in GrowthChartSheet(model: presentation.model) }
+            .confirmationDialog(L10n.IndividualAssessment.cancelChangesTitle, isPresented: $confirmingCancel) {
+                Button(L10n.IndividualAssessment.discard, role: .destructive) {
+                    do { try detail.discardChanges() } catch { onError(error) }
+                }
+                Button(L10n.IndividualAssessment.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.IndividualAssessment.cancelChangesMessage)
+            }
             .confirmationDialog(L10n.IndividualAssessment.deleteVisitsTitle, isPresented: $confirmingVisitDelete) {
                 Button(L10n.IndividualAssessment.delete, role: .destructive) { detail.deleteSelectedVisits() }
                 Button(L10n.IndividualAssessment.cancel, role: .cancel) {}
@@ -220,10 +229,8 @@ struct ChildDetailPane: View {
                     .foregroundStyle(.orange)
             }
             Spacer()
-            Button(L10n.IndividualAssessment.cancel) {
-                do { try detail.discardChanges() } catch { onError(error) }
-            }
-            .disabled(!detail.hasUnsavedChanges)
+            Button(L10n.IndividualAssessment.cancel) { confirmingCancel = true }
+                .disabled(!detail.hasUnsavedChanges)
             Button(L10n.IndividualAssessment.save) {
                 do { onSaved(try detail.save()) } catch { onError(error) }
             }
@@ -242,9 +249,10 @@ private struct ChildSection: View {
     var body: some View {
         Section {
             if detail.isDisplayIDEditable {
-                TextField(L10n.IndividualAssessment.displayID, text: Binding(
-                    get: { draft.displayID.map(String.init) ?? "" },
-                    set: { text in detail.update { $0.displayID = Int(text.trimmingCharacters(in: .whitespaces)) } }))
+                // Campo numérico: texto que não é inteiro volta ao último valor válido, sem virar `nil` em silêncio.
+                TextField(L10n.IndividualAssessment.displayID,
+                          value: Binding(get: { draft.displayID }, set: { id in detail.update { $0.displayID = id } }),
+                          format: .number.grouping(.never))
             } else {
                 LabeledContent(L10n.IndividualAssessment.displayID) {
                     Text(draft.displayID.map(String.init) ?? L10n.IndividualAssessment.automaticID)
@@ -298,9 +306,10 @@ private struct FollowUpSection: View {
                            selection: Binding(get: { date }, set: { value in detail.update { $0.followUpDate = value } }),
                            displayedComponents: .date)
             }
-            TextField(L10n.IndividualAssessment.followUpInterval, text: Binding(
-                get: { draft.followUpInterval.map(String.init) ?? "" },
-                set: { text in detail.update { $0.followUpInterval = Int(text.trimmingCharacters(in: .whitespaces)) } }))
+            TextField(L10n.IndividualAssessment.followUpInterval,
+                      value: Binding(get: { draft.followUpInterval },
+                                     set: { days in detail.update { $0.followUpInterval = days } }),
+                      format: .number.grouping(.never))
             TextField(L10n.IndividualAssessment.followUpRefTo, text: Binding(
                 get: { draft.followUpRefTo }, set: { value in detail.update { $0.followUpRefTo = value } }))
         } header: {

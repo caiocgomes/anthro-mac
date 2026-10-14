@@ -50,9 +50,10 @@ public final class ChildDetailModel {
 
     // MARK: Criança
 
-    /// `Child()`: nascimento um ano antes de hoje, sexo indefinido, sem visitas.
+    /// Criança nova como `ClearRightPanel` e `CreateNewChild`: nascimento seis anos antes de hoje (o valor do
+    /// `dtpDateOfBirth`), sexo indefinido, sem visitas.
     public func startNew() {
-        let birth = Calendar.current.date(byAdding: .year, value: -1, to: today()) ?? today()
+        let birth = Calendar.current.date(byAdding: .year, value: -6, to: today()) ?? today()
         let new = ChildDraft(id: nil, displayID: nil, firstName: "", lastName: "", sex: nil,
                              dateOfBirth: IndividualAssessment.normalized(birth), dateOfBirthIsApprox: false, notes: "",
                              followUpDate: nil, followUpInterval: nil, followUpRefTo: "", motherID: nil, fatherID: nil,
@@ -139,6 +140,24 @@ public final class ChildDetailModel {
         case .cancel:
             return false
         }
+    }
+
+    /// `DisableChildUI`: fecha a ficha sem gravar (criança arquivada ou excluída pela lista).
+    public func close() {
+        draft = nil
+        visits = []
+        savedDraft = nil
+        savedVisits = []
+        selectedVisitDates = []
+        focusedVisitDate = nil
+        hasUnsavedChanges = false
+    }
+
+    /// Mãe, pai e endereço ligados ao rascunho, que a limpeza de órfãos tem de preservar.
+    public var linkedRecords: OrphanCleanupKeep {
+        OrphanCleanupKeep(motherIDs: Set([draft?.motherID].compactMap { $0 }),
+                          fatherIDs: Set([draft?.fatherID].compactMap { $0 }),
+                          addressIDs: Set([draft?.addressID].compactMap { $0 }))
     }
 
     // MARK: Visitas

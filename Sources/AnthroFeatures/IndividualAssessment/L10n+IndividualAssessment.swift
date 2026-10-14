@@ -88,6 +88,10 @@ extension L10n {
         public static let automaticID = "Automático ao salvar"
         public static let confirm = "Confirmar"
         public static let searchPlaceholder = "Nome, sobrenome ou outro campo"
+        public static let cancelChangesTitle = "Descartar as alterações desta criança?"
+        public static let cancelChangesMessage = "A ficha e as visitas voltam ao que está gravado no banco."
+        public static let recordGone = "Esta criança não existe mais no banco; ela foi excluída."
+        public static let databaseError = "Erro no banco de dados:"
     }
 
     static var individualAssessmentStrings: [String] {
@@ -104,7 +108,7 @@ extension L10n {
             e.unsavedMessage, e.deleteChildrenTitle, e.deleteChildrenMessage, e.deleteVisitsTitle,
             e.deleteVisitsMessage, e.sexRequired, e.duplicateDate, e.invalidMeasurement, e.saveFailed, e.searchTitle,
             e.idFrom, e.idTo, e.birthFrom, e.birthTo, e.any, e.wildcardHint, e.checkedCount, e.automaticID, e.confirm,
-            e.searchPlaceholder,
+            e.searchPlaceholder, e.cancelChangesTitle, e.cancelChangesMessage, e.recordGone, e.databaseError,
         ]
     }
 }

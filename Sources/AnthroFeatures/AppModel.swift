@@ -15,6 +15,10 @@ public final class AppModel {
     /// Módulo aberto que tem de perguntar antes de sair, se houver alterações pendentes.
     @ObservationIgnored public weak var unsavedChangesGuard: UnsavedChangesGuard?
 
+    /// Estado de módulo que sobrevive ao fechamento da janela (a ficha em edição da Avaliação individual), para que as
+    /// alterações pendentes não se percam e o encerramento do app ainda pergunte.
+    @ObservationIgnored public var moduleSessions: [AppSection: AnyObject] = [:]
+
     /// Módulo pedido enquanto o guarda tem alterações pendentes; a janela mostra o diálogo de `AskForSave`.
     public private(set) var pendingSection: AppSection?
 

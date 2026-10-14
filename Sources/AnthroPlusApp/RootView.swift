@@ -39,9 +39,9 @@ struct MainSplitView: View {
         )
     }
 
-    private var pendingDecision: Binding<Bool> {
-        Binding(get: { model.pendingSection != nil },
-                set: { if !$0, model.pendingSection != nil { resolve(.cancel) } })
+    /// O pedido pendente só é limpo pela decisão (`resolvePendingSection`), nunca pelo fechamento do alerta.
+    private var pendingSection: Binding<AppSection?> {
+        Binding(get: { model.pendingSection }, set: { _ in })
     }
 
     @State private var errorMessage: String?
@@ -80,7 +80,7 @@ struct MainSplitView: View {
                     }
                 }
         }
-        .unsavedChangesDialog(isPresented: pendingDecision) { resolve($0) }
+        .unsavedChangesDialog(pending: pendingSection) { decision, _ in resolve(decision) }
         .alert(L10n.IndividualAssessment.saveFailed,
                isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK", role: .cancel) {}

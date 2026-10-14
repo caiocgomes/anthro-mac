@@ -33,7 +33,8 @@ public final class ParentEditorModel {
         self.randomDay = randomDay
         storedBirth = IndividualAssessment.normalized(editing?.dateOfBirth ?? today())
         storedApprox = editing?.dateOfBirthIsApprox ?? false
-        dateOfBirthUnknown = editing != nil && editing?.dateOfBirth == nil
+        // `Parent()` novo não tem nascimento, e `cbDateIsUnknown` abre marcado (`IAParentDialog.LoadParent`).
+        dateOfBirthUnknown = editing?.dateOfBirth == nil
         firstName = editing?.firstName ?? ""
         lastName = editing?.lastName ?? ""
         notes = editing?.notes ?? ""
@@ -69,6 +70,7 @@ public final class ParentEditorModel {
                                                          isApprox: storedApprox, upperBound: upperBound,
                                                          randomDay: randomDay)
             storedBirth = IndividualAssessment.normalized(adjusted)
+            dateOfBirthUnknown = false
         }
     }
 

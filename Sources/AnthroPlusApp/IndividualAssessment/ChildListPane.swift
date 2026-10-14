@@ -7,6 +7,8 @@ struct ChildListPane: View {
     let selectedChildID: Int64?
     let onSelect: (Int64) -> Void
     let onNew: () -> Void
+    let onArchive: () -> Void
+    let onDelete: () -> Void
     let onError: (Error) -> Void
 
     @State private var showingSearch = false
@@ -20,7 +22,8 @@ struct ChildListPane: View {
                 ContentUnavailableView(L10n.IndividualAssessment.emptyList, systemImage: "person.2")
                     .frame(maxHeight: .infinity)
             } else {
-                List(selection: Binding(get: { selectedChildID }, set: { if let id = $0 { onSelect(id) } })) {
+                List(selection: Binding(get: { list.canOpen ? selectedChildID : nil },
+                                        set: { if let id = $0, list.canOpen { onSelect(id) } })) {
                     ForEach(list.rows) { row in
                         ChildListRowView(row: row, isChecked: Binding(
                             get: { list.checkedIDs.contains(row.id) },
@@ -41,7 +44,7 @@ struct ChildListPane: View {
             }
         }
         .confirmationDialog(L10n.IndividualAssessment.deleteChildrenTitle, isPresented: $confirmingDelete) {
-            Button(L10n.IndividualAssessment.delete, role: .destructive) { perform { try list.deleteChecked() } }
+            Button(L10n.IndividualAssessment.delete, role: .destructive, action: onDelete)
             Button(L10n.IndividualAssessment.cancel, role: .cancel) {}
         } message: {
             Text(L10n.IndividualAssessment.deleteChildrenMessage)
@@ -94,7 +97,7 @@ struct ChildListPane: View {
                 Spacer()
                 Button(L10n.IndividualAssessment.backToList) { perform { try list.showActive() } }
             case .active, .searchResults:
-                Button(L10n.IndividualAssessment.archiveAction) { perform { try list.archiveChecked() } }
+                Button(L10n.IndividualAssessment.archiveAction, action: onArchive)
                     .disabled(!list.canArchive)
                 Button(L10n.IndividualAssessment.delete, role: .destructive) { confirmingDelete = true }
                     .disabled(!list.canDelete)

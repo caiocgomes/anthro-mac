@@ -38,10 +38,13 @@ public final class ChildListModel {
     public var canDelete: Bool { mode != .archive && !checkedIDs.isEmpty }
     public var canArchive: Bool { mode != .archive && !checkedIDs.isEmpty }
     public var canRestore: Bool { mode == .archive && !checkedIDs.isEmpty }
+    /// No arquivo não se abre a ficha (o original esconde o botão Abrir).
+    public var canOpen: Bool { mode != .archive }
 
-    /// Abertura do módulo: limpeza de órfãos (`Global.Init` chama `CleanupOrphans`, design D6) e lista ativa.
-    public func load() throws {
-        try OrphanCleanup.run(in: database)
+    /// Abertura do módulo: limpeza de órfãos (`Global.Init` chama `CleanupOrphans`, design D6), preservando os registros
+    /// ligados à ficha aberta, e lista ativa.
+    public func load(keeping: OrphanCleanupKeep = OrphanCleanupKeep()) throws {
+        try OrphanCleanup.run(in: database, keeping: keeping)
         try showActive()
     }
 
@@ -73,8 +76,8 @@ public final class ChildListModel {
         try reload()
     }
 
-    public func deleteChecked() throws {
-        try repository.delete(Array(checkedIDs))
+    public func deleteChecked(keeping: OrphanCleanupKeep = OrphanCleanupKeep()) throws {
+        try repository.delete(Array(checkedIDs), keeping: keeping)
         try reload()
     }
 

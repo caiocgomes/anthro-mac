@@ -69,17 +69,22 @@ public final class ChildRepository {
                 .integer(child.displayID), .text(child.firstName), .text(child.lastName), SQLValue(child.dateOfBirth),
                 .flag(child.dateOfBirthIsApprox), .sex(child.sex), .integer(child.motherID), .integer(child.fatherID),
                 .integer(child.addressID), .text(child.notes), SQLValue(child.followUpDate),
-                .integer(child.followUpInterval), .text(child.followUpRefTo), .flag(child.isArchived),
+                .integer(child.followUpInterval), .text(child.followUpRefTo),
             ]
             if let id = child.id {
+                // A ficha não arquiva nem restaura: `is_archived` só muda por `setArchived`.
                 try database.execute(
                     """
                     UPDATE children SET display_id = ?, first_name = ?, last_name = ?, date_of_birth = ?,
                         date_of_birth_is_approx = ?, sex = ?, mother_id = ?, father_id = ?, address_id = ?, notes = ?,
-                        follow_up_date = ?, follow_up_interval = ?, follow_up_ref_to = ?, is_archived = ?,
+                        follow_up_date = ?, follow_up_interval = ?, follow_up_ref_to = ?,
                         updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
                     WHERE child_id = ?
                     """, values + [.integer(id)])
+                guard case .integer(1) = try database.query("SELECT changes() AS n").first?["n"] else {
+                    throw StoreError.recordNotFound(table: "children", id: id)
+                }
+                saved.isArchived = try self.child(id: id)?.isArchived ?? child.isArchived
             } else {
                 try database.execute(
                     """
@@ -87,7 +92,7 @@ public final class ChildRepository {
                         mother_id, father_id, address_id, notes, follow_up_date, follow_up_interval, follow_up_ref_to,
                         is_archived)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, values)
+                    """, values + [.flag(child.isArchived)])
                 saved.id = database.lastInsertRowID()
             }
             try VisitRepository(database: database).replaceVisits(childID: saved.id!, with: visits)
@@ -106,14 +111,15 @@ public final class ChildRepository {
         }
     }
 
-    /// `Children.Delete` para cada criança (visitas e criança) e a limpeza de órfãos, numa só transação (design D6).
-    public func delete(_ ids: [Int64]) throws {
+    /// `Children.Delete` para cada criança (visitas e criança) e a limpeza de órfãos, numa só transação (design D6);
+    /// `keeping` preserva os registros ligados à ficha aberta e ainda não salva.
+    public func delete(_ ids: [Int64], keeping: OrphanCleanupKeep = OrphanCleanupKeep()) throws {
         try database.transaction {
             for id in ids {
                 try database.execute("DELETE FROM visits WHERE child_id = ?", [.integer(id)])
                 try database.execute("DELETE FROM children WHERE child_id = ?", [.integer(id)])
             }
-            try OrphanCleanup.run(in: database)
+            try OrphanCleanup.run(in: database, keeping: keeping)
         }
     }
 
