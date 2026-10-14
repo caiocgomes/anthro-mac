@@ -31,8 +31,9 @@ public struct AdditionalDataSection: Sendable, Equatable {
         self.variables = variables
     }
 
+    /// `FindVariable`: a primeira variável com o identificador.
     public func variable(_ identifier: String) -> AdditionalDataVariable? {
-        nil
+        variables.first { $0.identifier == identifier }
     }
 }
 
@@ -44,11 +45,13 @@ public struct AdditionalData: Sendable, Equatable {
         self.sections = sections
     }
 
+    /// `FindSection`: a primeira seção com o identificador.
     public func section(_ identifier: String) -> AdditionalDataSection? {
-        nil
+        sections.first { $0.identifier == identifier }
     }
 
+    /// `FindSection` seguido de `FindVariable`, como `GetVariableValueAsString`.
     public func variable(section: String, variable: String) -> AdditionalDataVariable? {
-        nil
+        self.section(section)?.variable(variable)
     }
 }
