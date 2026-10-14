@@ -16,13 +16,29 @@ public final class SurveyListModel {
         self.repository = repository
     }
 
-    public var canArchive: Bool { false }
-    public var canDelete: Bool { false }
-    public var canRestore: Bool { false }
+    /// Arquivar e excluir só na lista ativa e com algum inquérito marcado; restaurar só no arquivo.
+    public var canArchive: Bool { !showsArchive && !checkedIDs.isEmpty }
+    public var canDelete: Bool { !showsArchive && !checkedIDs.isEmpty }
+    public var canRestore: Bool { showsArchive && !checkedIDs.isEmpty }
 
-    public func reload() throws {}
+    /// Relê a lista corrente; marcações de inquéritos que saíram da lista são descartadas.
+    public func reload() throws {
+        surveys = try repository.list(archived: showsArchive)
+        checkedIDs.formIntersection(surveys.compactMap(\.id))
+    }
 
-    public func showArchive(_ archived: Bool) throws {}
+    /// Alterna entre a lista ativa e o arquivo, sem marcações.
+    public func showArchive(_ archived: Bool) throws {
+        showsArchive = archived
+        checkedIDs = []
+        try reload()
+    }
 
-    public func restoreChecked() throws {}
+    /// `tsbSurveyRestore_Click`: os marcados voltam à lista ativa.
+    public func restoreChecked() throws {
+        guard canRestore else { return }
+        try repository.setArchived(Array(checkedIDs), archived: false)
+        checkedIDs = []
+        try reload()
+    }
 }
