@@ -5,10 +5,16 @@ import SwiftUI
 struct CalculatorView: View {
     let model: CalculatorModel
 
-    @State private var weightText = "20,00"
-    @State private var lengthOrHeightText = "115,00"
+    @State private var weightText: String
+    @State private var lengthOrHeightText: String
     @State private var chart: ChartPresentation?
     @FocusState private var focus: CalculatorField?
+
+    init(model: CalculatorModel) {
+        self.model = model
+        _weightText = State(initialValue: Self.fieldText(model.weight))
+        _lengthOrHeightText = State(initialValue: Self.fieldText(model.lengthOrHeight))
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -131,12 +137,17 @@ struct CalculatorView: View {
     /// Lê o campo ao sair dele ou com Enter, como `NumericUpDownX`, e mostra o valor truncado.
     private func commitWeight() {
         model.setWeightText(weightText)
-        if let weight = model.weight { weightText = ClinicalFormat.string(weight, places: 2) }
+        if model.weight != nil { weightText = Self.fieldText(model.weight) }
     }
 
     private func commitLengthOrHeight() {
         model.setLengthOrHeightText(lengthOrHeightText)
-        if let value = model.lengthOrHeight { lengthOrHeightText = ClinicalFormat.string(value, places: 2) }
+        if model.lengthOrHeight != nil { lengthOrHeightText = Self.fieldText(model.lengthOrHeight) }
+    }
+
+    /// Valor do campo com 2 casas, como o `NumericUpDownX` com `DecimalPlaces = 2`; vazio quando `nil`.
+    private static func fieldText(_ value: Decimal?) -> String {
+        value.map { ClinicalFormat.string($0, places: 2) } ?? ""
     }
 
     private func commitTextFields() {
@@ -152,7 +163,12 @@ struct CalculatorView: View {
 
     private func binding<Value>(_ keyPath: KeyPath<CalculatorModel, Value>,
                                 _ set: @escaping (Value) -> Void) -> Binding<Value> {
-        Binding(get: { model[keyPath: keyPath] }, set: { set($0) })
+        Binding(get: { model[keyPath: keyPath] }, set: { value in
+            // Picker segmentado, Toggle e DatePicker nem sempre tomam o foco ao clique no macOS; ler os campos de
+            // texto antes reproduz a perda de foco do `NumericUpDownX`, que validava o campo no original.
+            commitTextFields()
+            set(value)
+        })
     }
 }
 

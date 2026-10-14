@@ -17,4 +17,13 @@ struct ApproximateBirthDateUnitTests {
         #expect(ranges == [1..<28])
         #expect(ymd(result) == "2022-02-03")
     }
+
+    /// O `DateTimePicker` do original não dispara `ValueChanged` com o mesmo valor; reenviar o mesmo dia não sorteia.
+    @Test func mesmoDiaReenviadoNaoSorteiaDeNovo() {
+        var ranges: [Range<Int>] = []
+        let result = ApproximateBirthDate.adjusted(previous: day(2021, 2, 9), proposed: day(2021, 2, 9), isApprox: true,
+                                                   upperBound: day(2026, 10, 14)) { ranges.append($0); return 3 }
+        #expect(ranges == [])
+        #expect(ymd(result) == "2021-02-09")
+    }
 }

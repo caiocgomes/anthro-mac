@@ -32,6 +32,7 @@
 - [x] 3.3 Implement ponto único ou vários pontos e troca de indicador e de modo (port de `InitToolStrip` e `RefreshGraph`); verified when [tests: tresVisitasComVariosPontos, pontoUnicoEntreTresVisitas, resultadoUnicoSemEscolhaDeVariosPontos, trocaDePesoParaImcRecalculaSeriesEFaixa, trocaDeModoDescartaOZoom] pass
 - [x] 3.4 Implement zoom, deslocamento e restauração (interações `RubberBandSelection`, `HorizontalDrag`, `VerticalDrag`, `OriginalDimensions`); verified when [tests: zoomERestauracao, selecaoDegeneradaIgnorada, deslocamentoHorizontalDe12Meses] pass
 - [x] 3.5 Refactor `Sources/AnthroFeatures/GrowthChart/`; full suite stays green (`swift test`)
+- [x] 3.6 Implement a costura entre padrões e referência (pedido do usuário depois da checagem manual: curvas sem retorno no eixo x aos 60 meses), com spec emendada; verified when [tests: pesoParaIdadeSemRetornoAos60Meses, percentisDeImcSemRetornoAos60Meses] pass (commit `8f8862b`)
 
 ## 4. Exportação do gráfico
 
@@ -40,16 +41,18 @@
 
 ## 5. Views SwiftUI
 
-- [ ] 5.1 Implement `CalculatorView` e `IndicatorPanelView` em `Sources/AnthroPlusApp/Calculator/`, ligando campos a `@FocusState` com `nextFocus(after:)`, aviso inline de `weightIssue` e `lengthOrHeightIssue` com `issueMessage`, cores de `Severity` (D12) e botões de gráfico; ligar a seção `.calculator` da view raiz criada por `bootstrap-macos-app`; verified when `swift build` e `scripts/build-app.sh` terminam com código 0 e `codesign --verify build/AnthroPlus.app` passa
-- [ ] 5.2 Implement `GrowthChartView` (Swift Charts com `chartXScale`/`chartYScale` nos domínios visíveis, `chartOverlay` para seleção e deslocamento com Shift) e `GrowthChartSheet` com a toolbar de indicador, modo, pontos, restaurar, copiar (`ImageRenderer` e `ChartExport.copy`), exportar e imprimir; verified when `swift build` e `scripts/build-app.sh` terminam com código 0
-- [ ] 5.3 Fazer `SelfTest.run` (change 1, `Sources/AnthroFeatures/SelfTest.swift`) carregar `GrowthReferenceTables.bundled()` e conferir 1857 linhas de padrões por indicador e sexo, para que o autoteste do `.app` prove que as tabelas abrem dentro do bundle (pendência do design D1 da change 1, apontada na verificação da `port-anthro-engine`); laço interno: endurecer `autotesteEncontraOsRecursosDoNucleo` para exigir as tabelas, ver falhar, implementar; verificado quando o teste unitário passa e `scripts/build-app.sh` termina com o autoteste positivo e o negativo (`.app` sem bundle falha)
-- [ ] 5.4 Checagem manual registrada no evidence.md: abrir o app, preencher o caso "IMC de 20 kg e 110 cm aos seis anos", conferir "16,5", abrir o gráfico de IMC, fazer zoom, restaurar e exportar PDF; full suite stays green (`swift test`)
+- [x] 5.1 Implement `CalculatorView` e `IndicatorPanelView` em `Sources/AnthroPlusApp/Calculator/`, ligando campos a `@FocusState` com `nextFocus(after:)`, aviso inline de `weightIssue` e `lengthOrHeightIssue` com `issueMessage`, cores de `Severity` (D12) e botões de gráfico; ligar a seção `.calculator` da view raiz criada por `bootstrap-macos-app`; verified when `swift build` e `scripts/build-app.sh` terminam com código 0 e `codesign --verify build/AnthroPlus.app` passa
+- [x] 5.2 Implement `GrowthChartView` (Swift Charts com `chartXScale`/`chartYScale` nos domínios visíveis, `chartOverlay` para seleção e deslocamento com Shift) e `GrowthChartSheet` com a toolbar de indicador, modo, pontos, restaurar, copiar (`ImageRenderer` e `ChartExport.copy`), exportar e imprimir; verified when `swift build` e `scripts/build-app.sh` terminam com código 0
+- [x] 5.3 Fazer `SelfTest.run` (change 1, `Sources/AnthroFeatures/SelfTest.swift`) carregar `GrowthReferenceTables.bundled()` e conferir 1857 linhas de padrões por indicador e sexo, para que o autoteste do `.app` prove que as tabelas abrem dentro do bundle (pendência do design D1 da change 1, apontada na verificação da `port-anthro-engine`); laço interno: endurecer `autotesteEncontraOsRecursosDoNucleo` para exigir as tabelas, ver falhar, implementar; verificado quando o teste unitário passa e `scripts/build-app.sh` termina com o autoteste positivo e o negativo (`.app` sem bundle falha)
+- [x] 5.4 Checagem manual registrada no evidence.md: abrir o app, preencher o caso "IMC de 20 kg e 110 cm aos seis anos", conferir "16,5", abrir o gráfico de IMC, fazer zoom, restaurar e exportar PDF; full suite stays green (`swift test`)
+
+- [x] 5.5 Correções da verificação (`openspec-verify-change`): campos de texto lidos antes de qualquer alteração em outro controle; texto inicial dos campos derivado do modelo; duplo clique de restaurar removido (fora do D9); mesmo dia reenviado não sorteia a data aproximada, unit test first (inner loop); verified when [tests: mesmoDiaReenviadoNaoSorteiaDeNovo] passes, `swift build` termina sem avisos e a suíte completa fica verde
 
 ## 6. Verification
 
-- [ ] 6.1 Mutation check for anthropometric-calculator: trocar o limite de `ageInMonths < 11` por `< 61` em `CalculatorModel`, ver `criancaDe30MesesSemEscolhaContraAAjuda` falhar, reverter
-- [ ] 6.2 Mutation check for growth-charts: trocar o limite de peso de `> 108` por `> 121` em `GrowthChartModel`, ver `pesoAos109MesesForaDoGrafico` falhar, reverter
-- [ ] 6.3 Run the full suite fresh (`swift test`); all green, output free of errors and warnings
+- [x] 6.1 Mutation check for anthropometric-calculator: trocar o limite de `ageInMonths < 11` por `< 61` em `CalculatorModel`, ver `criancaDe30MesesSemEscolhaContraAAjuda` falhar, reverter
+- [x] 6.2 Mutation check for growth-charts: trocar o limite de peso de `> 108` por `> 121` em `GrowthChartModel`, ver `pesoAos109MesesForaDoGrafico` falhar, reverter
+- [x] 6.3 Run the full suite fresh (`swift test`); all green, output free of errors and warnings
 
 ## Workflow follow-up
 

@@ -214,7 +214,6 @@ struct GrowthChartView: View {
             .fill(.clear)
             .contentShape(Rectangle())
             .gesture(pan.exclusively(before: zoom))
-            .onTapGesture(count: 2) { model.resetZoom() }
             .overlay(alignment: .topLeading) {
                 if let selection {
                     Rectangle()
