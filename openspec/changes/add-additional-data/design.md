@@ -67,6 +67,12 @@ As changes 4 e 5 já gravam esse XML sem interpretá-lo: `add-individual-assessm
 
 **D13. Colunas dinâmicas na `Table` a partir do macOS 14.4.** O pacote declara macOS 14, e no SwiftUI tanto `TableColumnForEach` quanto `if` dentro do construtor de colunas exigem macOS 14.4 (sondado em 14/10/2026: `buildIf` e `buildLimitedAvailability` indisponíveis em 14.0). A tela escolhe a tabela no nível da view com `if #available(macOS 14.4, *)`: a partir de 14.4, as 19 colunas fixas mais as adicionais; de 14.0 a 14.3, só as fixas, com filtro e cópia ainda incluindo as adicionais, porque operam no modelo. Elevar o alvo do pacote para 14.4 eliminaria o ramo, mas depende da versão do macOS do Mac da Suzan e fica como pergunta ao Caio.
 
+**D14. Decisões tomadas na implementação.**
+- `AdditionalDataValuesModel.Field` ganhou `sectionDescription` e `hint`, as descrições traduzidas da seção e da variável: sem elas, o formulário não diria que "Esporte" e "TV/computador" são em horas por semana. Os avisos de número com um só limite dizem "Valor mínimo: N" ou "Valor máximo: N", em vez do intervalo com o `decimal.MaxValue` do original; limites invertidos vindos de arquivo são lidos em ordem crescente, em vez de derrubar o app.
+- A árvore do editor de definição é uma lista com as variáveis recuadas sob a seção, sempre expandida como o `ExpandAll` do original, em vez de `OutlineGroup`, que começa recolhido. Identificador e descrição só vão ao modelo quando o campo está em foco, para que abrir um item lido de arquivo não apare o identificador.
+- "Gerenciar dados adicionais" é um botão da barra da janela visível só na Avaliação individual, o equivalente ao menu do `IAMain`. Se o modelo não puder ser lido, o botão fica desabilitado.
+- Número de dado adicional na célula sai do `Decimal` normalizado: "1.50" gravado aparece "1,5", onde o `decimal` do .NET mostraria "1,50". Só afeta a exibição.
+
 ## Risks / Trade-offs
 
 - [Escape do XML diferir do .NET em algum caractere] -> O teste de ida e volta usa o valor literal do `.exe.config`, que contém `&amp;`; caracteres de controle não aparecem em dados digitados.

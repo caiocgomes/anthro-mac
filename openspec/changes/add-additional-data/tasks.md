@@ -48,15 +48,15 @@
 
 ## 7. Interface SwiftUI
 
-- [ ] 7.1 Implement `AdditionalDataEditorSheet` (árvore com `OutlineGroup`, campos de identificador, descrição, tipo, mínimo e máximo), `AdditionalDataFormSection` reutilizada nas folhas de visita e de registro, item de menu "Gerenciar dados adicionais" na avaliação individual e botão "Dados adicionais" no inquérito aberto e colunas adicionais na tabela a partir do macOS 14.4 (D13), sem regra de negócio; verified when `scripts/build-app.sh` termina com código 0 e `swift test` continua verde
-- [ ] 7.2 Verificação manual registrada (N/A non-executable): editar o modelo, criar visita e registro com valores, conferir colunas na tabela do inquérito; critério mecânico: `codesign --verify build/AnthroPlus.app` termina com código 0
-- [ ] 7.3 Refactor das views; `swift test` stays green
+- [x] 7.1 Implement `AdditionalDataEditorSheet` (árvore com `OutlineGroup`, campos de identificador, descrição, tipo, mínimo e máximo), `AdditionalDataFormSection` reutilizada nas folhas de visita e de registro, item de menu "Gerenciar dados adicionais" na avaliação individual e botão "Dados adicionais" no inquérito aberto e colunas adicionais na tabela a partir do macOS 14.4 (D13), sem regra de negócio; verified when `scripts/build-app.sh` termina com código 0 e `swift test` continua verde
+- [x] 7.2 Verificação manual registrada (N/A non-executable): editar o modelo, criar visita e registro com valores, conferir colunas na tabela do inquérito; critério mecânico: `codesign --verify build/AnthroPlus.app` termina com código 0
+- [x] 7.3 Refactor das views; `swift test` stays green
 
 ## 8. Verification
 
-- [ ] 8.1 Mutation check for additional-data: trocar a ordem de atributos de `Num` para `ID`, `Descr`, `Min`, `Max` em `AdditionalDataXML.encode`, ver `templateRoundTripIsByteIdentical` falhar, reverter
-- [ ] 8.2 Mutation check for additional-data: fazer `AdditionalDataColumns.structure` começar o sufixo em 1, ver `duplicateAndForbiddenKeysGetNumericSuffix` falhar, reverter
-- [ ] 8.3 Run the full suite fresh (`swift test`); all green, output free of errors and warnings
+- [x] 8.1 Mutation check for additional-data: trocar a ordem de atributos de `Num` para `ID`, `Descr`, `Min`, `Max` em `AdditionalDataXML.encode`, ver `templateRoundTripIsByteIdentical` falhar, reverter
+- [x] 8.2 Mutation check for additional-data: fazer `AdditionalDataColumns.structure` começar o sufixo em 1, ver `duplicateAndForbiddenKeysGetNumericSuffix` falhar, reverter
+- [x] 8.3 Run the full suite fresh (`swift test`); all green, output free of errors and warnings
 
 ## Workflow follow-up
 
