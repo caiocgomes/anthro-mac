@@ -117,11 +117,18 @@ public struct GrowthReferenceTables: Sendable {
         tables[Key(standards: true, indicator: indicator, sex: sex)]?.row(ageInDays)
     }
 
+    /// Mês inteiro usa a própria linha; mês fracionado interpola L, M e S entre o par escolhido como em
+    /// `Get4AgeIndicatorDataPoint`: `num = Round(m)`, par `(num - 1, num)` se `num > m`, senão `(num, num + 1)`.
     public func referenceLMS(_ indicator: Indicator, sex: Sex, ageInMonths: Decimal) -> LMS? {
         guard let table = tables[Key(standards: false, indicator: indicator, sex: sex)],
-              let rounded = ClinicalRounding.round(ageInMonths, places: 0),
-              rounded == ageInMonths else { return nil }
-        return table.row(NSDecimalNumber(decimal: rounded).intValue)
+              let rounded = ClinicalRounding.round(ageInMonths, places: 0) else { return nil }
+        let nearest = NSDecimalNumber(decimal: rounded).intValue
+        if rounded == ageInMonths { return table.row(nearest) }
+        let (low, high) = Decimal(nearest) > ageInMonths ? (nearest - 1, nearest) : (nearest, nearest + 1)
+        guard let lower = table.row(low), let upper = table.row(high) else { return nil }
+        let factor = (ageInMonths - Decimal(low)) / Decimal(high - low)
+        func interpolate(_ a: Decimal, _ b: Decimal) -> Decimal { (b - a) * factor + a }
+        return LMS(l: interpolate(lower.l, upper.l), m: interpolate(lower.m, upper.m), s: interpolate(lower.s, upper.s))
     }
 
     public func rowCount(_ indicator: Indicator, range: AgeRange, sex: Sex) -> Int {
