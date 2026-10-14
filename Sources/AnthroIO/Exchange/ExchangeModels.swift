@@ -123,5 +123,5 @@ public struct ExchangeChild: Equatable, Sendable {
 
 /// `CreatedBy` escrito em toda exportação (design D9): o app é de usuário único.
 public enum ExchangeDefaults {
-    public static let createdBy: String = ""
+    public static let createdBy = "AnthroPlus"
 }
