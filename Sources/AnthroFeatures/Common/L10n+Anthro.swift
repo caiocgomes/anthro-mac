@@ -67,6 +67,8 @@ extension L10n {
         public static let bmiAxis = "Índice de massa corporal"
         public static let median = "Mediana"
         public static let standardDeviation = "DP"
+        /// `_Label_Percentile3rd` a `_Label_Percentile97th`.
+        public static let percentileLabels = ["3º", "15º", "50º", "85º", "97º"]
         public static let lengthMarker = "COMPRIMENTO"
         public static let heightMarker = "ESTATURA"
         public static let zScoreMode = "Z-score"
@@ -100,6 +102,6 @@ extension L10n {
             Chart.zScoreMode, Chart.percentileMode, Chart.legendZScore, Chart.legendPercentile, Chart.indicator,
             Chart.mode, Chart.multiplePoints, Chart.resetZoom, Chart.copy, Chart.exportPDF, Chart.exportPNG,
             Chart.print, Chart.close, Chart.exportFailed,
-        ]
+        ] + Chart.percentileLabels
     }
 }

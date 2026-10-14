@@ -5,7 +5,10 @@ public enum ChartDisplayMode: Int, CaseIterable, Sendable {
     case percentile
 
     public var title: String {
-        ""
+        switch self {
+        case .zScore: L10n.Chart.zScoreMode
+        case .percentile: L10n.Chart.percentileMode
+        }
     }
 }
 

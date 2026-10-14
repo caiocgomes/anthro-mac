@@ -42,8 +42,7 @@ public final class CalculatorModel {
 
     public var ageText: String {
         guard let months = ageInMonths else { return "" }
-        // Parte inteira dos meses, como `(int)ageInMonths` de `RefreshAge`.
-        return AgeText.localized(months: NSDecimalNumber(decimal: MeasurementInput.truncate(months, places: 0)).intValue)
+        return AgeText.localized(months: AgeText.wholeMonths(months))
     }
 
     /// `RefreshAge`: a escolha deitado ou em pé só existe abaixo de 11 meses.
