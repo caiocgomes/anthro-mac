@@ -82,7 +82,10 @@ public final class RecordEditorModel {
         self.survey = survey
         self.existingRecords = existingRecords
         self.randomDay = randomDay
-        additionalData = AdditionalDataValuesModel(data: AdditionalData())
+        // Registro novo: a definição do inquérito (construtor de `Record`); existente: a estrutura do próprio XML.
+        // XML ilegível monta formulário vazio e é gravado intacto (D11 da add-additional-data).
+        let additionalXML = record == nil ? survey.additionalDataDefinitionXML : record?.additionalDataXML
+        additionalData = AdditionalDataValuesModel(data: (try? AdditionalDataXML.decode(additionalXML)) ?? AdditionalData())
         let todayNoon = IndividualAssessment.normalized(today)
         visitDate = record?.visitDate.map(IndividualAssessment.normalized)
         // Registro novo: nascimento um ano antes de hoje; existente sem nascimento: a data da pesquisa ou hoje.
@@ -153,9 +156,10 @@ public final class RecordEditorModel {
         return warnings
     }
 
-    /// Texto ilegível ou fora do intervalo bloqueia; vazio é aceito, exceto no fator de peso (`IsNullable = false`).
+    /// Texto ilegível ou fora do intervalo bloqueia, inclusive nos dados adicionais; vazio é aceito, exceto no fator de
+    /// peso (`IsNullable = false`).
     public var canSave: Bool {
-        issues.isEmpty
+        issues.isEmpty && additionalData.canSave
     }
 
     private var issues: Set<RecordFieldIssue> {
@@ -247,10 +251,12 @@ public final class RecordEditorModel {
     // MARK: Registro
 
     /// `NSRecordDialog.SaveRecord`: textos sem espaços nas pontas, IDs automáticos para campos vazios com a opção ligada,
-    /// idade digitada descartada com as duas datas; o registro novo copia a definição de dados adicionais do inquérito.
+    /// idade digitada descartada com as duas datas; o registro novo copia a definição de dados adicionais do inquérito, e
+    /// os dados adicionais só são regravados quando o formulário mudou (D11 da add-additional-data).
     public func makeRecord() throws -> SurveyRecord {
         let issues = issues
         guard issues.isEmpty else { throw RecordValidationError(issues: issues) }
+        let additionalValues = try additionalData.result()
         var record = editing ?? SurveyRecord()
         record.visitDate = visitDate
         record.weightingFactor = value(.weightingFactor) ?? 1
@@ -270,7 +276,9 @@ public final class RecordEditorModel {
         // Edema `nil` de um registro gravado fica `nil` se continuar desmarcado; registro novo grava falso.
         record.hasOedema = hasOedema ? true : (editing != nil && editing?.hasOedema == nil ? nil : false)
         record.notes = IndividualAssessment.nullable(notes)
-        record.additionalDataXML = editing?.additionalDataXML ?? survey.additionalDataDefinitionXML ?? "<Data />"
+        record.additionalDataXML = additionalData.isUnchanged
+            ? editing?.additionalDataXML ?? survey.additionalDataDefinitionXML ?? "<Data />"
+            : AdditionalDataXML.encode(additionalValues)
         return record
     }
 
