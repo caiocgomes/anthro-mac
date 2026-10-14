@@ -2,9 +2,9 @@
 
 ## 0. Red gate
 
-- [ ] 0.1 Write every scenario test from tests.md (`GrowthReferenceDataTests.swift`, `AnthropometricComputationTests.swift`, `GoldenParityTests.swift`) and stubs with the exact signatures from Interface Under Test (neutral return values per design D9, no logic); inclui `scripts/golden/generate_golden.R` (biblioteca local `.rlib/`, semente fixa, 600 + 600 casos e grade de bordas, exclusão de peso aos 121.0 meses registrada no cabeçalho) e as fixtures `Tests/AnthroCoreTests/Fixtures/golden-standards.csv` e `golden-reference.csv`, idênticas em duas execuções, porque os testes de paridade as leem
-- [ ] 0.2 Run the scenario tests (`swift test --filter AnthroCoreTests`); confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
-- [ ] 0.3 Commit tests, stubs, fixtures and the golden script only as `test(red): port-anthro-engine`; write the SHA in the ledger
+- [x] 0.1 Write every scenario test from tests.md (`GrowthReferenceDataTests.swift`, `AnthropometricComputationTests.swift`, `GoldenParityTests.swift`) and stubs with the exact signatures from Interface Under Test (neutral return values per design D9, no logic); inclui `scripts/golden/generate_golden.R` (biblioteca local `.rlib/`, semente fixa, 600 + 600 casos e grade de bordas, exclusão de peso aos 121.0 meses registrada no cabeçalho) e as fixtures `Tests/AnthroCoreTests/Fixtures/golden-standards.csv` e `golden-reference.csv`, idênticas em duas execuções, porque os testes de paridade as leem
+- [x] 0.2 Run the scenario tests (`swift test --filter AnthroCoreTests`); confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
+- [x] 0.3 Commit tests, stubs, fixtures and the golden script only as `test(red): port-anthro-engine`; write the SHA in the ledger
 - [ ] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing
 
 ## 1. Dados de referência (growth-reference-data)

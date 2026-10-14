@@ -57,8 +57,8 @@
 - **Test name**: ultimoIntervaloValidoDeEstatura
 - **Test file**: Tests/AnthroCoreTests/GrowthReferenceDataTests.swift
 - **Level**: acceptance
-- **Breaks if**: o gerador descarta a linha de 229 meses.
-- **Expected red**: expected M strictly between M(228) and M(229), got M = 0
+- **Breaks if**: o gerador descarta a linha de 229 meses (sem par superior, 228.5 meses viraria `nil`).
+- **Expected red**: expected LMS(l: 1, m: 163.1548, s: 0.04009), got LMS(l: 0, m: 0, s: 0)
 
 #### Scenario: Mês superior ausente
 - **Test name**: mesSuperiorAusente
@@ -122,7 +122,7 @@
 - **Test name**: idadeDeUmaCriancaDeCincoAnos
 - **Test file**: Tests/AnthroCoreTests/AnthropometricComputationTests.swift
 - **Level**: acceptance
-- **Breaks if**: a diferença de datas usa o fuso local e perde um dia, ou meses usam 30.4 em vez de 30.4375.
+- **Breaks if**: o dia é extraído em UTC em vez do calendário do usuário (nascimento às 23h30 locais em fuso a oeste de Greenwich cairia no dia seguinte), ou meses usam 30.4 em vez de 30.4375.
 - **Expected red**: expected 1843 days, got 0
 
 #### Scenario: Nascimento depois da visita
@@ -262,8 +262,8 @@
 - **Test name**: pesoNaMedianaDaZeroEPercentil50
 - **Test file**: Tests/AnthroCoreTests/AnthropometricComputationTests.swift
 - **Level**: acceptance
-- **Breaks if**: o percentil é arredondado para 0 casas, ou o z de peso não usa a linha do dia 0.
-- **Expected red**: expected z 0.00 and percentile 50.0, got percentile 0
+- **Breaks if**: o percentil é arredondado para 0 casas, ou `ZScore.lms` subtrai 1 antes de elevar (o z na mediana deixaria de ser 0). O teste chama `ZScore.lms` e `ZScore.centile` sobre a linha do dia 0, porque pelo motor o peso 3.3464 seria arredondado para 3.35 antes do cálculo, como no original.
+- **Expected red**: expected z 0.00 and percentile 50.0, got 0 and 0 (o `ClinicalRounding.round` do stub devolve 0)
 
 #### Scenario: Criança com edema
 - **Test name**: criancaComEdemaZeraPesoEImc
@@ -388,59 +388,59 @@
 
 | Capability | Scenario | Test file | Test name | Breaks if | Red (SHA: failure) | Green (SHA) | State |
 |------------|----------|-----------|-----------|-----------|--------------------|-------------|-------|
-| growth-reference-data | Linha do dia 0 de peso para idade de meninos | GrowthReferenceDataTests.swift | linhaDoDia0DePesoParaIdadeDeMeninos | colunas M/S trocadas | | | planned |
-| growth-reference-data | Último dia dos padrões de IMC de meninas | GrowthReferenceDataTests.swift | ultimoDiaDosPadroesDeImcDeMeninas | corte em 1826 | | | planned |
-| growth-reference-data | Dia além do fim dos padrões | GrowthReferenceDataTests.swift | diaAlemDoFimDosPadroes | devolve última linha | | | planned |
-| growth-reference-data | Mês 61 de IMC para idade de meninos | GrowthReferenceDataTests.swift | mes61DeImcParaIdadeDeMeninos | índice deslocado | | | planned |
-| growth-reference-data | Peso para idade além de 121 meses | GrowthReferenceDataTests.swift | pesoParaIdadeAlemDe121Meses | peso estendido a 229 | | | planned |
-| growth-reference-data | IMC de meninos aos 61,5 meses | GrowthReferenceDataTests.swift | imcDeMeninosAos61eMeioMeses | sem interpolação | | | planned |
-| growth-reference-data | Último intervalo válido de estatura | GrowthReferenceDataTests.swift | ultimoIntervaloValidoDeEstatura | linha 229 descartada | | | planned |
-| growth-reference-data | Mês superior ausente | GrowthReferenceDataTests.swift | mesSuperiorAusente | devolve linha inferior | | | planned |
-| growth-reference-data | Mês inferior ausente | GrowthReferenceDataTests.swift | mesInferiorAusente | devolve linha superior | | | planned |
-| growth-reference-data | Recurso embutido completo | GrowthReferenceDataTests.swift | recursoEmbutidoCompleto | recurso fora do bundle | | | planned |
-| growth-reference-data | Recurso com dia faltando | GrowthReferenceDataTests.swift | recursoComDiaFaltando | sem validação de lacuna | | | planned |
-| growth-reference-data | Linha +2 DP no dia 0 de peso de meninos | GrowthReferenceDataTests.swift | linhaMais2DpNoDia0DePesoDeMeninos | expoente L em vez de 1/L | | | planned |
-| growth-reference-data | Número de pontos e limite superior de peso | GrowthReferenceDataTests.swift | numeroDePontosELimiteSuperiorDePeso | amostragem diária | | | planned |
-| growth-reference-data | Percentil 50 igual à mediana | GrowthReferenceDataTests.swift | percentil50IgualAMediana | offset errado no P50 | | | planned |
-| growth-reference-data | Limite superior das curvas de IMC | GrowthReferenceDataTests.swift | limiteSuperiorDasCurvasDeImc | filtro de 228 removido | | | planned |
-| anthropometric-computation | Idade de uma criança de cinco anos | AnthropometricComputationTests.swift | idadeDeUmaCriancaDeCincoAnos | fuso local | | | planned |
-| anthropometric-computation | Nascimento depois da visita | AnthropometricComputationTests.swift | nascimentoDepoisDaVisita | idade negativa sem erro | | | planned |
-| anthropometric-computation | Meses fracionados | AnthropometricComputationTests.swift | mesesFracionadosViramDias | truncamento | | | planned |
-| anthropometric-computation | Dois anos exatos | AnthropometricComputationTests.swift | doisAnosExatosViram731Dias | arredondamento bancário | | | planned |
-| anthropometric-computation | Último dia dos padrões e primeiro da referência | AnthropometricComputationTests.swift | ultimoDiaDosPadroesEPrimeiroDaReferencia | `<` no lugar de `<=` | | | planned |
-| anthropometric-computation | Última idade válida e primeira fora dos limites | AnthropometricComputationTests.swift | ultimaIdadeValidaEPrimeiraForaDosLimites | meses fracionados no limite | | | planned |
-| anthropometric-computation | Sexo ausente | AnthropometricComputationTests.swift | sexoAusenteZeraResultados | assume menino | | | planned |
-| anthropometric-computation | Idade ausente | AnthropometricComputationTests.swift | idadeAusenteDaFaixaDesconhecida | assume 0 dias | | | planned |
-| anthropometric-computation | Comprimento medido em pé | AnthropometricComputationTests.swift | comprimentoMedidoEmPeSoma07 | limiar 730 | | | planned |
-| anthropometric-computation | Altura medida deitada | AnthropometricComputationTests.swift | alturaMedidaDeitadaSubtrai07 | ajuste omitido | | | planned |
-| anthropometric-computation | Referência ignora o modo de medida | AnthropometricComputationTests.swift | referenciaIgnoraOModoDeMedida | ajuste na referência | | | planned |
-| anthropometric-computation | Peso com três casas | AnthropometricComputationTests.swift | pesoComTresCasasArredondaAntes | sem arredondar entrada | | | planned |
-| anthropometric-computation | Peso ausente | AnthropometricComputationTests.swift | pesoAusenteZeraPesoEImc | peso nulo vira 0 | | | planned |
-| anthropometric-computation | IMC de 20 kg e 110 cm | AnthropometricComputationTests.swift | imcDe20KgE110Cm | cm sem dividir por 100 | | | planned |
-| anthropometric-computation | IMC absurdo | AnthropometricComputationTests.swift | imcAbsurdoEIndefinido | teto removido | | | planned |
-| anthropometric-computation | Estatura em +2 DP | AnthropometricComputationTests.swift | estaturaEmMais2Dp | divide por L | | | planned |
-| anthropometric-computation | Estatura além de +3 DP não é ajustada | AnthropometricComputationTests.swift | estaturaAlemDe3DpNaoEAjustada | clamp em 3.00 | | | planned |
-| anthropometric-computation | Medida inválida | AnthropometricComputationTests.swift | medidaInvalidaZeraEstatura | mínimo removido | | | planned |
-| anthropometric-computation | Peso acima de +3 DP | AnthropometricComputationTests.swift | pesoAcimaDe3DpUsaAjuste | ramo z > 3 removido | | | planned |
-| anthropometric-computation | Peso abaixo de -3 DP | AnthropometricComputationTests.swift | pesoAbaixoDeMenos3DpUsaAjuste | ramo z < -3 errado | | | planned |
-| anthropometric-computation | Peso dentro de 3 DP | AnthropometricComputationTests.swift | pesoNaMedianaDaZeroEPercentil50 | percentil sem casa | | | planned |
-| anthropometric-computation | Criança com edema | AnthropometricComputationTests.swift | criancaComEdemaZeraPesoEImc | IMC mantido com edema | | | planned |
-| anthropometric-computation | Peso abaixo do mínimo | AnthropometricComputationTests.swift | pesoAbaixoDoMinimoZeraPeso | mínimo removido | | | planned |
-| anthropometric-computation | Última idade com peso para idade | AnthropometricComputationTests.swift | ultimaIdadeComPesoParaIdade | linha 121 omitida | | | planned |
-| anthropometric-computation | Primeira idade sem peso para idade | AnthropometricComputationTests.swift | primeiraIdadeSemPesoParaIdade | clamp no último mês | | | planned |
-| anthropometric-computation | Percentis de z conhecidos | AnthropometricComputationTests.swift | percentisDeZConhecidos | ramo negativo errado | | | planned |
-| anthropometric-computation | Percentil além de 3 DP | AnthropometricComputationTests.swift | percentilAlemDe3DpEIndefinido | corte sobre z arredondado | | | planned |
-| anthropometric-computation | Empates longe de zero | AnthropometricComputationTests.swift | empatesArredondamLongeDeZero | arredondamento bancário | | | planned |
-| anthropometric-computation | Valor indefinido | AnthropometricComputationTests.swift | valorIndefinidoContinuaIndefinido | nil vira 0 | | | planned |
-| anthropometric-computation | Soma binária imprecisa | AnthropometricComputationTests.swift | somaBinariaImprecisaViraDecimalExato | Decimal(Double) direto | | | planned |
-| anthropometric-computation | Valor não finito | AnthropometricComputationTests.swift | valorNaoFinitoViraNil | infinito vira máximo | | | planned |
-| anthropometric-computation | Limites dos intervalos | AnthropometricComputationTests.swift | limitesDosIntervalosDePlausibilidade | limite de peso 6 | | | planned |
-| anthropometric-computation | Peso e estatura implausíveis ao mesmo tempo | AnthropometricComputationTests.swift | pesoEEstaturaImplausiveisAoMesmoTempo | ordem trocada | | | planned |
-| anthropometric-computation | Fronteiras das faixas | AnthropometricComputationTests.swift | fronteirasDasFaixasDeGravidade | `<=` nas fronteiras | | | planned |
-| anthropometric-computation | Negativo extremo e indefinido | AnthropometricComputationTests.swift | negativoExtremoEIndefinido | sem valor absoluto | | | planned |
-| anthropometric-computation | Peso para idade aos 121 meses informados | AnthropometricComputationTests.swift | pesoParaIdadeAos121MesesInformados | meses recalculados dos dias | | | planned |
-| anthropometric-computation | Fixture de padrões | GoldenParityTests.swift | fixtureDePadroesBateComAnthro | limiar de 0,7 cm errado | | | planned |
-| anthropometric-computation | Fixture de referência | GoldenParityTests.swift | fixtureDeReferenciaBateComAnthroplus | sem interpolação | | | planned |
+| growth-reference-data | Linha do dia 0 de peso para idade de meninos | GrowthReferenceDataTests.swift | linhaDoDia0DePesoParaIdadeDeMeninos | colunas M/S trocadas | 0da1e12: `GrowthReferenceDataTests.swift:16 Expectation failed: (tables.standardsLMS(.weightForAge, sex: .boy, ageInDays: 0) -> LMS(l: 0, m: 0, s: 0)) ...` | | red |
+| growth-reference-data | Último dia dos padrões de IMC de meninas | GrowthReferenceDataTests.swift | ultimoDiaDosPadroesDeImcDeMeninas | corte em 1826 | 0da1e12: `GrowthReferenceDataTests.swift:21 Expectation failed: (tables.standardsLMS(.bmiForAge, sex: .girl, ageInDays: 1856) -> LMS(l: 0, m: 0, s: 0))...` | | red |
+| growth-reference-data | Dia além do fim dos padrões | GrowthReferenceDataTests.swift | diaAlemDoFimDosPadroes | devolve última linha | 0da1e12: `GrowthReferenceDataTests.swift:26 Expectation failed: (tables.standardsLMS(.weightForAge, sex: .boy, ageInDays: 1857) -> LMS(l: 0, m: 0, s: 0...` | | red |
+| growth-reference-data | Mês 61 de IMC para idade de meninos | GrowthReferenceDataTests.swift | mes61DeImcParaIdadeDeMeninos | índice deslocado | 0da1e12: `GrowthReferenceDataTests.swift:31 Expectation failed: (tables.referenceLMS(.bmiForAge, sex: .boy, ageInMonths: 61) -> LMS(l: 0, m: 0, s: 0)) ...` | | red |
+| growth-reference-data | Peso para idade além de 121 meses | GrowthReferenceDataTests.swift | pesoParaIdadeAlemDe121Meses | peso estendido a 229 | 0da1e12: `GrowthReferenceDataTests.swift:36 Expectation failed: (tables.referenceLMS(.weightForAge, sex: .boy, ageInMonths: 122) -> LMS(l: 0, m: 0, s: ...` | | red |
+| growth-reference-data | IMC de meninos aos 61,5 meses | GrowthReferenceDataTests.swift | imcDeMeninosAos61eMeioMeses | sem interpolação | 0da1e12: `GrowthReferenceDataTests.swift:41 Expectation failed: (tables.referenceLMS(.bmiForAge, sex: .boy, ageInMonths: d("61.5")) -> LMS(l: 0, m: 0, ...` | | red |
+| growth-reference-data | Último intervalo válido de estatura | GrowthReferenceDataTests.swift | ultimoIntervaloValidoDeEstatura | linha 229 descartada | 0da1e12: `GrowthReferenceDataTests.swift:46 Expectation failed: (tables.referenceLMS(.lengthOrHeightForAge, sex: .girl, ageInMonths: d("228.5")) -> LMS...` | | red |
+| growth-reference-data | Mês superior ausente | GrowthReferenceDataTests.swift | mesSuperiorAusente | devolve linha inferior | 0da1e12: `GrowthReferenceDataTests.swift:51 Expectation failed: (tables.referenceLMS(.bmiForAge, sex: .boy, ageInMonths: d("229.5")) -> LMS(l: 0, m: 0,...` | | red |
+| growth-reference-data | Mês inferior ausente | GrowthReferenceDataTests.swift | mesInferiorAusente | devolve linha superior | 0da1e12: `GrowthReferenceDataTests.swift:56 Expectation failed: (tables.referenceLMS(.bmiForAge, sex: .boy, ageInMonths: d("59.5")) -> LMS(l: 0, m: 0, ...` | | red |
+| growth-reference-data | Recurso embutido completo | GrowthReferenceDataTests.swift | recursoEmbutidoCompleto | recurso fora do bundle | 0da1e12: `GrowthReferenceDataTests.swift:63 Expectation failed: (tables.rowCount(indicator, range: .standards, sex: sex) -> 0) == 1857` | | red |
+| growth-reference-data | Recurso com dia faltando | GrowthReferenceDataTests.swift | recursoComDiaFaltando | sem validação de lacuna | 0da1e12: `GrowthReferenceDataTests.swift:90 Expectation failed: an error was expected but none was thrown and "GrowthReferenceTables()" was returned` | | red |
+| growth-reference-data | Linha +2 DP no dia 0 de peso de meninos | GrowthReferenceDataTests.swift | linhaMais2DpNoDia0DePesoDeMeninos | expoente L em vez de 1/L | 0da1e12: `GrowthReferenceDataTests.swift:97 Expectation failed: (GrowthCurves.zScoreOffsets -> []) == [-3, -2, -1, 0, 1, 2, 3]` | | red |
+| growth-reference-data | Número de pontos e limite superior de peso | GrowthReferenceDataTests.swift | numeroDePontosELimiteSuperiorDePeso | amostragem diária | 0da1e12: `GrowthReferenceDataTests.swift:109 Expectation failed: (points.count -> 0) == 526` | | red |
+| growth-reference-data | Percentil 50 igual à mediana | GrowthReferenceDataTests.swift | percentil50IgualAMediana | offset errado no P50 | 0da1e12: `GrowthReferenceDataTests.swift:115 Expectation failed: (GrowthCurves.percentileOffsets -> []) == ([d("-1.88"), d("-1.036"), 0, d("1.036"), d("...` | | red |
+| growth-reference-data | Limite superior das curvas de IMC | GrowthReferenceDataTests.swift | limiteSuperiorDasCurvasDeImc | filtro de 228 removido | 0da1e12: `GrowthReferenceDataTests.swift:130 Expectation failed: (points.count -> 0) == 634` | | red |
+| anthropometric-computation | Idade de uma criança de cinco anos | AnthropometricComputationTests.swift | idadeDeUmaCriancaDeCincoAnos | fuso local | 0da1e12: `AnthropometricComputationTests.swift:30 Expectation failed: (days -> 0) == 1843` | | red |
+| anthropometric-computation | Nascimento depois da visita | AnthropometricComputationTests.swift | nascimentoDepoisDaVisita | idade negativa sem erro | 0da1e12: `AnthropometricComputationTests.swift:36 Expectation failed: an error was expected but none was thrown and "0" was returned` | | red |
+| anthropometric-computation | Meses fracionados | AnthropometricComputationTests.swift | mesesFracionadosViramDias | truncamento | 0da1e12: `AnthropometricComputationTests.swift:45 Expectation failed: (AgeMath.monthsToDays(d("61.5")) -> 0) == 1872` | | red |
+| anthropometric-computation | Dois anos exatos | AnthropometricComputationTests.swift | doisAnosExatosViram731Dias | arredondamento bancário | 0da1e12: `AnthropometricComputationTests.swift:50 Expectation failed: (AgeMath.monthsToDays(24) -> 0) == 731` | | red |
+| anthropometric-computation | Último dia dos padrões e primeiro da referência | AnthropometricComputationTests.swift | ultimoDiaDosPadroesEPrimeiroDaReferencia | `<` no lugar de `<=` | 0da1e12: `AnthropometricComputationTests.swift:57 Expectation failed: (AgeMath.ageRange(days: 1856, months: AgeMath.daysToMonths(1856)) -> .unknown) == .stan...` | | red |
+| anthropometric-computation | Última idade válida e primeira fora dos limites | AnthropometricComputationTests.swift | ultimaIdadeValidaEPrimeiraForaDosLimites | meses fracionados no limite | 0da1e12: `AnthropometricComputationTests.swift:65 Expectation failed: (engine.at(days: 6970, sex: .boy, weight: 60, height: 170).ageRange -> .unknown) == .re...` | | red |
+| anthropometric-computation | Sexo ausente | AnthropometricComputationTests.swift | sexoAusenteZeraResultados | assume menino | 0da1e12: `AnthropometricComputationTests.swift:79 Expectation failed: (result.score(indicator) -> IndicatorScore(zScore: Optional(0), percentile: Optional(0)...` | | red |
+| anthropometric-computation | Idade ausente | AnthropometricComputationTests.swift | idadeAusenteDaFaixaDesconhecida | assume 0 dias | 0da1e12: `AnthropometricComputationTests.swift:88 Expectation failed: (result.score(indicator).zScore -> 0) == nil` | | red |
+| anthropometric-computation | Comprimento medido em pé | AnthropometricComputationTests.swift | comprimentoMedidoEmPeSoma07 | limiar 730 | 0da1e12: `AnthropometricComputationTests.swift:97 Expectation failed: (adjusted.value -> 0) == (d("80.70") -> 80.7)` | | red |
+| anthropometric-computation | Altura medida deitada | AnthropometricComputationTests.swift | alturaMedidaDeitadaSubtrai07 | ajuste omitido | 0da1e12: `AnthropometricComputationTests.swift:104 Expectation failed: (adjusted.value -> 0) == (d("89.30") -> 89.3)` | | red |
+| anthropometric-computation | Referência ignora o modo de medida | AnthropometricComputationTests.swift | referenciaIgnoraOModoDeMedida | ajuste na referência | 0da1e12: `AnthropometricComputationTests.swift:111 Expectation failed: (result.adjustedLengthOrHeight -> 0) == (d("110.00") -> 110)` | | red |
+| anthropometric-computation | Peso com três casas | AnthropometricComputationTests.swift | pesoComTresCasasArredondaAntes | sem arredondar entrada | 0da1e12: `AnthropometricComputationTests.swift:118 Expectation failed: (engine.at(days: 2000, sex: .girl, weight: d("20.005"), height: 110).weight -> 0) == (d...` | | red |
+| anthropometric-computation | Peso ausente | AnthropometricComputationTests.swift | pesoAusenteZeraPesoEImc | peso nulo vira 0 | 0da1e12: `AnthropometricComputationTests.swift:124 Expectation failed: (result.weight -> 0) == nil` | | red |
+| anthropometric-computation | IMC de 20 kg e 110 cm | AnthropometricComputationTests.swift | imcDe20KgE110Cm | cm sem dividir por 100 | 0da1e12: `AnthropometricComputationTests.swift:134 Expectation failed: (r(bmi, 13) -> 0) == (d("16.5289256198347") -> 16.5289256198347)` | | red |
+| anthropometric-computation | IMC absurdo | AnthropometricComputationTests.swift | imcAbsurdoEIndefinido | teto removido | 0da1e12: `AnthropometricComputationTests.swift:140 Expectation failed: (Anthropometry.exactBMI(weight: 275, lengthOrHeight: 1) -> 0) == nil` | | red |
+| anthropometric-computation | Estatura em +2 DP | AnthropometricComputationTests.swift | estaturaEmMais2Dp | divide por L | 0da1e12: `AnthropometricComputationTests.swift:148 Expectation failed: (result.lengthOrHeightForAge.zScore -> 0) == (d("2.00") -> 2)` | | red |
+| anthropometric-computation | Estatura além de +3 DP não é ajustada | AnthropometricComputationTests.swift | estaturaAlemDe3DpNaoEAjustada | clamp em 3.00 | 0da1e12: `AnthropometricComputationTests.swift:154 Expectation failed: (result.lengthOrHeightForAge.zScore -> 0) == (d("4.00") -> 4)` | | red |
+| anthropometric-computation | Medida inválida | AnthropometricComputationTests.swift | medidaInvalidaZeraEstatura | mínimo removido | 0da1e12: `AnthropometricComputationTests.swift:160 Expectation failed: (result.lengthOrHeightForAge -> IndicatorScore(zScore: Optional(0), percentile: Optiona...` | | red |
+| anthropometric-computation | Peso acima de +3 DP | AnthropometricComputationTests.swift | pesoAcimaDe3DpUsaAjuste | ramo z > 3 removido | 0da1e12: `AnthropometricComputationTests.swift:167 Expectation failed: (r(ZScore.lms(d("5.641924702067"), weightBoyDay0, restricted: true), 2) -> 0) == (d("4....` | | red |
+| anthropometric-computation | Peso abaixo de -3 DP | AnthropometricComputationTests.swift | pesoAbaixoDeMenos3DpUsaAjuste | ramo z < -3 errado | 0da1e12: `AnthropometricComputationTests.swift:172 Expectation failed: (r(ZScore.lms(d("1.701303187307"), weightBoyDay0, restricted: true), 2) -> 0) == (d("-4...` | | red |
+| anthropometric-computation | Peso dentro de 3 DP | AnthropometricComputationTests.swift | pesoNaMedianaDaZeroEPercentil50 | percentil sem casa | 0da1e12: `AnthropometricComputationTests.swift:179 Expectation failed: (r(ZScore.centile(z), 1) -> 0) == (d("50.0") -> 50)` | | red |
+| anthropometric-computation | Criança com edema | AnthropometricComputationTests.swift | criancaComEdemaZeraPesoEImc | IMC mantido com edema | 0da1e12: `AnthropometricComputationTests.swift:187 Expectation failed: (result.weightForAge.zScore -> 0) == nil` | | red |
+| anthropometric-computation | Peso abaixo do mínimo | AnthropometricComputationTests.swift | pesoAbaixoDoMinimoZeraPeso | mínimo removido | 0da1e12: `AnthropometricComputationTests.swift:194 Expectation failed: (engine.at(days: 0, sex: .boy, weight: d("0.85"), height: nil).weightForAge.zScore -> 0...` | | red |
+| anthropometric-computation | Última idade com peso para idade | AnthropometricComputationTests.swift | ultimaIdadeComPesoParaIdade | linha 121 omitida | 0da1e12: `AnthropometricComputationTests.swift:202 Expectation failed: (result.weightForAge -> IndicatorScore(zScore: Optional(0), percentile: Optional(0))) =...` | | red |
+| anthropometric-computation | Primeira idade sem peso para idade | AnthropometricComputationTests.swift | primeiraIdadeSemPesoParaIdade | clamp no último mês | 0da1e12: `AnthropometricComputationTests.swift:208 Expectation failed: (result.weightForAge.zScore -> 0) == nil` | | red |
+| anthropometric-computation | Percentis de z conhecidos | AnthropometricComputationTests.swift | percentisDeZConhecidos | ramo negativo errado | 0da1e12: `AnthropometricComputationTests.swift:217 Expectation failed: (r(ZScore.centile(1), 1) -> 0) == (d("84.1") -> 84.1)` | | red |
+| anthropometric-computation | Percentil além de 3 DP | AnthropometricComputationTests.swift | percentilAlemDe3DpEIndefinido | corte sobre z arredondado | 0da1e12: `AnthropometricComputationTests.swift:224 Expectation failed: (ZScore.centile(d("3.0001")) -> 0) == nil` | | red |
+| anthropometric-computation | Empates longe de zero | AnthropometricComputationTests.swift | empatesArredondamLongeDeZero | arredondamento bancário | 0da1e12: `AnthropometricComputationTests.swift:232 Expectation failed: (r(d("2.345"), 2) -> 0) == (d("2.35") -> 2.35)` | | red |
+| anthropometric-computation | Valor indefinido | AnthropometricComputationTests.swift | valorIndefinidoContinuaIndefinido | nil vira 0 | 0da1e12: `AnthropometricComputationTests.swift:239 Expectation failed: (r(nil, 2) -> 0) == nil` | | red |
+| anthropometric-computation | Soma binária imprecisa | AnthropometricComputationTests.swift | somaBinariaImprecisaViraDecimalExato | Decimal(Double) direto | 0da1e12: `AnthropometricComputationTests.swift:246 Expectation failed: (ClinicalRounding.decimal15(0.1 + 0.2) -> 0) == (d("0.3") -> 0.3)` | | red |
+| anthropometric-computation | Valor não finito | AnthropometricComputationTests.swift | valorNaoFinitoViraNil | infinito vira máximo | 0da1e12: `AnthropometricComputationTests.swift:251 Expectation failed: (ClinicalRounding.decimal15(.infinity) -> 0) == nil` | | red |
+| anthropometric-computation | Limites dos intervalos | AnthropometricComputationTests.swift | limitesDosIntervalosDePlausibilidade | limite de peso 6 | 0da1e12: `AnthropometricComputationTests.swift:259 Expectation failed: (Plausibility.isFlagged(.weightForAge, z: d("5.01")) -> false) == true` | | red |
+| anthropometric-computation | Peso e estatura implausíveis ao mesmo tempo | AnthropometricComputationTests.swift | pesoEEstaturaImplausiveisAoMesmoTempo | ordem trocada | 0da1e12: `AnthropometricComputationTests.swift:275 Expectation failed: (Plausibility.flag(for: result) -> .none) == .weightAndLengthOrHeightForAge` | | red |
+| anthropometric-computation | Fronteiras das faixas | AnthropometricComputationTests.swift | fronteirasDasFaixasDeGravidade | `<=` nas fronteiras | 0da1e12: `AnthropometricComputationTests.swift:282 Expectation failed: (SeverityClassifier.severity(d("0.99")) -> .undefined) == .normal` | | red |
+| anthropometric-computation | Negativo extremo e indefinido | AnthropometricComputationTests.swift | negativoExtremoEIndefinido | sem valor absoluto | 0da1e12: `AnthropometricComputationTests.swift:290 Expectation failed: (SeverityClassifier.severity(d("-3.50")) -> .undefined) == .extreme` | | red |
+| anthropometric-computation | Peso para idade aos 121 meses informados | AnthropometricComputationTests.swift | pesoParaIdadeAos121MesesInformados | meses recalculados dos dias | 0da1e12: `AnthropometricComputationTests.swift:299 Expectation failed: (result.weightForAge -> IndicatorScore(zScore: Optional(0), percentile: Optional(0))) =...` | | red |
+| anthropometric-computation | Fixture de padrões | GoldenParityTests.swift | fixtureDePadroesBateComAnthro | limiar de 0,7 cm errado | 0da1e12: `GoldenParityTests.swift:93 Expectation failed: (comparison.maxDifference -> 99) <= (d("0.01") -> 0.01)` | | red |
+| anthropometric-computation | Fixture de referência | GoldenParityTests.swift | fixtureDeReferenciaBateComAnthroplus | sem interpolação | 0da1e12: `GoldenParityTests.swift:102 Expectation failed: (comparison.maxDifference -> 99) <= (d("0.01") -> 0.01)` | | red |
 
 ## Test Changes After Red
 
