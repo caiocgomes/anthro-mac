@@ -22,5 +22,15 @@ public struct ChildSearchCriteria: Sendable, Equatable {
         self.dateOfBirthTo = dateOfBirthTo
     }
 
-    public var isEmpty: Bool { false }
+    /// Sem nenhum critério: a busca se encerra e a lista volta às ativas (`IASearchDialog.btnSearch_Click`).
+    public var isEmpty: Bool {
+        Self.nameCriterion(firstName) == nil && Self.nameCriterion(lastName) == nil && sex == nil
+            && displayIDFrom == nil && displayIDTo == nil && dateOfBirthFrom == nil && dateOfBirthTo == nil
+    }
+
+    /// Nome sem espaços nas pontas, ou `nil` se vazio (`Utils.TextToNullableString`).
+    static func nameCriterion(_ text: String?) -> String? {
+        guard let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return nil }
+        return trimmed
+    }
 }

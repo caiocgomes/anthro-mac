@@ -23,7 +23,39 @@ public final class ChildRepository {
         try database.query("SELECT \(Self.columns) FROM children WHERE child_id = ?", [.integer(id)]).compactMap(Self.child).first
     }
 
-    public func search(_ criteria: ChildSearchCriteria) throws -> [ChildRecord] { [] }
+    /// `Children.Search`: só ativas, sexo, faixas de ID e de nascimento no SQL, ordem por ID; nomes filtrados em Swift
+    /// por `NameMatcher` (design D5).
+    public func search(_ criteria: ChildSearchCriteria) throws -> [ChildRecord] {
+        var conditions = ["is_archived = 0"]
+        var params: [SQLValue] = []
+        if let sex = criteria.sex {
+            conditions.append("sex = ?")
+            params.append(.sex(sex))
+        }
+        if let from = criteria.displayIDFrom {
+            conditions.append("display_id >= ?")
+            params.append(.integer(Int64(from)))
+        }
+        if let to = criteria.displayIDTo {
+            conditions.append("display_id <= ?")
+            params.append(.integer(Int64(to)))
+        }
+        if let from = criteria.dateOfBirthFrom {
+            conditions.append("date_of_birth >= ?")
+            params.append(SQLValue(from))
+        }
+        if let to = criteria.dateOfBirthTo {
+            conditions.append("date_of_birth <= ?")
+            params.append(SQLValue(to))
+        }
+        let sql = "SELECT \(Self.columns) FROM children WHERE \(conditions.joined(separator: " AND ")) ORDER BY display_id ASC, child_id ASC"
+        let firstName = ChildSearchCriteria.nameCriterion(criteria.firstName)
+        let lastName = ChildSearchCriteria.nameCriterion(criteria.lastName)
+        return try database.query(sql, params).compactMap(Self.child).filter { child in
+            (firstName.map { NameMatcher.matches(pattern: $0, value: child.firstName) } ?? true)
+                && (lastName.map { NameMatcher.matches(pattern: $0, value: child.lastName) } ?? true)
+        }
+    }
     public func maxDisplayID() throws -> Int? { nil }
 
     /// Grava a criança (inclui ou atualiza) e substitui as suas visitas numa só transação (design D3).
