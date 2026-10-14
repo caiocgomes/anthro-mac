@@ -1,0 +1,12 @@
+# build
+.build/
+build/
+.swiftpm/
+# R local library (scripts/golden)
+.rlib/
+# material do original (direitos da OMS; uso interno)
+reference/decompiled/
+*.exe
+# sistema
+.DS_Store
+._*

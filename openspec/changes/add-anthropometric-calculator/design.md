@@ -1,0 +1,95 @@
+# Design
+
+## Context
+
+No original, a Calculadora é o formulário `ACMain` (`reference/decompiled/exe/WHOAnthroPlus.PC.Forms/ACMain.cs`), que delega o cálculo a `AnthroComputation.GetAnthroResult` e mostra o resultado no controle `IndicatorDisplayPanel` (`reference/decompiled/exe/WHOAnthroPlus.PC.Controls/IndicatorDisplayPanel.cs`). Cada botão de gráfico abre o diálogo modal `GraphDialog` (`reference/decompiled/exe/WHOAnthroPlus.PC.Forms/GraphDialog.cs`), desenhado com NPlot e reaproveitado pela Avaliação individual (vários pontos por criança) e pelo Inquérito (um registro). A ajuda está em `reference/original-help/AC.htm`. O cálculo já está portado em `AnthroCore` pela change `port-anthro-engine`; esta change cuida só das regras de tela, que no original vivem nos formulários e controles, e do gráfico.
+
+## Goals / Non-Goals
+
+**Goals:**
+- Reproduzir as regras de entrada, recálculo e exibição de `ACMain` e `IndicatorDisplayPanel` em view models testáveis.
+- Reproduzir o conteúdo do `GraphDialog`: séries, faixas, pontos, legenda, limites de idade, modos e interações.
+- Deixar `IndicatorPanel`, `AgeText`, `MeasurementInput` e `GrowthChartModel` prontos para as changes 4 e 5.
+
+**Non-Goals:**
+- Salvar qualquer dado da Calculadora (o original não salva).
+- Reproduzir o layout pixel a pixel do WinForms ou a tipografia Arial do NPlot.
+- Visualização da ajuda HTML original.
+
+## Interface Under Test
+
+| Entry point | Signature | File |
+|-------------|-----------|------|
+| Campos | `public enum CalculatorField: CaseIterable, Sendable { case dateOfBirth, approximateDate, dateOfVisit, sex, weight, lengthOrHeight, measurement, oedema }` | `Sources/AnthroFeatures/Calculator/CalculatorField.swift` |
+| Modelo da Calculadora | `@MainActor @Observable public final class CalculatorModel { public init(engine: AnthroEngine, tables: GrowthReferenceTables, settings: AppSettings, today: Date, randomDay: @escaping (Range<Int>) -> Int = { Int.random(in: $0) }); public private(set) var dateOfBirth: Date; public private(set) var dateOfVisit: Date; public private(set) var isApproximateBirthDate: Bool; public private(set) var sex: Sex; public private(set) var weight: Decimal?; public private(set) var lengthOrHeight: Decimal?; public private(set) var measuredRecumbent: Bool; public private(set) var hasOedema: Bool; public private(set) var result: AnthropometricResult; public private(set) var weightIssue: MeasurementInput.Outcome?; public private(set) var lengthOrHeightIssue: MeasurementInput.Outcome?; public var ageText: String { get }; public var isMeasurementChoiceEnabled: Bool { get }; public var bmiText: String { get }; public var rows: [IndicatorPanelRow] { get }; public func setDateOfBirth(_ date: Date); public func setDateOfVisit(_ date: Date); public func setApproximateBirthDate(_ isOn: Bool); public func setSex(_ sex: Sex); public func setWeightText(_ text: String); public func setLengthOrHeightText(_ text: String); public func setMeasuredRecumbent(_ isOn: Bool); public func setHasOedema(_ isOn: Bool); public func nextFocus(after field: CalculatorField) -> CalculatorField?; public func makeChart(for indicator: Indicator) -> GrowthChartModel }` | `Sources/AnthroFeatures/Calculator/CalculatorModel.swift` |
+| Linha do painel | `public struct IndicatorPanelRow: Sendable, Equatable { public let indicator: Indicator; public let title: String; public let zScoreText: String; public let percentileText: String; public let severity: Severity; public let percentileBarValue: Int }` | `Sources/AnthroFeatures/IndicatorPanel/IndicatorPanelRow.swift` |
+| Painel | `public enum IndicatorPanel { public static func rows(for result: AnthropometricResult) -> [IndicatorPanelRow]; public static func percentileBarValue(percentile: Decimal?, zScore: Decimal?) -> Int }` | `Sources/AnthroFeatures/IndicatorPanel/IndicatorPanel.swift` |
+| Idade em texto | `public enum AgeText { public static func localized(months: Int) -> String }` | `Sources/AnthroFeatures/Common/AgeText.swift` |
+| Entrada de medida | `public enum MeasurementInput { public enum Outcome: Equatable, Sendable { case empty, value(Decimal), invalid, outOfRange(ClosedRange<Decimal>); public var issueMessage: String? { get } }; public static func evaluate(_ text: String, range: ClosedRange<Decimal>, places: Int = 2) -> Outcome; public static func parse(_ text: String, range: ClosedRange<Decimal>) -> Decimal?; public static func truncate(_ value: Decimal, places: Int) -> Decimal }` (helper compartilhado, dono: esta change; consumido pelas changes 4, 5 e 6) | `Sources/AnthroFeatures/Common/MeasurementInput.swift` |
+| Data aproximada | `public enum ApproximateBirthDate { public static func randomized(_ date: Date, randomDay: (Range<Int>) -> Int) -> Date; public static func adjusted(previous: Date, proposed: Date, isApprox: Bool, upperBound: Date, randomDay: (Range<Int>) -> Int) -> Date }` (helper compartilhado, dono: esta change; consumido pelas changes 4, 5 e 6) | `Sources/AnthroFeatures/Common/ApproximateBirthDate.swift` |
+| Textos | `extension L10n { public enum Indicators { public static func title(_ indicator: Indicator, isLength: Bool?) -> String }; public enum Age { ... }; public enum Calculator { ... }; public enum Chart { ... } }` | `Sources/AnthroFeatures/Common/L10n+Anthro.swift` |
+| Modo do gráfico | `public enum ChartDisplayMode: Int, CaseIterable, Sendable { case zScore, percentile; public var title: String }` | `Sources/AnthroFeatures/GrowthChart/ChartTypes.swift` |
+| Tipos do gráfico | `public enum CurveStyle: Sendable { case sd3, sd2, sd1, median }`; `public enum GuideStyle: Sendable { case current, other }`; `public struct ChartXY: Sendable, Equatable { public let x: Double; public let y: Double }`; `public struct ChartSeries: Sendable, Equatable, Identifiable { public let id: Int; public let label: String; public let style: CurveStyle; public let points: [ChartXY] }`; `public struct MeasurementPoint: Sendable, Equatable { public let resultIndex: Int; public let x: Double; public let y: Double; public let guideStyle: GuideStyle }`; `public struct TransitionMarker: Sendable, Equatable { public let x: Double; public let y: Double; public let leftLabel: String; public let leftX: Double; public let rightLabel: String; public let rightX: Double }` | `Sources/AnthroFeatures/GrowthChart/ChartTypes.swift` |
+| Modelo do gráfico | `@MainActor @Observable public final class GrowthChartModel { public init(results: [AnthropometricResult], currentIndex: Int, indicator: Indicator, tables: GrowthReferenceTables, mode: ChartDisplayMode = .zScore); public var resultCount: Int { get }; public let currentIndex: Int; public private(set) var indicator: Indicator; public private(set) var mode: ChartDisplayMode; public private(set) var showMultiplePoints: Bool; public var canShowMultiplePoints: Bool { get }; public private(set) var series: [ChartSeries]; public private(set) var points: [MeasurementPoint]; public var showsConnectingLine: Bool { get }; public private(set) var transitionMarker: TransitionMarker?; public private(set) var hasOutOfRangePoints: Bool; public var isEmpty: Bool { get }; public var title: String { get }; public var xAxisTitle: String { get }; public var yAxisTitle: String { get }; public var legendText: String? { get }; public private(set) var fullXDomain: ClosedRange<Double>; public private(set) var fullYDomain: ClosedRange<Double>; public private(set) var visibleXDomain: ClosedRange<Double>; public private(set) var visibleYDomain: ClosedRange<Double>; public func setIndicator(_ indicator: Indicator); public func setMode(_ mode: ChartDisplayMode); public func setShowMultiplePoints(_ isOn: Bool); public func zoom(x: ClosedRange<Double>, y: ClosedRange<Double>); public func pan(byX dx: Double, byY dy: Double); public func resetZoom() }` | `Sources/AnthroFeatures/GrowthChart/GrowthChartModel.swift` |
+| Exportação | `public enum ChartExport { public static func pngData(_ image: CGImage) -> Data?; public static func pdfData(_ image: CGImage) -> Data?; public static func copy(_ image: CGImage?, to pasteboard: NSPasteboard) -> Bool; public static func printOperation(pdfData: Data) -> NSPrintOperation?; public static func suggestedFileName(indicator: Indicator, mode: ChartDisplayMode, date: Date) -> String }` | `Sources/AnthroFeatures/GrowthChart/ChartExport.swift` |
+| Views (sem regra) | `CalculatorView`, `IndicatorPanelView`, `GrowthChartView`, `GrowthChartSheet` | `Sources/AnthroPlusApp/Calculator/`, `Sources/AnthroPlusApp/GrowthChart/` |
+
+Os stubs do portão vermelho devolvem valores neutros: datas `Date(timeIntervalSince1970: 0)` (inclusive `ApproximateBirthDate.randomized` e `adjusted`, sem chamar o sorteador), `Bool` falso, `String` vazia, `Optional` `nil` (inclusive `weightIssue`, `lengthOrHeightIssue` e `issueMessage`), `MeasurementInput.evaluate` igual a `.empty`, arrays vazios, `Int` 0, domínios `0...0`, indicador `.weightForAge`, modo `.zScore`, e `result` igual ao resultado vazio do motor (`engine.result(ageInDays: nil, ageInMonths: nil, sex: nil, weight: nil, lengthOrHeight: nil, measuredRecumbent: false, hasOedema: false)`).
+
+## Decisions
+
+**D1. Regras portadas de `ACMain`.**
+- Estado inicial (`ACMain()` e `ACMain_Load`): peso 20, medida 115, sexo feminino (`rbSexFemale.Checked = true` no `InitializeComponent`), nascimento `Today.AddYears(-6)`, visita `Today`, deitado marcado e logo forçado para em pé por `RefreshAge`, edema não.
+- Limite do nascimento pela visita: `dtpDateOfVisit_ValueChanged` e `dtpDateOfBirth_ValueChanged`.
+- Data aproximada: `cbDateIsApprox_CheckStateChanged` e o ramo aproximado de `dtpDateOfBirth_ValueChanged` (desfaz troca de dia comparando com `_dobPrevDate.Day`; aceita troca de mês ou ano e sorteia de novo; depois limita pela visita). A lógica fica no helper compartilhado `ApproximateBirthDate` (`randomized` para marcar a caixa, `adjusted` para cada alteração do nascimento), que o `CalculatorModel` chama e as changes 4, 5 e 6 reutilizam nos diálogos de criança, visita e registro (`IAVisitDialog`, `NSRecordDialog` repetem o mesmo padrão). O sorteio é `Random.Next(1, DaysInMonth)`, com limite superior exclusivo; o sorteador `randomDay(1..<diasNoMês)` é injetável para os testes.
+- Modo de medida: `RefreshAge` habilita a escolha com `ageInMonths < 11` e força em pé caso contrário.
+- IMC exibido: `UpdateIndicators`, com `GetAdjustedLengthOrHeight` antes de `ComputeExactBMI` e `Round(num, 1)`.
+- Recálculo: `UpdateIndicators` em todo `ValueChanged`; o modelo recalcula dentro de cada `set...`.
+- Gráfico: `indicatorDisplayPanel_GraphButtonClicked*` passa um array de um resultado com índice 0.
+
+**D2. Campos de medida: truncamento e política única de valor inválido.** `NumericUpDownX` (`DecimalPlaces = 2`, mínimo e máximo de `ACMain()`) rejeita texto fora do intervalo ou não numérico em `CheckValidValue` e, sendo anulável (`IsNullable = true`), chama `SetToNull`; dentro do intervalo, aplica `AnthroComputation.SymetricCrop`, que trunca. O helper compartilhado `MeasurementInput.evaluate` porta essa classificação em quatro casos (`.empty`, `.value`, `.invalid`, `.outOfRange`), com `ClinicalFormat.parseDecimal` para aceitar vírgula ou ponto e `MeasurementInput.truncate` como port de `SymetricCrop`; `parse` reduz o resultado a `Decimal?`. Consequência: "20,129" vira 20.12, e o `Round(weight, 2)` do motor não altera nada.
+
+Política única para todas as changes que usam o helper: texto inválido ou fora do intervalo resulta em valor `nil` para o cálculo, fiel a `CheckValidValue` + `SetToNull`, e o view model expõe o problema do campo (`weightIssue`, `lengthOrHeightIssue`, com `Outcome.issueMessage`: "Valor inválido" ou "Fora do intervalo: {mín} a {máx}" com 2 casas em pt-BR) para um aviso inline junto ao campo. O aviso é desvio deliberado de UX: o original apenas esvaziava o campo, sem dizer por quê; não há efeito numérico. Texto vazio não gera aviso. Na Calculadora não há salvar, então o aviso não bloqueia nada; as changes com salvar decidem o bloqueio nas próprias specs.
+
+**D3. Painel compartilhado.** `IndicatorPanel.rows(for:)` porta `IndicatorDisplayPanel.DisplayResult`: textos `ToString("N2")` e `ToString("N1")` via `ClinicalFormat`, `N/D` para indefinido, gravidade de `SeverityClassifier` sobre o z já arredondado do resultado (port de `SetZLabelColor`), rótulo `_Label_L4A` ou `_Label_H4A` por `isLength`. A barra usa `Convert.ToInt32(percentile)`, que no .NET arredonda empates para o par (`MidpointRounding.ToEven`); `percentileBarValue` reproduz isso, com o fallback 100, 50 ou 0. As changes 4 e 5 usam o mesmo `IndicatorPanel`.
+
+**D4. Idade em texto.** `AgeText.localized(months:)` porta `Utils.GetLocalizedAgeFromMonths` com os rótulos pt-BR "Idade", "a" e "m": "Idade: 5a 11m (71m)" e "Idade: 5m". Recebe a parte inteira dos meses, como o original (`(int)ageInMonths`).
+
+**D5. Enter como Tab.** `FormX.PreFilterMessage` troca Enter por `SelectNextControl` quando `UseEnterForNextControl` está ligado, pulando controles desabilitados e voltando ao primeiro (`wrap = true`). A ordem de tabulação de `ACMain` é nascimento, data aproximada, visita, sexo, peso, medida, modo, edema. `nextFocus(after:)` devolve o próximo campo habilitado ou `nil` com a configuração desligada; as views ligam isso a `@FocusState` com `.onSubmit` nos campos de texto e `.onKeyPress(.return)` nos demais controles.
+
+**D6. Séries do gráfico.** `GrowthChartModel` consome `GrowthCurves.points(_:sex:kind:tables:)`. No modo z-score monta as séries de `zScoreOffsets` -3, -2, 0, +2, +3 e só para IMC também -1 e +1, como `DrawIndicatorGraph` (o `if` exclui `Weight4Age` e `LengthOrHeight4Age`). No modo percentil monta as cinco séries. Estilos de cor do original: `_SD3COLOR` preto, `_SD2COLOR` e `_P03COLOR` vermelho, `_SD1COLOR` e `_P15COLOR` Goldenrod, `_MCOLOR` verde. As curvas usam o sexo do resultado atual; sexo `nil` usa as curvas femininas, porque `GetIndicatorDataCurves` recebe `sex == Gender.Boy` falso.
+
+**D7. Faixas e títulos.** Port de `DrawIndicatorGraph` e `GetOrdinateWorldMin`: x de 0 ao último x das curvas mais 10 (peso) ou mais 20; y mínimo 0, 40 ou 8; y máximo de IMC fixo em 38; nos demais, o maior valor da série mais alta (`+3 DP` ou `97º`), que é o que `SuggestYAxis` de NPlot usa como base. As margens automáticas do NPlot não são reproduzidas. Marca de transição em 24 meses só para estatura e IMC, com "COMPRIMENTO" e "ESTATURA" (o original usa `_Label_Length` e `_Label_Height` em maiúsculas).
+
+**D8. Pontos.** Port de `DrawMeasures`: omite resultado com z `nil` no indicador; fora do intervalo se `x < 0`, ou `Int(x) > 108` para peso, ou `Int(x) > 228` para os demais; y do IMC recalculado com `ComputeExactBMI` sobre peso e medida ajustada. O ponto atual tem guias `_CURPOINTLINECOLOR` e legenda; os demais, `_OTHERPOINTLINECOLOR`. Com vários pontos e mais de um ponto, uma linha liga os pontos. Zero pontos limpa o gráfico (`gSurface.Clear()`): `series` fica vazio, `transitionMarker` `nil` e título "(Sem dados)". A escolha de vários pontos só existe com mais de um resultado (`InitToolStrip`).
+
+**D9. Zoom.** `RubberBandSelection` vira `zoom(x:y:)`, que ignora seleção degenerada; `HorizontalDrag` e `VerticalDrag` (com Shift) viram `pan(byX:byY:)`; `OriginalDimensions` vira `resetZoom()`. Trocar indicador ou modo redesenha com eixos novos, então o zoom é descartado, como `RefreshGraph`. Na view, `chartOverlay` com `ChartProxy` converte o retângulo arrastado em domínios.
+
+**D10. Copiar, exportar e imprimir.** `CopyToClipboard` e `Print` do NPlot viram `ChartExport`: a view renderiza o gráfico com `ImageRenderer` (fora dos testes), e `ChartExport` gera PNG com `CGImageDestination`, PDF de uma página com `CGContext(consumer:mediaBox:)`, copia PNG para um `NSPasteboard` injetado e cria `NSPrintOperation` sobre um `PDFView` com o documento. Nome sugerido "{indicador} - {modo} - {AAAA-MM-DD}" com "/" trocada por "-".
+
+**D11. Gráfico em sheet.** O `GraphDialog` era modal; no Mac, `GrowthChartSheet` é uma sheet redimensionável (mínimo 900 por 640) sobre a janela principal, com toolbar de indicador, modo, ponto único ou vários, restaurar, copiar, exportar e imprimir. Alternativa descartada: janela separada com `openWindow`, que exigiria tornar o modelo `Codable` e somaria janelas órfãs.
+
+**D12. Cores no modo escuro.** Gravidade `.extreme` é selo preto com texto branco e borda clara para continuar visível no modo escuro; a série `.sd3` usa `.primary` em vez de preto puro. É desvio visual consciente, sem efeito em valores.
+
+## Divergências registradas
+
+| Tema | Ajuda (`AC.htm`) | Código | Decisão |
+|------|------------------|--------|---------|
+| Escolha deitado ou em pé | "0-60 months old the user has to specify" | só com idade < 11 meses (`ACMain.RefreshAge`) | seguir o código; cenário "Criança de 30 meses sem escolha, contra a ajuda" |
+| Data aproximada | "randomized day within the given month" | `Random.Next(1, DaysInMonth)` nunca sorteia o último dia | seguir o código; cenário "Sorteio em fevereiro de 2021" |
+| Cor de 2 a 3 DP | "red" | `Color.OrangeRed` (`SetZLabelColor`) | seguir o código (`Severity.high`) |
+| Limite de peso no gráfico | não menciona | z de peso calculado até 121 meses, mas `DrawMeasures` só desenha até a parte inteira 108 (`REF_UPPERAGELIMITMONTHS_W4A = 108` inlinado) | seguir o código; cenário "Peso aos 109 meses fora do gráfico" |
+| Tamanho da janela | "Resizing to fill the screen is not possible" | formulário de tamanho fixo | desvio consciente de layout: a Calculadora ocupa o conteúdo da janela principal redimensionável; sem efeito em valores |
+| Cópia da tela | "press ALT+Print Screen" | sem função própria | sem função equivalente; o Mac já oferece captura de tela |
+| Valor inválido no campo | não menciona | campo esvaziado em silêncio (`NumericUpDownX.SetToNull`) | valor `nil` como no original, mais aviso inline (desvio deliberado de UX, sem efeito numérico) |
+
+## Risks / Trade-offs
+
+- [`NSPrintOperation` ou `NSPasteboard` exigirem `NSApplication` ativo nos testes] -> Os testes chamam `NSApplication.shared` antes e usam `NSPasteboard(name:)` exclusivo por teste; se `NSPrintOperation` ainda exigir sessão gráfica, o teste afirma a página do `PDFDocument` e registra a operação como N/A no ledger com o motivo.
+- [Zoom por arrasto no Swift Charts menos fluido que no NPlot] -> Lógica toda em `zoom(x:y:)`; a view só converte coordenadas com `ChartProxy`.
+- [Margens de eixo diferentes do NPlot] -> Afetam só a aparência; valores de curvas e pontos são idênticos.
+- [Sorteio injetável esquecido em produção] -> O padrão do inicializador usa `Int.random(in:)`; testes sempre injetam.
+
+## Open Questions
+
+- Nenhuma que mude o que será construído.

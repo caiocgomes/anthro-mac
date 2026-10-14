@@ -1,0 +1,294 @@
+name: sdd-tdd
+version: 3
+description: Spec-Driven + Test-Driven Development (double loop) - proposal → specs → design → tests → tasks → apply → evidence; scenario tests written and watched failing behind a red gate before any implementation, then verified evidence after
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Initial proposal document outlining the change
+    template: proposal.md
+    instruction: |
+      Create the proposal document that establishes WHY this change is needed.
+
+      Sections:
+      - **Why**: 1-2 sentences on the problem or opportunity. What problem does this solve? Why now?
+      - **What Changes**: Bullet list of changes. Be specific about new capabilities, modifications, or removals. Mark breaking changes with **BREAKING**.
+      - **Capabilities**: Identify which specs will be created or modified:
+        - **New Capabilities**: capabilities being introduced. Each becomes `specs/<capability-path>/spec.md`. Use kebab-case path segments and follow the project's existing organization (flat, or nested by domain such as `billing/invoices`).
+        - **Modified Capabilities**: existing capabilities whose REQUIREMENTS change. Use the exact path from `openspec/specs/` (confirm with `openspec list --specs`). Leave empty if no requirement changes.
+      - **Impact**: Affected code, APIs, dependencies, or systems.
+
+      NO SPEC CHANGE: if the change alters no observable behavior (pure refactor, tooling,
+      build, docs), say so in What Changes and set `skip_specs: true` in this change's
+      `.openspec.yaml`. TDD still applies: tests.md then maps the EXISTING tests that guard
+      the behavior, plus characterization tests to add first where coverage is missing.
+
+      Keep it concise (1-2 pages). Focus on the "why" not the "how" - implementation
+      details belong in design.md.
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Detailed specifications with testable scenarios
+    template: spec.md
+    instruction: |
+      Create specification files that define WHAT the system should do.
+
+      Create one spec file per capability listed in the proposal, at
+      `specs/<capability-path>/spec.md`, using the exact path from the proposal (new) or
+      from openspec/specs/ (modified). Do not move or rename an existing capability.
+
+      Delta operations (use ## headers):
+      - **ADDED Requirements**: New capabilities
+      - **MODIFIED Requirements**: Changed behavior - MUST include full updated content
+      - **REMOVED Requirements**: Deprecated features - MUST include **Reason** and **Migration**
+      - **RENAMED Requirements**: Name changes only - use FROM:/TO: format
+
+      Format requirements:
+      - Each requirement: `### Requirement: <name>` followed by description
+      - Use SHALL/MUST for normative requirements (avoid should/may)
+      - ONE behavior per requirement. Keep the description (text between the
+        requirement header and its first scenario) at 500 characters or fewer:
+        `openspec validate --strict` fails above that. Move examples and edge cases into
+        scenarios; split a requirement that covers several behaviors.
+      - Each scenario: `#### Scenario: <name>` with WHEN/THEN format
+      - **CRITICAL**: Scenarios MUST use exactly 4 hashtags (`####`).
+      - Every requirement MUST have at least one scenario.
+
+      MODIFIED requirements workflow:
+      1. Locate the existing requirement in openspec/specs/<capability-path>/spec.md
+      2. Copy the ENTIRE requirement block (from `### Requirement:` through all scenarios)
+      3. Paste under `## MODIFIED Requirements` and edit to reflect new behavior
+      4. Ensure header text matches exactly (whitespace-insensitive)
+      Never trim or split existing text under MODIFIED just to meet the length limit.
+
+      TDD CONTRACT (every scenario becomes a named acceptance test written BEFORE code):
+      - Every requirement MUST have at least one happy-path scenario AND at least one
+        failure or edge scenario (invalid input, empty data, error from a dependency,
+        boundary value). A requirement with only happy paths is incomplete.
+      - Every THEN MUST be mechanically assertable: a concrete value, state, error type,
+        or side effect. Never "works correctly", "handles gracefully", or "is fast".
+      - Scenario names MUST be unique within the change. tests.md references them by name.
+
+      NON-EXECUTABLE CHANGES: a scenario MAY assert an equivalent mechanical validation
+      instead of a code test (e.g. "schema validates", "linter passes", "link resolves").
+      The THEN must still be checkable by a tool that can pass or fail.
+
+      Use the project context from openspec/config.yaml (rendered as the <project_context>
+      block when configured) to match existing naming and domain vocabulary.
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: Technical design, including the interface the scenario tests will exercise
+    template: design.md
+    instruction: |
+      Create the design document that explains HOW to implement the change.
+
+      Always create design.md: tests and tasks depend on it. For small changes keep it
+      short (Context, Interface Under Test, Decisions, Risks). For cross-cutting changes,
+      new dependencies, data model changes, security, performance or migration complexity,
+      fill every section.
+
+      Sections:
+      - **Context**: Background, current state, constraints
+      - **Goals / Non-Goals**
+      - **Interface Under Test**: the public entry points the scenario tests will call
+        (function and method signatures, CLI commands, HTTP routes, events), with their
+        files. The red gate creates stubs with exactly these signatures, so this section
+        must be concrete. Name the module and file boundaries.
+      - **Decisions**: Key technical choices with rationale and alternatives considered.
+      - **Risks / Trade-offs**: Format `[Risk] -> Mitigation`
+      - **Migration Plan**: Steps to deploy, rollback strategy (if applicable)
+      - **Open Questions**: anything unresolved. Questions that would change what gets
+        built MUST be resolved with the user before tasks are written.
+    requires:
+      - proposal
+
+  - id: tests
+    generates: tests.md
+    description: Test plan mapping every scenario to a named acceptance test, with the break each test must catch; doubles as the red/green ledger
+    template: tests.md
+    instruction: |
+      Create the test plan. It maps every spec scenario to ONE named acceptance test
+      (the OUTER loop of double-loop TDD). Unit tests written during apply (the INNER
+      loop) are not planned here.
+
+      RULES:
+      1. Every `#### Scenario:` in specs/ MUST have exactly one block here, under the same
+         capability, with the scenario name copied verbatim. An unmapped scenario is a
+         blocking defect, not a TODO.
+      2. Do NOT restate GIVEN/WHEN/THEN: the scenario already has them. Add only what the
+         scenario does not say.
+      3. For each test, write **Breaks if**: the concrete production change that would make
+         this test fail (a wrong constant, a missing branch, an empty return, a missing
+         validation). If you cannot name one, the test checks nothing; redesign it.
+      4. For each test, write **Expected red**: the assertion failure you expect to see
+         when it runs against the stubs (expected X, got Y; expected error E, got none).
+      5. Tests exercise real code through the Interface Under Test from design.md. Mocks
+         only for slow or external dependencies, never for the unit under test, and never
+         assert on mock behavior.
+      6. Use the project's test framework and conventions (project context,
+         pyproject.toml, package.json, Makefile, CI files).
+      7. Test names MUST be unique within the change. tasks.md references them by name.
+
+      Sections:
+      - **Test Strategy**: framework, the exact full-suite command, conventions, and the
+        mutation tool if the project has one (mutmut, Stryker, PIT); otherwise "manual".
+      - **Spec-to-Test Mapping**: one block per scenario (format in the template).
+      - **Coverage Ledger**: one row per scenario. State starts as `planned`. It becomes
+        `red` ONLY with observed evidence (red commit SHA and the failure excerpt) and
+        `green` ONLY with the commit where the test passes. Non-executable rows use
+        `N/A (non-executable)` and name the mechanical check.
+      - **Test Changes After Red**: append-only log, empty at planning. Any change to a
+        test after the red commit is recorded here with the reason and the spec change
+        that justifies it.
+    requires:
+      - specs
+      - design
+
+  - id: tasks
+    generates: tasks.md
+    description: Checklist that opens with the red gate (scenario tests and stubs, watched failing, committed, approved) before any implementation
+    template: tasks.md
+    instruction: |
+      Create the task list. The apply phase parses `- [ ]` checkboxes; a box holding only
+      `x` counts as done, every other marker (including `- [~]`) reads as unfinished.
+
+      Before writing tasks, check design.md Open Questions. Resolve with the user any that
+      would change what gets built.
+
+      MANDATORY STRUCTURE:
+
+      `## 0. Red gate` comes first and is copied from the template:
+      - 0.1 write every scenario test from tests.md, plus stubs with the exact signatures
+        from Interface Under Test that return a neutral value of the right type
+        (None, empty, zero) and contain no logic;
+      - 0.2 run the scenario tests; every one must FAIL BY ASSERTION; record the failure
+        excerpt in each ledger row;
+      - 0.3 commit tests and stubs only, message `test(red): <change-name>`, and write the
+        SHA in the ledger;
+      - 0.4 STOP: show the user the failing tests and wait for explicit approval. This
+        task is completed only by the user's OK.
+
+      Then one `## N. <group>` per capability or functional slice:
+      - Each implementation task names the scenario tests it turns green:
+        `- [ ] N.M Implement <what> [tests: test_a, test_b]`.
+      - Each task states how its completion is verified (which tests pass, which command).
+      - Each group lands the unit tests its own work calls for (inner loop). Never collect
+        tests into a final group.
+      - Each group ends with a refactor task that keeps the full suite green.
+
+      The last group is `## N. Verification`: one mutation-check task per capability
+      (apply a "Breaks if" mutation, see its test fail, revert) and one fresh full-suite
+      run.
+
+      Put non-tracked follow-up (produce evidence.md, archive) as plain bullets in an
+      optional `## Workflow follow-up` section at the end. They are not checkboxes.
+    requires:
+      - specs
+      - design
+      - tests
+
+  - id: evidence
+    generates: evidence.md
+    description: Post-implementation evidence that TDD happened - red gate replay, test freeze, mutation checks, full suite, decision
+    template: evidence.md
+    instruction: |
+      PRECHECK - this artifact is written AFTER apply, never during planning. The
+      `requires: [tasks]` edge exists only for graph order. Before writing anything, run
+      all three checks from the project root. If any fails, STOP and tell the user that
+      apply has not finished; do not create evidence.md.
+      1. A red commit exists (must print a SHA):
+         git log --format=%h --grep='^test(red)' -n 1
+      2. Implementation happened after it (must be > 0):
+         git rev-list --count <red-sha>..HEAD
+      3. No unchecked task remains in tasks.md (must be 0):
+         grep -cE '^\s*([-*+]|[0-9]+[.)]) \[ \]' openspec/changes/<change-name>/tasks.md
+
+      Then produce evidence.md with these checks, recording commands and results:
+      - **Red Gate Replay**: recreate the red state (a temporary git worktree at the red
+        SHA, or a clean checkout of it), run the scenario tests, and confirm each one fails
+        by assertion. If the project cannot run tests outside the main working tree,
+        record why and cite the failure excerpts captured in task 0.2 instead; mark this
+        as weaker evidence.
+      - **Test Freeze**: run `git diff <red-sha>..HEAD --stat -- <scenario test files>`.
+        Every change listed must match an entry in tests.md "Test Changes After Red".
+        An unexplained change is a FAIL.
+      - **Mutation Checks**: per capability, the mutation applied, the test that caught
+        it, and confirmation it was reverted. With a mutation tool, its score on the
+        changed files instead.
+      - **Full Suite**: the exact command, a fresh run, pass/fail/skip counts, and whether
+        the output was free of errors and warnings.
+      - **TDD Path**: `TDD path: superpowers | embedded` (which rules guided the inner loop).
+      - **OpenSpec Verify**: if the verify workflow is installed, run `/opsx:verify` (or
+        `openspec-verify-change`) and summarize its CRITICAL and WARNING findings.
+      - **Decision**: exactly one line `DECISION: PASS` or `DECISION: FAIL`, followed by
+        the blocking items when FAIL. Any ledger row not green (or documented
+        non-executable), an unexplained test change, a mutation not caught, or a failing
+        suite is FAIL.
+
+      evidence.md may be regenerated after fixes; each run overwrites it.
+    requires:
+      - tasks
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    This schema runs double-loop TDD. Outer loop: one acceptance test per spec scenario,
+    written and watched failing behind the red gate. Inner loop: unit tests, one at a
+    time, during implementation.
+
+    INNER-LOOP RULES: if the skill `superpowers:test-driven-development` is available,
+    invoke it for the inner loop only (steps 2-4 below: implementation tasks and their
+    unit tests). The red gate (tasks 0.x) is governed by this schema, not by that skill:
+    writing all scenario tests at once behind the gate is intended, even though the skill
+    writes one test at a time. If the skill is not available, follow the rules below,
+    which carry the same discipline. Record which path you used in evidence.md
+    (`TDD path:`).
+
+    1. **RED GATE (tasks 0.x)**: write the scenario tests and the stubs. Run them. Each
+       must FAIL BY ASSERTION: expected-vs-actual mismatch, or a wrong or missing
+       exception. Not valid red: ImportError, SyntaxError, collection errors, missing
+       fixtures, or a NotImplementedError raised before the assertion runs. A test that
+       passes against the stubs tests existing behavior or nothing: fix the test. Commit
+       tests and stubs only as `test(red): <change-name>`, record the SHA and the failure
+       excerpts in the ledger, then STOP at task 0.4 and wait for the user's approval.
+    2. **GREEN (outer loop)**: take one implementation task at a time. Write the minimum
+       code that turns its scenario tests green. Commit as `feat(green): <what>`.
+    3. **INNER LOOP**: whenever a unit needs logic of its own, write ONE unit test, watch
+       it fail for the right reason, write the minimum code, watch it pass. One behavior
+       per test, real code over mocks. Code written before its failing test is deleted,
+       not kept as reference.
+    4. **REFACTOR**: after green only. Remove duplication, improve names. Do not add
+       behavior. The full suite stays green.
+    5. **MARK**: check off a task only after its tests pass. Flip ledger rows from `red`
+       to `green` with the commit SHA.
+
+    TEST FREEZE: scenario tests committed in the red commit are frozen. Changing an
+    assertion, deleting a test, or loosening a check to make it pass is a TDD violation.
+    If a test is genuinely wrong, STOP: amend the spec (spec drift), append an entry to
+    tests.md "Test Changes After Red" with the reason, tell the user, then resume.
+
+    SPEC DRIFT: if implementation reveals that a requirement or scenario is wrong,
+    incomplete, or untestable, STOP implementing that scenario. Amend specs/ (and
+    design.md if affected), update tests.md and tasks.md, tell the user what changed and
+    why, then resume.
+
+    ON ANY unexpected failure or regression: diagnose the root cause BEFORE attempting a
+    fix. No symptom patches.
+
+    VERIFICATION GROUP: run one mutation check per capability (apply a "Breaks if"
+    mutation, see its test fail, revert), then the FULL project suite fresh, not just the
+    changed files. Any failure goes in the report by name.
+
+    FINISHING: when every task is checked, produce the `evidence` artifact
+    (`openspec instructions evidence --change <change-name>`). The change is done only
+    when evidence.md says `DECISION: PASS`.
+
+    IMPORTANT:
+    - Do NOT write implementation before the red gate is approved.
+    - Do NOT mark a task complete if its tests don't pass.
+    - Do NOT claim completion without a fresh full-suite run recorded in evidence.md.
+    - If you hit a blocker, pause and ask rather than skipping TDD.

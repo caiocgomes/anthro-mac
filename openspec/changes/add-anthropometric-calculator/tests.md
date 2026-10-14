@@ -1,0 +1,607 @@
+# Tests
+
+## Test Strategy
+
+- **Framework**: swift-testing (`import Testing`, `@Test`, `#expect`, `#require`), com `@MainActor` nos testes de view model.
+- **Full-suite command**: `swift test`
+- **Conventions**: testes de cenário em `Tests/AnthroFeaturesTests/`, um arquivo por unidade (`CalculatorModelTests.swift`, `ApproximateBirthDateTests.swift`, `MeasurementInputTests.swift`, `IndicatorPanelTests.swift`, `GrowthChartModelTests.swift`, `ChartExportTests.swift`). O motor e as tabelas são reais (`AnthroEngine.shared()`, `GrowthReferenceTables.bundled()`), sem mocks. `AppSettings` usa `UserDefaults(suiteName:)` exclusivo por teste. O sorteador de dia é uma closure que registra o intervalo recebido e devolve o valor do cenário. Resultados com z conhecido para os testes de gráfico e de painel são construídos com o inicializador membro a membro de `AnthropometricResult` via `@testable import AnthroCore`, em `Tests/AnthroFeaturesTests/Support/ResultFixtures.swift`. Datas de teste em UTC (`2026-10-14` etc.). Acesso a linhas e séries usa `try #require(...)`, para que stub vazio falhe por asserção e não por índice fora do intervalo. Quando o THEN espera um valor igual ao neutro do stub (falso, `nil`, domínio inalterado), o teste começa com uma asserção de guarda que o stub não satisfaz, indicada em **Expected red**.
+- **Mutation tool**: manual.
+
+## Spec-to-Test Mapping
+
+### Capability: anthropometric-calculator
+
+#### Scenario: Abertura com valores padrão
+- **Test name**: `aberturaComValoresPadraoUsaSeisAnosMeninaVinteQuilos`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o estado inicial usa `AddYears(-5)`, sexo masculino ou peso 0.
+- **Expected red**: expected dateOfBirth 2020-10-14, got 1970-01-01.
+
+#### Scenario: Nova calculadora não herda valores
+- **Test name**: `novaCalculadoraNaoHerdaValoresVoltaAVinteQuilos`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o modelo grava o último peso em `AppSettings` ou em estado estático e o restaura na criação.
+- **Expected red**: expected weight 20.00, got nil.
+
+#### Scenario: Seis anos de calendário mostram 71 meses
+- **Test name**: `seisAnosDeCalendarioMostram71Meses`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a idade em texto arredonda os meses (72) em vez de truncar, ou usa anos de calendário.
+- **Expected red**: expected "Idade: 5a 11m (71m)", got "".
+
+#### Scenario: Idade abaixo de um ano
+- **Test name**: `idadeAbaixoDeUmAnoMostraSoMeses`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o limite do formato longo vira `>= 0` e mostra "Idade: 0a 5m (5m)".
+- **Expected red**: expected "Idade: 5m", got "".
+
+#### Scenario: Visita movida para antes do nascimento
+- **Test name**: `visitaMovidaParaAntesDoNascimentoPuxaNascimento`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `setDateOfVisit` deixa de aplicar o limite do nascimento.
+- **Expected red**: expected dateOfBirth 2019-01-01, got 1970-01-01.
+
+#### Scenario: Nascimento informado depois da visita
+- **Test name**: `nascimentoInformadoDepoisDaVisitaFicaNaVisita`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `setDateOfBirth` aceita data posterior à visita.
+- **Expected red**: expected dateOfBirth 2026-10-14, got 1970-01-01.
+
+#### Scenario: Sorteio em fevereiro de 2021
+- **Test name**: `sorteioEmFevereiroDe2021UsaIntervaloSemUltimoDia`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o intervalo passado ao sorteador vira `1..<29` (inclui o último dia) ou `1...28`.
+- **Expected red**: expected recorded range 1..<28, got no call; expected dateOfBirth 2021-02-01, got 1970-01-01.
+
+#### Scenario: Sorteio que ultrapassa a visita
+- **Test name**: `sorteioQueUltrapassaAVisitaFicaNaVisita`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o limite da visita não é aplicado depois do sorteio em `setApproximateBirthDate`.
+- **Expected red**: expected dateOfBirth 2026-10-14, got 1970-01-01.
+
+#### Scenario: Helper nunca sorteia o último dia
+- **Test name**: `helperNuncaSorteiaOUltimoDia`
+- **Test file**: `Tests/AnthroFeaturesTests/ApproximateBirthDateTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `randomized` passa `1..<(diasNoMês + 1)` ao sorteador e devolve 2021-02-28.
+- **Expected red**: expected recorded range 1..<28 and 2021-02-27, got no call and 1970-01-01.
+
+#### Scenario: Helper em fevereiro bissexto
+- **Test name**: `helperEmFevereiroBissextoUsaIntervaloDe29`
+- **Test file**: `Tests/AnthroFeaturesTests/ApproximateBirthDateTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o número de dias do mês ignora ano bissexto (intervalo 1..<28).
+- **Expected red**: expected recorded range 1..<29, got no call.
+
+#### Scenario: Helper desfaz troca de dia
+- **Test name**: `helperDesfazTrocaDeDiaSemSortear`
+- **Test file**: `Tests/AnthroFeaturesTests/ApproximateBirthDateTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `adjusted` sorteia em vez de devolver a data anterior quando o dia muda.
+- **Expected red**: expected 2021-02-01, got 1970-01-01.
+
+#### Scenario: Helper aceita troca de mês e sorteia de novo
+- **Test name**: `helperAceitaTrocaDeMesESorteiaDeNovo`
+- **Test file**: `Tests/AnthroFeaturesTests/ApproximateBirthDateTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `adjusted` devolve a proposta sem sortear, ou usa os dias do mês anterior.
+- **Expected red**: expected 2021-03-09 and recorded range 1..<31, got 1970-01-01 and no call.
+
+#### Scenario: Helper sem data aproximada só limita pela visita
+- **Test name**: `helperSemDataAproximadaSoLimitaPelaVisita`
+- **Test file**: `Tests/AnthroFeaturesTests/ApproximateBirthDateTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o limite superior deixa de ser aplicado sem data aproximada.
+- **Expected red**: expected 2020-01-01, got 1970-01-01.
+
+#### Scenario: Troca de mês aceita com novo sorteio
+- **Test name**: `trocaDeMesAceitaComNovoSorteio`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a troca de mês com data aproximada não sorteia de novo, ou usa o número de dias do mês anterior.
+- **Expected red**: expected dateOfBirth 2021-03-09 and last range 1..<31, got 1970-01-01 and no call.
+
+#### Scenario: Troca de dia desfeita
+- **Test name**: `trocaDeDiaDesfeitaMantemDataAnterior`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a comparação com o dia anterior é removida e a troca de dia é aceita.
+- **Expected red**: expected dateOfBirth 2021-02-01, got 1970-01-01.
+
+#### Scenario: Escolha habilitada com 334 dias
+- **Test name**: `escolhaHabilitadaCom334Dias`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o limite vira `< 10` meses ou `<= 10`.
+- **Expected red**: expected isMeasurementChoiceEnabled true, got false.
+
+#### Scenario: Escolha desabilitada com 335 dias
+- **Test name**: `escolhaDesabilitadaCom335DiasForcaEmPe`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o limite vira `<= 11` meses, ou a mudança de idade não força em pé.
+- **Expected red**: guarda com 334 dias e deitado: expected isMeasurementChoiceEnabled true, got false.
+
+#### Scenario: Criança de 30 meses sem escolha, contra a ajuda
+- **Test name**: `criancaDe30MesesSemEscolhaContraAAjuda`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o limite segue a ajuda (`< 61` meses).
+- **Expected red**: guarda com 10 meses (nascimento 2025-12-14) e deitado: expected measuredRecumbent true, got false.
+
+#### Scenario: Peso truncado, não arredondado
+- **Test name**: `pesoTruncadoNaoArredondado`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `MeasurementInput.parse` arredonda (20.13) em vez de truncar, ou não aceita vírgula.
+- **Expected red**: expected weight 20.12, got nil.
+
+#### Scenario: Valores fora dos limites
+- **Test name**: `valoresForaDosLimitesEsvaziamOCampo`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: valores fora de `InputLimits` são aceitos ou limitados ao máximo (275) em vez de esvaziar.
+- **Expected red**: guarda com texto "25": expected weight 25, got nil.
+
+#### Scenario: Helper trunca texto válido
+- **Test name**: `helperTruncaTextoValido`
+- **Test file**: `Tests/AnthroFeaturesTests/MeasurementInputTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `evaluate` arredonda (20.13) ou rejeita o ponto como separador.
+- **Expected red**: expected .value(20.12), got .empty.
+
+#### Scenario: Helper aponta valor fora do intervalo
+- **Test name**: `helperApontaValorForaDoIntervalo`
+- **Test file**: `Tests/AnthroFeaturesTests/MeasurementInputTests.swift`
+- **Level**: acceptance
+- **Breaks if**: fora do intervalo é classificado como `.invalid`, ou o valor é limitado ao máximo.
+- **Expected red**: expected .outOfRange(0.9...275), got .empty.
+
+#### Scenario: Helper aponta texto inválido e vazio
+- **Test name**: `helperApontaTextoInvalidoEVazio`
+- **Test file**: `Tests/AnthroFeaturesTests/MeasurementInputTests.swift`
+- **Level**: acceptance
+- **Breaks if**: texto com dois separadores é aceito, ou espaços viram `.invalid` em vez de `.empty`.
+- **Expected red**: expected .invalid, got .empty.
+
+#### Scenario: Aviso de peso fora do intervalo
+- **Test name**: `avisoDePesoForaDoIntervalo`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o modelo anula o peso sem registrar `weightIssue`, ou a mensagem usa ponto decimal.
+- **Expected red**: expected weightIssue .outOfRange(0.9...275), got nil.
+
+#### Scenario: Aviso some com valor válido
+- **Test name**: `avisoSomeComValorValido`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `setWeightText` não limpa `weightIssue` quando o texto volta a ser válido.
+- **Expected red**: guarda após "300": expected weightIssue .outOfRange(0.9...275), got nil.
+
+#### Scenario: Aviso de medida inválida
+- **Test name**: `avisoDeMedidaInvalida`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: texto não numérico é tratado como vazio, sem aviso.
+- **Expected red**: expected lengthOrHeightIssue .invalid, got nil.
+
+#### Scenario: IMC de 20 kg e 110 cm aos seis anos
+- **Test name**: `imcDe20kgE110cmAosSeisAnosMostra16v5`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o IMC usa a medida sem ajuste em padrões, ou é formatado com ponto.
+- **Expected red**: expected "16,5", got "".
+
+#### Scenario: IMC indisponível
+- **Test name**: `imcIndisponivelMostraND`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o IMC é exibido com edema, ou o texto vazio substitui "N/D".
+- **Expected red**: expected "N/D", got "".
+
+#### Scenario: Troca de sexo
+- **Test name**: `trocaDeSexoRecalculaComOMotor`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `setSex` não recalcula, ou o modelo passa `measuredRecumbent` invertido ao motor.
+- **Expected red**: expected result.sex .boy, got nil.
+
+#### Scenario: Peso apagado
+- **Test name**: `pesoApagadoAnulaPesoEImcMantemEstatura`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: texto vazio mantém o peso anterior em vez de `nil`.
+- **Expected red**: expected lengthOrHeightForAge.zScore not nil, got nil.
+
+#### Scenario: Z e percentil formatados
+- **Test name**: `zEPercentilFormatadosComVirgula`
+- **Test file**: `Tests/AnthroFeaturesTests/IndicatorPanelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o percentil é formatado com 2 casas ou o z com 1 casa.
+- **Expected red**: `#require` da linha de peso falha: rows is empty.
+
+#### Scenario: Percentil além de 3 DP
+- **Test name**: `percentilAlemDe3DPMostraND`
+- **Test file**: `Tests/AnthroFeaturesTests/IndicatorPanelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: percentil `nil` vira "0,0" ou "100,0".
+- **Expected red**: `#require` da linha de IMC falha: rows is empty.
+
+#### Scenario: Gravidade alta
+- **Test name**: `gravidadeAltaParaZMenos2v35`
+- **Test file**: `Tests/AnthroFeaturesTests/IndicatorPanelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o painel classifica o z com sinal (sem valor absoluto) e devolve `.normal`.
+- **Expected red**: `#require` da linha de peso falha: rows is empty.
+
+#### Scenario: Gravidade indefinida
+- **Test name**: `gravidadeIndefinidaParaZNulo`
+- **Test file**: `Tests/AnthroFeaturesTests/IndicatorPanelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: z `nil` é tratado como 0 e vira `.normal`.
+- **Expected red**: `#require` da linha de estatura falha: rows is empty.
+
+#### Scenario: Empate arredondado para par
+- **Test name**: `empateDaBarraArredondaParaPar`
+- **Test file**: `Tests/AnthroFeaturesTests/IndicatorPanelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `percentileBarValue` arredonda meio para cima (85 e 86) ou trunca (84 e 85).
+- **Expected red**: expected 84 and 86, got 0 and 0.
+
+#### Scenario: Barra sem percentil
+- **Test name**: `barraSemPercentilUsa100Zero50`
+- **Test file**: `Tests/AnthroFeaturesTests/IndicatorPanelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: z `nil` cai no ramo de 0 em vez de 50, ou z > 3 cai em 0.
+- **Expected red**: expected 100, got 0.
+
+#### Scenario: Seis anos mostra estatura
+- **Test name**: `seisAnosMostraEstaturaParaIdade`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o rótulo usa o modo de medida em vez de `result.isLength`.
+- **Expected red**: `#require` da linha de estatura falha: rows is empty.
+
+#### Scenario: Quinze meses medido em pé mostra comprimento
+- **Test name**: `quinzeMesesMedidoEmPeMostraComprimento`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o rótulo é derivado de "em pé" (Estatura) e não de `isLength`.
+- **Expected red**: `#require` da linha de estatura falha: rows is empty.
+
+#### Scenario: Gráfico de IMC
+- **Test name**: `graficoDeImcAbreComUmResultado`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `makeChart` ignora o indicador recebido ou passa mais de um resultado.
+- **Expected red**: expected indicator .bmiForAge, got .weightForAge.
+
+#### Scenario: Gráfico sem medida calculável
+- **Test name**: `graficoSemMedidaCalculavelFicaVazio`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o gráfico desenha ponto para resultado fora dos limites.
+- **Expected red**: expected isEmpty true, got false.
+
+#### Scenario: Do peso para a medida
+- **Test name**: `enterDoPesoVaiParaAMedida`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a ordem de foco troca medida e peso.
+- **Expected red**: expected .lengthOrHeight, got nil.
+
+#### Scenario: Modo de medida desabilitado é pulado
+- **Test name**: `enterPulaModoDeMedidaDesabilitado`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `nextFocus` não consulta `isMeasurementChoiceEnabled`.
+- **Expected red**: expected .oedema, got nil.
+
+#### Scenario: Volta ao início e configuração desligada
+- **Test name**: `enterVoltaAoInicioEDesligadoMantemFoco`
+- **Test file**: `Tests/AnthroFeaturesTests/CalculatorModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o último campo devolve `nil` com a configuração ligada (sem volta), ou a configuração desligada é ignorada.
+- **Expected red**: expected .dateOfBirth, got nil.
+
+### Capability: growth-charts
+
+#### Scenario: Peso para idade sem linhas de 1 DP
+- **Test name**: `pesoParaIdadeSemLinhasDe1DP`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a condição que limita -1 e +1 DP ao IMC é removida (7 séries para peso).
+- **Expected red**: expected 5 series labels, got [].
+
+#### Scenario: IMC para idade com linhas de 1 DP
+- **Test name**: `imcParaIdadeComLinhasDe1DP`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a condição de -1 e +1 DP passa a excluir o IMC.
+- **Expected red**: expected 7 series, got 0.
+
+#### Scenario: Percentis de estatura para idade
+- **Test name**: `percentisDeEstaturaParaIdade`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: os estilos de 15 e 85 viram `.sd2`, ou falta uma série.
+- **Expected red**: expected labels ["3º", "15º", "50º", "85º", "97º"], got [].
+
+#### Scenario: Percentil 50 sobre a mediana
+- **Test name**: `percentil50SobreAMediana`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a série "50º" usa o índice de offset errado de `percentileOffsets`.
+- **Expected red**: `#require` da série "50º" falha: series is empty.
+
+#### Scenario: Marca no gráfico de IMC
+- **Test name**: `marcaDeTransicaoNoGraficoDeImc`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a marca usa o último valor da série, ou x = 24.5.
+- **Expected red**: `#require` de transitionMarker falha: nil.
+
+#### Scenario: Peso para idade sem marca
+- **Test name**: `pesoParaIdadeSemMarcaDeTransicao`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a marca é criada para todos os indicadores.
+- **Expected red**: guarda `series.count == 5`: expected 5, got 0.
+
+#### Scenario: Faixa de peso para idade
+- **Test name**: `faixaDosEixosDePesoParaIdade`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o acréscimo de x para peso vira 20, ou o mínimo de y vira 8.
+- **Expected red**: expected fullXDomain 0...130, got 0...0.
+
+#### Scenario: Faixa de IMC para idade
+- **Test name**: `faixaDosEixosDeImcParaIdade`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o máximo fixo de 38 só vale no modo z-score, ou o acréscimo de x vira 10.
+- **Expected red**: expected fullYDomain 8...38, got 0...0.
+
+#### Scenario: Títulos de estatura para idade
+- **Test name**: `titulosDosEixosDeEstaturaParaIdade`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o título do eixo y de estatura vira "Peso (kg)".
+- **Expected red**: expected "Idade (meses)", got "".
+
+#### Scenario: Título do gráfico vazio
+- **Test name**: `tituloDoGraficoVazioSemDados`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: gráfico sem pontos mantém o título da OMS.
+- **Expected red**: expected "(Sem dados)", got "".
+
+#### Scenario: Ponto de IMC
+- **Test name**: `pontoDeImcUsaImcExatoDaMedidaAjustada`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o y do IMC usa a medida não ajustada ou o IMC arredondado a 1 casa.
+- **Expected red**: `#require` do primeiro ponto falha: points is empty.
+
+#### Scenario: Resultado sem z omitido
+- **Test name**: `resultadoSemZOmitidoDeixaGraficoVazio`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a verificação de z `nil` é removida e o ponto entra com y do peso.
+- **Expected red**: expected isEmpty true, got false.
+
+#### Scenario: Peso aos 109 meses fora do gráfico
+- **Test name**: `pesoAos109MesesForaDoGrafico`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o limite de peso vira 121 ou 120 meses, ou o sufixo do eixo não é aplicado.
+- **Expected red**: expected 1 point, got 0.
+
+#### Scenario: Só pontos fora do intervalo
+- **Test name**: `soPontosForaDoIntervaloDeixamGraficoVazio`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: com zero pontos o gráfico mantém curvas e título da OMS.
+- **Expected red**: expected title "(Sem dados)", got "".
+
+#### Scenario: Legenda no modo z-score
+- **Test name**: `legendaNoModoZScore`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a legenda usa ponto decimal ou omite a idade.
+- **Expected red**: expected "Idade: 6a 0m (72m), z-score: -2,35", got nil.
+
+#### Scenario: Legenda no modo percentil sem percentil
+- **Test name**: `legendaNoModoPercentilSemPercentil`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: percentil `nil` é formatado como "0,0".
+- **Expected red**: expected "Idade: 6a 0m (72m), Percentil: N/D", got nil.
+
+#### Scenario: Legenda sem idade no nascimento
+- **Test name**: `legendaSemIdadeNoNascimento`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a condição `ageInDays > 0` vira `>= 0` e a legenda começa com "Idade: 0m".
+- **Expected red**: expected "z-score: 0,00", got nil.
+
+#### Scenario: Três visitas com vários pontos
+- **Test name**: `tresVisitasComVariosPontos`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: os pontos são reordenados por idade, ou todos recebem `.current`.
+- **Expected red**: expected 3 points, got 0.
+
+#### Scenario: Ponto único entre três visitas
+- **Test name**: `pontoUnicoEntreTresVisitas`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o modo de ponto único desenha o índice 0 em vez do atual.
+- **Expected red**: expected 1 point with resultIndex 2, got 0 points.
+
+#### Scenario: Resultado único sem escolha
+- **Test name**: `resultadoUnicoSemEscolhaDeVariosPontos`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `setShowMultiplePoints(true)` é aceito com um único resultado.
+- **Expected red**: guarda `points.count == 1`: expected 1, got 0.
+
+#### Scenario: De peso para IMC
+- **Test name**: `trocaDePesoParaImcRecalculaSeriesEFaixa`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `setIndicator` não recalcula as séries ou mantém a faixa de peso.
+- **Expected red**: expected 7 series, got 0.
+
+#### Scenario: Troca de modo descarta o zoom
+- **Test name**: `trocaDeModoDescartaOZoom`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `setMode` preserva o domínio visível anterior.
+- **Expected red**: guarda após o zoom: expected visibleXDomain 60...120, got 0...0.
+
+#### Scenario: Zoom e restauração
+- **Test name**: `zoomERestauracao`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `resetZoom` não restaura y, ou `zoom` troca x por y.
+- **Expected red**: expected visibleXDomain 60...120, got 0...0.
+
+#### Scenario: Seleção degenerada ignorada
+- **Test name**: `selecaoDegeneradaIgnorada`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a checagem de largura zero é removida e o domínio vira 60...60.
+- **Expected red**: guarda `fullXDomain == 0...130` no gráfico de peso: got 0...0.
+
+#### Scenario: Deslocamento horizontal
+- **Test name**: `deslocamentoHorizontalDe12Meses`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: `pan` desloca só o limite inferior, ou também desloca y.
+- **Expected red**: expected visibleXDomain 72...132, got 0...0.
+
+#### Scenario: Cópia em PNG
+- **Test name**: `copiaEmPngParaAreaDeTransferencia`
+- **Test file**: `Tests/AnthroFeaturesTests/ChartExportTests.swift`
+- **Level**: integration
+- **Breaks if**: a cópia grava só TIFF, sem o tipo PNG.
+- **Expected red**: expected copy to return true, got false.
+
+#### Scenario: Cópia sem imagem
+- **Test name**: `copiaSemImagemNaoAlteraAreaDeTransferencia`
+- **Test file**: `Tests/AnthroFeaturesTests/ChartExportTests.swift`
+- **Level**: integration
+- **Breaks if**: a cópia limpa a área de transferência (`clearContents`) antes de checar a imagem.
+- **Expected red**: guarda com imagem válida: expected true, got false.
+
+#### Scenario: Exportações válidas
+- **Test name**: `exportacoesValidasPngPdfEImpressao`
+- **Test file**: `Tests/AnthroFeaturesTests/ChartExportTests.swift`
+- **Level**: integration
+- **Breaks if**: o PDF é gerado com duas páginas ou o PNG com outro codec.
+- **Expected red**: expected pngData not nil, got nil.
+
+#### Scenario: Nome de arquivo sem barra
+- **Test name**: `nomeDeArquivoSemBarra`
+- **Test file**: `Tests/AnthroFeaturesTests/ChartExportTests.swift`
+- **Level**: acceptance
+- **Breaks if**: a troca de "/" por "-" é removida.
+- **Expected red**: expected "Comprimento-estatura para idade - Percentil - 2026-10-14", got "".
+
+#### Scenario: PDF inválido para impressão
+- **Test name**: `pdfInvalidoParaImpressaoDevolveNil`
+- **Test file**: `Tests/AnthroFeaturesTests/ChartExportTests.swift`
+- **Level**: integration
+- **Breaks if**: `printOperation` cria a operação sem validar o `PDFDocument`.
+- **Expected red**: guarda com PDF válido de `pdfData`: expected operation not nil, got nil.
+
+## Coverage Ledger
+
+| Capability | Scenario | Test file | Test name | Breaks if | Red (SHA: failure) | Green (SHA) | State |
+|------------|----------|-----------|-----------|-----------|--------------------|-------------|-------|
+| anthropometric-calculator | Abertura com valores padrão | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | aberturaComValoresPadraoUsaSeisAnosMeninaVinteQuilos | estado inicial com outros valores | | | planned |
+| anthropometric-calculator | Nova calculadora não herda valores | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | novaCalculadoraNaoHerdaValoresVoltaAVinteQuilos | último peso persistido | | | planned |
+| anthropometric-calculator | Seis anos de calendário mostram 71 meses | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | seisAnosDeCalendarioMostram71Meses | meses arredondados | | | planned |
+| anthropometric-calculator | Idade abaixo de um ano | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | idadeAbaixoDeUmAnoMostraSoMeses | formato longo abaixo de 12 meses | | | planned |
+| anthropometric-calculator | Visita movida para antes do nascimento | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | visitaMovidaParaAntesDoNascimentoPuxaNascimento | sem limite na visita | | | planned |
+| anthropometric-calculator | Nascimento informado depois da visita | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | nascimentoInformadoDepoisDaVisitaFicaNaVisita | sem limite no nascimento | | | planned |
+| anthropometric-calculator | Sorteio em fevereiro de 2021 | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | sorteioEmFevereiroDe2021UsaIntervaloSemUltimoDia | intervalo inclui o último dia | | | planned |
+| anthropometric-calculator | Sorteio que ultrapassa a visita | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | sorteioQueUltrapassaAVisitaFicaNaVisita | sem limite após sorteio | | | planned |
+| anthropometric-calculator | Helper nunca sorteia o último dia | Tests/AnthroFeaturesTests/ApproximateBirthDateTests.swift | helperNuncaSorteiaOUltimoDia | intervalo inclui o último dia | | | planned |
+| anthropometric-calculator | Helper em fevereiro bissexto | Tests/AnthroFeaturesTests/ApproximateBirthDateTests.swift | helperEmFevereiroBissextoUsaIntervaloDe29 | ignora bissexto | | | planned |
+| anthropometric-calculator | Helper desfaz troca de dia | Tests/AnthroFeaturesTests/ApproximateBirthDateTests.swift | helperDesfazTrocaDeDiaSemSortear | sorteia em vez de desfazer | | | planned |
+| anthropometric-calculator | Helper aceita troca de mês e sorteia de novo | Tests/AnthroFeaturesTests/ApproximateBirthDateTests.swift | helperAceitaTrocaDeMesESorteiaDeNovo | não sorteia na troca de mês | | | planned |
+| anthropometric-calculator | Helper sem data aproximada só limita pela visita | Tests/AnthroFeaturesTests/ApproximateBirthDateTests.swift | helperSemDataAproximadaSoLimitaPelaVisita | sem limite superior | | | planned |
+| anthropometric-calculator | Troca de mês aceita com novo sorteio | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | trocaDeMesAceitaComNovoSorteio | sem novo sorteio | | | planned |
+| anthropometric-calculator | Troca de dia desfeita | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | trocaDeDiaDesfeitaMantemDataAnterior | troca de dia aceita | | | planned |
+| anthropometric-calculator | Escolha habilitada com 334 dias | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | escolhaHabilitadaCom334Dias | limite < 10 meses | | | planned |
+| anthropometric-calculator | Escolha desabilitada com 335 dias | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | escolhaDesabilitadaCom335DiasForcaEmPe | limite <= 11 meses | | | planned |
+| anthropometric-calculator | Criança de 30 meses sem escolha, contra a ajuda | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | criancaDe30MesesSemEscolhaContraAAjuda | limite da ajuda (< 61) | | | planned |
+| anthropometric-calculator | Peso truncado, não arredondado | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | pesoTruncadoNaoArredondado | arredonda em vez de truncar | | | planned |
+| anthropometric-calculator | Valores fora dos limites | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | valoresForaDosLimitesEsvaziamOCampo | limita ao máximo | | | planned |
+| anthropometric-calculator | Helper trunca texto válido | Tests/AnthroFeaturesTests/MeasurementInputTests.swift | helperTruncaTextoValido | arredonda | | | planned |
+| anthropometric-calculator | Helper aponta valor fora do intervalo | Tests/AnthroFeaturesTests/MeasurementInputTests.swift | helperApontaValorForaDoIntervalo | fora vira inválido | | | planned |
+| anthropometric-calculator | Helper aponta texto inválido e vazio | Tests/AnthroFeaturesTests/MeasurementInputTests.swift | helperApontaTextoInvalidoEVazio | dois separadores aceitos | | | planned |
+| anthropometric-calculator | Aviso de peso fora do intervalo | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | avisoDePesoForaDoIntervalo | sem weightIssue | | | planned |
+| anthropometric-calculator | Aviso some com valor válido | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | avisoSomeComValorValido | aviso não limpa | | | planned |
+| anthropometric-calculator | Aviso de medida inválida | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | avisoDeMedidaInvalida | inválido tratado como vazio | | | planned |
+| anthropometric-calculator | IMC de 20 kg e 110 cm aos seis anos | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | imcDe20kgE110cmAosSeisAnosMostra16v5 | formata com ponto | | | planned |
+| anthropometric-calculator | IMC indisponível | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | imcIndisponivelMostraND | IMC com edema | | | planned |
+| anthropometric-calculator | Troca de sexo | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | trocaDeSexoRecalculaComOMotor | sem recálculo | | | planned |
+| anthropometric-calculator | Peso apagado | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | pesoApagadoAnulaPesoEImcMantemEstatura | texto vazio mantém peso | | | planned |
+| anthropometric-calculator | Z e percentil formatados | Tests/AnthroFeaturesTests/IndicatorPanelTests.swift | zEPercentilFormatadosComVirgula | casas trocadas | | | planned |
+| anthropometric-calculator | Percentil além de 3 DP | Tests/AnthroFeaturesTests/IndicatorPanelTests.swift | percentilAlemDe3DPMostraND | nil vira número | | | planned |
+| anthropometric-calculator | Gravidade alta | Tests/AnthroFeaturesTests/IndicatorPanelTests.swift | gravidadeAltaParaZMenos2v35 | sem valor absoluto | | | planned |
+| anthropometric-calculator | Gravidade indefinida | Tests/AnthroFeaturesTests/IndicatorPanelTests.swift | gravidadeIndefinidaParaZNulo | nil tratado como 0 | | | planned |
+| anthropometric-calculator | Empate arredondado para par | Tests/AnthroFeaturesTests/IndicatorPanelTests.swift | empateDaBarraArredondaParaPar | meio para cima | | | planned |
+| anthropometric-calculator | Barra sem percentil | Tests/AnthroFeaturesTests/IndicatorPanelTests.swift | barraSemPercentilUsa100Zero50 | z nil em 0 | | | planned |
+| anthropometric-calculator | Seis anos mostra estatura | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | seisAnosMostraEstaturaParaIdade | rótulo pelo modo de medida | | | planned |
+| anthropometric-calculator | Quinze meses medido em pé mostra comprimento | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | quinzeMesesMedidoEmPeMostraComprimento | rótulo por "em pé" | | | planned |
+| anthropometric-calculator | Gráfico de IMC | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | graficoDeImcAbreComUmResultado | indicador ignorado | | | planned |
+| anthropometric-calculator | Gráfico sem medida calculável | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | graficoSemMedidaCalculavelFicaVazio | ponto fora dos limites desenhado | | | planned |
+| anthropometric-calculator | Do peso para a medida | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | enterDoPesoVaiParaAMedida | ordem trocada | | | planned |
+| anthropometric-calculator | Modo de medida desabilitado é pulado | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | enterPulaModoDeMedidaDesabilitado | ignora campo desabilitado | | | planned |
+| anthropometric-calculator | Volta ao início e configuração desligada | Tests/AnthroFeaturesTests/CalculatorModelTests.swift | enterVoltaAoInicioEDesligadoMantemFoco | sem volta ou ignora configuração | | | planned |
+| growth-charts | Peso para idade sem linhas de 1 DP | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | pesoParaIdadeSemLinhasDe1DP | 1 DP para peso | | | planned |
+| growth-charts | IMC para idade com linhas de 1 DP | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | imcParaIdadeComLinhasDe1DP | 1 DP excluído do IMC | | | planned |
+| growth-charts | Percentis de estatura para idade | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | percentisDeEstaturaParaIdade | estilos trocados | | | planned |
+| growth-charts | Percentil 50 sobre a mediana | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | percentil50SobreAMediana | offset errado | | | planned |
+| growth-charts | Marca no gráfico de IMC | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | marcaDeTransicaoNoGraficoDeImc | y do último ponto | | | planned |
+| growth-charts | Peso para idade sem marca | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | pesoParaIdadeSemMarcaDeTransicao | marca em todos | | | planned |
+| growth-charts | Faixa de peso para idade | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | faixaDosEixosDePesoParaIdade | acréscimo 20 para peso | | | planned |
+| growth-charts | Faixa de IMC para idade | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | faixaDosEixosDeImcParaIdade | máximo 38 só em z | | | planned |
+| growth-charts | Títulos de estatura para idade | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | titulosDosEixosDeEstaturaParaIdade | título y errado | | | planned |
+| growth-charts | Título do gráfico vazio | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | tituloDoGraficoVazioSemDados | mantém título da OMS | | | planned |
+| growth-charts | Ponto de IMC | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | pontoDeImcUsaImcExatoDaMedidaAjustada | medida sem ajuste | | | planned |
+| growth-charts | Resultado sem z omitido | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | resultadoSemZOmitidoDeixaGraficoVazio | sem checagem de nil | | | planned |
+| growth-charts | Peso aos 109 meses fora do gráfico | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | pesoAos109MesesForaDoGrafico | limite 121 | | | planned |
+| growth-charts | Só pontos fora do intervalo | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | soPontosForaDoIntervaloDeixamGraficoVazio | mantém curvas | | | planned |
+| growth-charts | Legenda no modo z-score | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | legendaNoModoZScore | ponto decimal | | | planned |
+| growth-charts | Legenda no modo percentil sem percentil | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | legendaNoModoPercentilSemPercentil | nil vira 0,0 | | | planned |
+| growth-charts | Legenda sem idade no nascimento | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | legendaSemIdadeNoNascimento | condição >= 0 | | | planned |
+| growth-charts | Três visitas com vários pontos | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | tresVisitasComVariosPontos | reordena por idade | | | planned |
+| growth-charts | Ponto único entre três visitas | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | pontoUnicoEntreTresVisitas | desenha índice 0 | | | planned |
+| growth-charts | Resultado único sem escolha | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | resultadoUnicoSemEscolhaDeVariosPontos | aceita vários com um | | | planned |
+| growth-charts | De peso para IMC | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | trocaDePesoParaImcRecalculaSeriesEFaixa | sem recálculo | | | planned |
+| growth-charts | Troca de modo descarta o zoom | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | trocaDeModoDescartaOZoom | preserva zoom | | | planned |
+| growth-charts | Zoom e restauração | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | zoomERestauracao | reset sem y | | | planned |
+| growth-charts | Seleção degenerada ignorada | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | selecaoDegeneradaIgnorada | aceita largura zero | | | planned |
+| growth-charts | Deslocamento horizontal | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | deslocamentoHorizontalDe12Meses | desloca só um limite | | | planned |
+| growth-charts | Cópia em PNG | Tests/AnthroFeaturesTests/ChartExportTests.swift | copiaEmPngParaAreaDeTransferencia | só TIFF | | | planned |
+| growth-charts | Cópia sem imagem | Tests/AnthroFeaturesTests/ChartExportTests.swift | copiaSemImagemNaoAlteraAreaDeTransferencia | limpa antes de checar | | | planned |
+| growth-charts | Exportações válidas | Tests/AnthroFeaturesTests/ChartExportTests.swift | exportacoesValidasPngPdfEImpressao | PDF com duas páginas | | | planned |
+| growth-charts | Nome de arquivo sem barra | Tests/AnthroFeaturesTests/ChartExportTests.swift | nomeDeArquivoSemBarra | barra mantida | | | planned |
+| growth-charts | PDF inválido para impressão | Tests/AnthroFeaturesTests/ChartExportTests.swift | pdfInvalidoParaImpressaoDevolveNil | sem validar PDF | | | planned |
+
+## Test Changes After Red
+
+<!-- Append-only. Vazio no planejamento. -->

@@ -1,0 +1,82 @@
+schema: sdd-tdd
+
+context: |
+  Language: pt-BR
+  All artifacts must be written in pt-BR, com acentuação correta.
+  Keep OpenSpec structural headings (## ADDED Requirements, ### Requirement:,
+  #### Scenario:, **WHEN**, **THEN**) and SHALL/MUST keywords in English.
+  Em Markdown, símbolos matemáticos em LaTeX entre $ $ (ex.: $\leq$, $\geq$, $\times$),
+  nunca Unicode não-ASCII para matemática. Evitar em-dash.
+
+  PRODUTO
+  AnthroPlus para Mac: reconstrução nativa macOS do WHO AnthroPlus 1.0.4 (Windows,
+  .NET 2.0 WinForms), obtida por engenharia reversa do instalador
+  WHO_AnthroPlus_setup.exe (SHA-256 36d64400d5885b3dea9ea102e0f3f71e691271ecf004a1049b3ed1c40ea7175b).
+  Usuária única: Suzan, nutricionista clínica (UNIFESP-EPM), pesquisa com crianças de
+  5 a 10 anos, N entre 300 e 500. Uso em um único Mac (Apple Silicon, macOS 14+).
+  Interface em pt-BR. Três módulos do original: Calculadora antropométrica,
+  Avaliação individual (longitudinal), Inquérito nutricional (prevalências e IC).
+
+  PRINCÍPIO DE FIDELIDADE
+  O comportamento observável do binário original é a especificação. Quando o código
+  decompilado diverge da ajuda (Help/*.htm), vale o código, e a divergência é
+  registrada no design.md da change. Números (z-score, percentil, IMC, prevalências,
+  IC) MUST coincidir com o original nas precisões exibidas (z 2 casas, percentil 1,
+  IMC 1, medidas 2). Fonte de verdade do comportamento:
+  reference/decompiled/{bll,dal,exe} (C# decompilado com ILSpy; uso interno, não
+  publicar). Achados de engenharia reversa: docs/reverse-engineering-findings.md.
+
+  DADOS DE REFERÊNCIA (públicos, OMS)
+  Padrões 2006 por dia (0 a 1856 dias): reference/who-tables/*-zscore-expanded-tables.xlsx
+  (wfa, lhfa, bfa; boys/girls). Referência 2007 por mês: reference/who-tables/*-who2007-anthroplus-r.csv
+  (do pacote R anthroplus 1.1.0 da OMS; bfa e hfa 60 a 229 meses, wfa 60 a 121).
+  O .sdf original é SQL CE 3.0 cifrado e não foi lido; a equivalência com essas
+  tabelas é inferência, validada por paridade com os pacotes R anthro/anthroplus.
+
+  STACK E LAYOUT (Swift 6.1, SwiftPM, sem Xcode; só Command Line Tools)
+  Package.swift na raiz. Targets:
+  - AnthroCore (library): tabelas OMS embutidas como recurso, cálculo, curvas. Sem UI, sem I/O de arquivo do usuário.
+  - AnthroStore (library): SQLite via `import SQLite3` do sistema, migrações, backups.
+  - AnthroIO (library): importação e exportação (CSV, TXT, XML, DBF, REC), relatórios.
+  - AnthroAnalysis (library): análise do inquérito (prevalências, IC, densidades).
+  - AnthroFeatures (library): view models @Observable, toda lógica de tela testável.
+  - AnthroPlusApp (executable): só views SwiftUI + Swift Charts, sem regra de negócio.
+  Tests/<Target>Tests/ com swift-testing (`import Testing`, @Test, #expect).
+  Comando da suíte completa: `swift test`. Build do app: `scripts/build-app.sh`
+  gera build/AnthroPlus.app (Info.plist, ícone .icns via iconutil, codesign ad-hoc).
+  Mutation tool: manual.
+
+  CONVENÇÕES NUMÉRICAS (espelham o .NET decimal do original)
+  Valores clínicos em `Decimal`; pow/exp/sqrt em `Double`, convertendo nos mesmos pontos
+  em que o C# converte. Conversão Double -> Decimal MUST arredondar para 15 dígitos
+  significativos (semântica do cast explícito do .NET Framework). Arredondamento
+  exibido: meio para longe de zero, `sign(x) * floor(|x| * 10^p + 0.5) / 10^p`.
+  Valor indefinido do original (decimal.MinValue) vira `nil` (Optional) no Swift.
+  Idade em dias: diferença de datas de calendário (sem hora, fuso fixo UTC).
+  Idade em meses: dias / 30.4375.
+
+  ROADMAP DE CHANGES (ordem de dependência)
+  1 bootstrap-macos-app: app-shell, local-data-store
+  2 port-anthro-engine: growth-reference-data, anthropometric-computation
+  3 add-anthropometric-calculator: anthropometric-calculator, growth-charts
+  4 add-individual-assessment: child-registry, visit-tracking
+  5 add-nutritional-survey: survey-management
+  6 add-additional-data: additional-data
+  7 add-individual-import-export: individual-data-exchange
+  8 add-survey-import-export: survey-data-exchange
+  9 add-survey-analysis: survey-analysis, survey-reports, survey-graphs
+  Fora de escopo: login multiusuário, listas geográficas SALB/países, idiomas
+  es/fr/ru, leitura do .sdf original, notarização Apple.
+
+rules:
+  specs:
+    - Cenários numéricos usam valores construídos analiticamente a partir de uma linha L, M, S citada da tabela (ex. Y = M dá z = 0.00), ou valores de fixture dourada gerada pelos pacotes R da OMS.
+    - Toda divergência entre ajuda e código decompilado vira cenário que fixa o comportamento do código.
+  design:
+    - Citar o arquivo e o método decompilado de origem de cada regra portada (ex. AnthroComputation.CalculateZandP).
+    - Interface Under Test em Swift, com assinaturas exatas e arquivo de destino.
+  tests:
+    - Testes de cenário em Tests/<Target>Tests/, nome do teste em lowerCamelCase prefixado com o cenário (ex. zScoreIsZeroWhenMeasureEqualsMedian).
+    - Lógica de UI testada pelos view models de AnthroFeatures; verificação visual de janelas é N/A (non-executable) com checagem mecânica nomeada (ex. build-app.sh termina com código 0 e o bundle passa em `codesign --verify`).
+  tasks:
+    - Commits de autoria do usuário, sem linha Co-Authored-By.
