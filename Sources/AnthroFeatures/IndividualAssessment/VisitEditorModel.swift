@@ -26,7 +26,9 @@ public final class VisitEditorModel {
     /// `Visit(Child)`: hoje, em pé, sem edema e sem medidas; nunca antes do nascimento.
     public init(dateOfBirth: Date, sex: Sex?, existingDates: Set<Date>, editing: VisitRecord?, engine: AnthroEngine,
                 today: Date, newVisitAdditionalData: AdditionalData = AdditionalData()) {
-        additionalData = AdditionalDataValuesModel(data: AdditionalData())
+        // Visita existente: a estrutura do próprio XML (ilegível monta formulário vazio); nova: o modelo vigente (D6).
+        let data = editing.map { (try? AdditionalDataXML.decode($0.additionalDataXML)) ?? AdditionalData() }
+        additionalData = AdditionalDataValuesModel(data: data ?? newVisitAdditionalData)
         self.dateOfBirth = IndividualAssessment.normalized(dateOfBirth)
         self.sex = sex
         self.existingDates = Set(existingDates.map(IndividualAssessment.normalized))
@@ -74,8 +76,12 @@ public final class VisitEditorModel {
         IndividualAssessment.warning(lengthOrHeightOutcome, range: IndividualAssessment.visitLengthOrHeightRange)
     }
 
-    /// Peso ou medida ilegível ou fora do intervalo bloqueia a confirmação; vazio é permitido (D7).
+    /// Peso, medida ou dado adicional ilegível ou fora do intervalo bloqueia a confirmação; vazio é permitido (D7).
     public var canSave: Bool {
+        measurementsAreValid && additionalData.canSave
+    }
+
+    private var measurementsAreValid: Bool {
         !IndividualAssessment.blocksSave(weightOutcome) && !IndividualAssessment.blocksSave(lengthOrHeightOutcome)
     }
 
@@ -99,16 +105,19 @@ public final class VisitEditorModel {
                                           measuredRecumbent: measuredRecumbent, hasOedema: hasOedema)
     }
 
-    /// `IAVisitDialog.SaveVisit`: recusa data repetida e medidas inválidas; notas sem espaços nas pontas; preserva os
-    /// dados adicionais da visita reeditada (D17).
+    /// `IAVisitDialog.SaveVisit`: recusa data repetida, medidas e dados adicionais inválidos; notas sem espaços nas
+    /// pontas. Dados adicionais sem alteração de uma visita reeditada voltam com o XML original (D11 da
+    /// add-additional-data); visita nova grava o modelo copiado.
     public func makeVisit() throws -> VisitRecord {
         if editing == nil, existingDates.contains(where: { IndividualAssessment.sameDay($0, storedDate) }) {
             throw VisitValidationError.duplicateDate
         }
-        guard canSave else { throw VisitValidationError.invalidMeasurement }
+        guard measurementsAreValid else { throw VisitValidationError.invalidMeasurement }
+        let values = try additionalData.result()
+        let xml = editing != nil && additionalData.isUnchanged ? editing?.additionalDataXML : AdditionalDataXML.encode(values)
         return VisitRecord(childID: editing?.childID, date: storedDate, weight: weight, lengthOrHeight: lengthOrHeight,
                            measuredRecumbent: measuredRecumbent, hasOedema: hasOedema,
-                           notes: IndividualAssessment.nullable(notes), additionalDataXML: editing?.additionalDataXML)
+                           notes: IndividualAssessment.nullable(notes), additionalDataXML: xml)
     }
 
     private var ageInDays: Int? {

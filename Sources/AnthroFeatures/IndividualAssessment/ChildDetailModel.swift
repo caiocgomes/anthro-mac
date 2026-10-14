@@ -165,7 +165,17 @@ public final class ChildDetailModel {
     public func makeVisitEditor(editing date: Date?) -> VisitEditorModel {
         let existing = date.flatMap { day in visits.first { IndividualAssessment.sameDay($0.date, day) } }
         return VisitEditorModel(dateOfBirth: draft?.dateOfBirth ?? today(), sex: draft?.sex,
-                                existingDates: Set(visits.map(\.date)), editing: existing, engine: engine, today: today())
+                                existingDates: Set(visits.map(\.date)), editing: existing, engine: engine, today: today(),
+                                newVisitAdditionalData: existing == nil ? currentAdditionalDataTemplate() : AdditionalData())
+    }
+
+    /// Modelo vigente lido do banco a cada visita nova (D12 da add-additional-data); se a leitura falhar, o padrão do
+    /// original, e não dados vazios.
+    private func currentAdditionalDataTemplate() -> AdditionalData {
+        if let stored = try? AdditionalDataTemplateRepository(database: database).individualAssessmentTemplate() {
+            return stored
+        }
+        return (try? AdditionalDataXML.decode(AdditionalDataTemplates.individualAssessmentDefaultXML)) ?? AdditionalData()
     }
 
     /// `tsbVisitNew_Click` e `tsbVisitOpen_Click`: a visita entra na ficha na posição da sua data, sem ir ao banco.
