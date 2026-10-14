@@ -85,12 +85,14 @@ struct SurveyAdditionalDataUnitTests {
         #expect(m.visibleRows.first?.text(column) == "")
     }
 
-    @Test func applyingAnUnchangedDefinitionKeepsTheStoredText() throws {
+    /// `tsbAddData_Click` marca pendência a cada OK, mesmo sem mudança; o texto gravado fica intacto, para que um Return
+    /// não troque uma definição ilegível ou com vírgula decimal por `<Data />` ou por outra grafia.
+    @Test func applyingAnUnchangedDefinitionMarksPendingButKeepsTheStoredText() throws {
         for stored in [#"<Data><Cat ID="A" Descr=""><Num Min="0,5" Max="" ID="n" Descr="" /></Cat></Data>"#,
                        #"<Data><Cat ID="A" /></Data>"#] {
             let m = detail(definition: stored)
             try m.applyAdditionalDataDefinition(m.makeAdditionalDataDefinitionEditor())
-            #expect(!m.hasUnsavedChanges, "\(stored)")
+            #expect(m.hasUnsavedChanges, "\(stored)")
             m.name = "Escola B"
             try m.save()
             let id = try #require(m.survey.id)

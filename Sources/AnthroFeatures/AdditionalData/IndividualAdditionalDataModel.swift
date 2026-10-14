@@ -20,11 +20,12 @@ public final class IndividualAdditionalDataModel {
         AdditionalDataEditorModel(definition: template)
     }
 
-    /// Aplica o editor e grava como `Settings.Save()`; com erro, o modelo não muda.
+    /// Aplica o editor e grava como `Settings.Save()`; com erro, o modelo não muda. Depois de gravar, relê o banco, para
+    /// que a memória tenha o mesmo que as visitas novas recebem (o escritor do XML filtra caracteres de controle).
     public func commit(_ editor: AdditionalDataEditorModel) throws {
         let applied = try editor.apply()
         try repository.saveIndividualAssessmentTemplate(applied)
-        template = applied
+        template = try repository.individualAssessmentTemplate()
     }
 
     /// `IAVisitDialog`: visita nova recebe uma cópia do modelo vigente.

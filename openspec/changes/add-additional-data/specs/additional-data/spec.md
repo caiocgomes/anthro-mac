@@ -25,7 +25,7 @@ O sistema SHALL lançar erro tipado para XML malformado ou com atributo obrigat�
 - **THEN** os dois resultados são dados sem seções, que gravados de novo dão `<Data />`
 
 ### Requirement: Escrita do XML compatível com o original
-O sistema SHALL gravar o XML exatamente como `AdditionalData.GetXML`: sem declaração nem espaços, `Num` com atributos na ordem `Min`, `Max`, `ID`, `Descr`, texto e variável sem valor como elemento aberto e fechado para `Txt` e vazio autofechado para `Num` e `Date`, descrição `nil` como "".
+O sistema SHALL gravar o XML exatamente como `AdditionalData.GetXML`: sem declaração nem espaços, `Num` com atributos na ordem `Min`, `Max`, `ID`, `Descr`, texto e variável sem valor como elemento aberto e fechado para `Txt` e vazio autofechado para `Num` e `Date`, descrição `nil` como "". Caracteres fora da produção `Char` do XML 1.0, que tornariam o texto ilegível também para o original, SHALL ser omitidos, com U+000B e U+000C gravados como espaço.
 
 #### Scenario: Ida e volta do modelo padrão
 - **WHEN** o sistema lê e grava de novo o XML do modelo padrão
