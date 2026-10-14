@@ -2,10 +2,10 @@
 
 ## 0. Red gate
 
-- [ ] 0.1 Write every scenario test from tests.md and stubs with the exact signatures from Interface Under Test (neutral return values, no logic), including the fixture `Tests/AnthroIOTests/Fixtures/ia-original-ptbr.xml` and the builders in `Tests/AnthroIOTests/Support/ExchangeFixtures.swift`
-- [ ] 0.2 Run the scenario tests; confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
-- [ ] 0.3 Commit tests and stubs only as `test(red): add-individual-import-export`; write the SHA in the ledger
-- [ ] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing
+- [x] 0.1 Write every scenario test from tests.md and stubs with the exact signatures from Interface Under Test (neutral return values, no logic), including the fixture `Tests/AnthroIOTests/Fixtures/ia-original-ptbr.xml` and the builders in `Tests/AnthroIOTests/Support/ExchangeFixtures.swift`
+- [x] 0.2 Run the scenario tests; confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
+- [x] 0.3 Commit tests and stubs only as `test(red): add-individual-import-export`; write the SHA in the ledger
+- [x] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing (registrado sem parada: a parada vale só para as changes que fixam números clínicos, decisão do Caio de 14/10/2026)
 
 ## 1. Campos e escritor delimitado
 
