@@ -4,7 +4,7 @@
 
 - **Framework**: swift-testing (`import Testing`, `@Test`, `#expect`, `#require`), com `@MainActor` nos testes de view model.
 - **Full-suite command**: `swift test`
-- **Conventions**: testes de cenário em arquivos `*ScenarioTests.swift`; unitários do laço interno em arquivos sem o sufixo. O XML do modelo padrão é comparado com o valor literal copiado de `reference/original-help/WHO AnthroPlus.exe.config` para `Tests/AnthroCoreTests/Fixtures/ia-additional-data-template.xml`, nunca com `AdditionalDataTemplates.individualAssessmentDefaultXML`, para que um stub neutro não passe. Banco real em arquivo temporário; `VisitRepository` real da change 4; `SurveyDetailModel` e `RecordEditorModel` reais da change 5. Datas em UTC pelo helper `day("2021-04-01")`.
+- **Conventions**: testes de cenário em arquivos `*ScenarioTests.swift`; unitários do laço interno em arquivos sem o sufixo. O XML do modelo padrão é comparado com o valor literal de `reference/original-help/WHO AnthroPlus.exe.config`, desescapado uma vez (o arquivo de configuração guarda `&amp;amp;`, e o XML real tem `Fruit&amp;veg`), nunca com `AdditionalDataTemplates.individualAssessmentDefaultXML`, para que um stub neutro não passe: em `Tests/AnthroCoreTests/Fixtures/ia-additional-data-template.xml` para o alvo que já tem recursos, e como constante literal `iaTemplateXML` em `Support/AdditionalDataFixtures.swift` de `AnthroStoreTests` e `AnthroFeaturesTests`, que não têm recursos no `Package.swift`. Banco real em arquivo temporário; `VisitRepository` e `ChildDetailModel` reais da change 4; `SurveyDetailModel` e `RecordEditorModel` reais da change 5. Datas ao meio-dia do calendário do usuário (`Calendar.current`), pelos helpers `day("2021-04-01")` de `AnthroFeaturesTests` e `localDate` de `AnthroCoreTests`, a normalização das changes 4 e 5. A migração 4 entra no commit vermelho registrada em `Migrations.all` com SQL vazio (nenhum outro teste semeia a tabela por SQL), e os dois testes da migração consultam `sqlite_master` e a mensagem do erro, para falhar por asserção contra ela; o SQL é preenchido no verde.
 - **Mutation tool**: manual.
 
 ## Spec-to-Test Mapping
@@ -85,8 +85,8 @@
 - **Test name**: `newVisitGetsCurrentTemplateCopy`
 - **Test file**: `Tests/AnthroFeaturesTests/IndividualAdditionalDataScenarioTests.swift`
 - **Level**: acceptance
-- **Breaks if**: `dataForNewVisit` devolve o padrão embutido em vez do modelo atual.
-- **Expected red**: expected 5 sections, last "Escola", got 0 sections.
+- **Breaks if**: `dataForNewVisit` devolve o padrão embutido em vez do modelo atual, ou `ChildDetailModel.makeVisitEditor` monta a visita nova sem ler o modelo gravado.
+- **Expected red**: expected 5 sections, last "Escola", got 0 sections (o teste confere `dataForNewVisit()` e o formulário do editor criado pela ficha).
 
 #### Scenario: Visita antiga não muda com o modelo
 - **Test name**: `savedVisitKeepsStructureAfterTemplateChange`
@@ -303,7 +303,7 @@
 - **Test file**: `Tests/AnthroStoreTests/AdditionalDataMigrationScenarioTests.swift`
 - **Level**: integration
 - **Breaks if**: `Migrations.additionalData` não é registrada em `Migrations.all` ou usa escopo com outro nome.
-- **Expected red**: expected 1 row with scope "individualAssessment", got "no such table" error.
+- **Expected red**: expected table `additional_data_templates` in `sqlite_master`, got none (migração 4 registrada com SQL vazio).
 
 #### Scenario: XML obrigatório
 - **Test name**: `templateXMLIsNotNull`

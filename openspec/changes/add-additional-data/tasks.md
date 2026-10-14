@@ -36,19 +36,19 @@
 ## 5. Integração com a avaliação individual
 
 - [ ] 5.1 Implement `IndividualAdditionalDataModel` (`makeEditor`, `commit`, `dataForNewVisit`); verified when [tests: newVisitGetsCurrentTemplateCopy, cancellingEditorKeepsTemplate] pass
-- [ ] 5.2 Implement em `VisitEditorModel` (change 4) a propriedade `additionalData`, montada a partir do modelo para visita nova e do XML para visita existente, com `canSave` exigindo `additionalData.canSave` e gravando o XML pelo `VisitRepository`; verified when [tests: savedVisitKeepsStructureAfterTemplateChange] pass and the change 4 suite stays green
+- [ ] 5.2 Implement em `VisitEditorModel` (change 4) a propriedade `additionalData`, montada a partir do modelo para visita nova (lido do banco por `ChildDetailModel.makeVisitEditor`, D12) e do XML para visita existente, com `canSave` exigindo `additionalData.canSave` e gravando o XML pela regra de D11, unit tests first para XML `nil` e ilegível preservados; verified when [tests: savedVisitKeepsStructureAfterTemplateChange] pass and the change 4 suite stays green
 - [ ] 5.3 Refactor a integração; `swift test` stays green
 
 ## 6. Integração com o inquérito
 
-- [ ] 6.1 Implement em `RecordEditorModel` a propriedade `additionalData` (definição do inquérito para registro novo, XML do registro para existente), `canSave` exigindo `additionalData.canSave` e a gravação do XML em `makeRecord()`; verified when [tests: newRecordStoresValuesFromSurveyDefinition, existingRecordFormUsesRecordStructure, invalidAdditionalValueBlocksRecordSave] pass
+- [ ] 6.1 Implement em `RecordEditorModel` a propriedade `additionalData` (definição do inquérito para registro novo, XML do registro para existente), `canSave` exigindo `additionalData.canSave` e a gravação do XML em `makeRecord()` pela regra de D11, unit tests first para número carregado fora do limite que não bloqueia; verified when [tests: newRecordStoresValuesFromSurveyDefinition, existingRecordFormUsesRecordStructure, invalidAdditionalValueBlocksRecordSave] pass
 - [ ] 6.2 Implement em `SurveyDetailModel` `additionalDataDefinition`, `makeAdditionalDataDefinitionEditor` e `applyAdditionalDataDefinition` com marcação de pendência e reconstrução das colunas; verified when [tests: surveyDefinitionIsAppliedMarkedAndSaved, existingRecordKeepsOldVariableAfterDefinitionChange] pass
 - [ ] 6.3 Implement o caso `.additional` em `SurveyTableColumn`, `SurveyRecordRow.text` para colunas adicionais, ordenação tipada (data cronológica) e inclusão em `columns`, filtro e cópia; verified when [tests: additionalCellsRenderTextNumberAndDate, missingAdditionalVariableRendersEmpty, additionalDateColumnSortsChronologically, additionalColumnIsFilterableAndCopied] pass and the change 5 suite stays green
 - [ ] 6.4 Refactor a integração com o inquérito; `swift test` stays green
 
 ## 7. Interface SwiftUI
 
-- [ ] 7.1 Implement `AdditionalDataEditorSheet` (árvore com `OutlineGroup`, campos de identificador, descrição, tipo, mínimo e máximo), `AdditionalDataFormSection` reutilizada nas folhas de visita e de registro, item de menu "Gerenciar dados adicionais" na avaliação individual e botão "Dados adicionais" no inquérito aberto, sem regra de negócio; verified when `scripts/build-app.sh` termina com código 0 e `swift test` continua verde
+- [ ] 7.1 Implement `AdditionalDataEditorSheet` (árvore com `OutlineGroup`, campos de identificador, descrição, tipo, mínimo e máximo), `AdditionalDataFormSection` reutilizada nas folhas de visita e de registro, item de menu "Gerenciar dados adicionais" na avaliação individual e botão "Dados adicionais" no inquérito aberto e colunas adicionais na tabela a partir do macOS 14.4 (D13), sem regra de negócio; verified when `scripts/build-app.sh` termina com código 0 e `swift test` continua verde
 - [ ] 7.2 Verificação manual registrada (N/A non-executable): editar o modelo, criar visita e registro com valores, conferir colunas na tabela do inquérito; critério mecânico: `codesign --verify build/AnthroPlus.app` termina com código 0
 - [ ] 7.3 Refactor das views; `swift test` stays green
 
