@@ -22,9 +22,23 @@ public final class AppModel {
     /// Módulo pedido enquanto o guarda tem alterações pendentes; a janela mostra o diálogo de `AskForSave`.
     public private(set) var pendingSection: AppSection?
 
+    /// Folhas de edição abertas (registro, visita, opções). O conteúdo de uma folha não é pendência que o guarda
+    /// enxergue, então trocar de módulo ou encerrar com uma delas aberta perderia o que foi digitado.
+    public private(set) var openSheetCount = 0
+
+    public var isEditingInSheet: Bool { openSheetCount > 0 }
+
+    public func sheetPresented() {
+        openSheetCount += 1
+    }
+
+    public func sheetDismissed() {
+        openSheetCount = max(openSheetCount - 1, 0)
+    }
+
     /// Troca de módulo: com alterações pendentes no módulo aberto, guarda o pedido até a decisão da usuária.
     public func requestSection(_ section: AppSection) {
-        guard section != selectedSection else { return }
+        guard section != selectedSection, !isEditingInSheet else { return }
         if let unsavedChangesGuard, unsavedChangesGuard.hasUnsavedChanges {
             pendingSection = section
         } else {
@@ -51,9 +65,9 @@ public final class AppModel {
         selectedSection = section
     }
 
-    /// Seleciona o módulo do atalho ⌘`number`; devolve `false` sem mudar nada fora de 1 a 3.
+    /// Seleciona o módulo do atalho ⌘`number`; devolve `false` sem mudar nada fora de 1 a 3 ou com folha aberta.
     public func handleShortcut(number: Int) -> Bool {
-        guard let section = AppSection.allCases.first(where: { $0.shortcutNumber == number }) else {
+        guard !isEditingInSheet, let section = AppSection.allCases.first(where: { $0.shortcutNumber == number }) else {
             return false
         }
         requestSection(section)

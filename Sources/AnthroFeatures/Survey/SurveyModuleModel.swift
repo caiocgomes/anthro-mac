@@ -140,6 +140,7 @@ extension SurveyModuleModel: UnsavedChangesGuard {
 
     /// Troca de módulo ou encerramento do app com pendências (`NSMain_FormClosing`).
     public func proceedAfterUnsavedChanges(_ decision: UnsavedChangesDecision) throws -> Bool {
-        try settle(decision)
+        guard hasUnsavedChanges else { return true }
+        return try settle(decision)
     }
 }

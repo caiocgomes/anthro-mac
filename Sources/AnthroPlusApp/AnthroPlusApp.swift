@@ -8,6 +8,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static weak var model: AppModel?
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if Self.model?.isEditingInSheet == true {
+            let alert = NSAlert()
+            alert.messageText = L10n.Menu.sheetOpenTitle
+            alert.informativeText = L10n.Menu.sheetOpenMessage
+            alert.runModal()
+            return .terminateCancel
+        }
         guard let unsaved = Self.model?.unsavedChangesGuard, unsaved.hasUnsavedChanges else { return .terminateNow }
         let alert = NSAlert()
         alert.messageText = UnsavedChangesText.title(for: unsaved)
@@ -57,6 +64,7 @@ struct AnthroPlusApp: App {
     var body: some Scene {
         Window(L10n.appName, id: "main") {
             RootView(model: model)
+                .environment(model)
                 .frame(minWidth: 860, minHeight: 560)
         }
         .defaultSize(width: 1240, height: 780)

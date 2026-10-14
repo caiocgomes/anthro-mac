@@ -25,6 +25,7 @@ struct AppCommands: Commands {
                     _ = model.handleShortcut(number: section.shortcutNumber)
                 }
                 .keyboardShortcut(KeyEquivalent(Character(String(section.shortcutNumber))), modifiers: .command)
+                .disabled(model.isEditingInSheet)
             }
         }
     }

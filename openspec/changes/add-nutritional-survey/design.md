@@ -81,6 +81,13 @@ As views SwiftUI (`Sources/AnthroPlusApp/Survey/`: `SurveyModuleView`, `SurveyLi
 
 **D13. Pergunta antes de arquivar e ao sair do módulo.** `tsbSurveyArchive_Click` chama `AskForSave` antes de arquivar, e o `FormClosing` do `NSMain` pergunta ao fechar. Para não perder edições do inquérito aberto, `archiveChecked()` devolve `.needsDecision` com `pendingAction == .archive` quando o inquérito aberto tem alterações pendentes, e `resolvePending` salva ou descarta antes de arquivar (cancelar não arquiva). `SurveyModuleModel` adota `UnsavedChangesGuard` da change 4, de modo que trocar de módulo ou encerrar o app com pendências passa pelo mesmo diálogo. Excluir não pergunta, como `tsbSurveyDelete_Click`: o inquérito excluído deixa de existir com as suas pendências.
 
+**D14. Decisões tomadas na implementação.**
+- `SurveyOptions(xml:)` também lança `invalidXML` para valor ilegível (booleano que não é True/False, lista com item não numérico); no original, `StringToIntArray` devolve `null` e o erro aparece adiante.
+- A migração 3 dá `DEFAULT` com a hora UTC a `created_at` e `updated_at`, como a migração 2; a lista ordena por `name COLLATE NOCASE, id`, aproximando a colação sem diferença de maiúsculas do SQL CE.
+- O editor de registro devolve o valor gravado de um campo numérico cujo texto não foi tocado (peso com 3 casas não é arredondado pela tela), mantém edema `nil` de um registro gravado enquanto continuar desmarcado e grava data aproximada falsa quando o nascimento é desconhecido.
+- Uma folha de edição aberta (registro, opções, filtro, e as folhas da ficha da Avaliação individual) bloqueia a troca de módulo e o encerramento do app (`AppModel.isEditingInSheet`): o que foi digitado na folha não é pendência que o guarda do módulo enxergue, e o menu do app continua ativo com a folha anexada.
+- Regra para a change add-survey-import-export: um registro importado com nascimento, data da pesquisa e idade em meses deve ter a idade descartada na importação, como o setter de `Record.Age`; o editor só aceita a idade digitada sem as duas datas e a descartaria ao reeditar, mudando a idade e os z do registro.
+
 ## Risks / Trade-offs
 
 - [Reconstruir as linhas a cada alteração com 500 registros] -> Cada linha chama o motor uma vez; 500 cálculos levam milissegundos. Medir no teste de integração e só então otimizar.

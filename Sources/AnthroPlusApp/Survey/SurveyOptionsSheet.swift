@@ -9,7 +9,7 @@ struct SurveyOptionsSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var errorMessage: String?
-    /// Muda a cada restauração para recriar os campos de z com os valores novos.
+    /// Muda a cada restauração e a cada faixa incluída ou removida, para recriar os campos com os valores vigentes.
     @State private var generation = 0
 
     var body: some View {
@@ -25,8 +25,12 @@ struct SurveyOptionsSheet: View {
                     ForEach(Array(editor.lowerBounds.indices), id: \.self) { index in
                         ageGroupRow(index)
                     }
+                    .id(generation)
                     HStack {
-                        Button(L10n.Survey.addAgeGroup) { editor.addAgeGroup() }
+                        Button(L10n.Survey.addAgeGroup) {
+                            editor.addAgeGroup()
+                            generation += 1
+                        }
                             .disabled(editor.lowerBounds.count >= 21)
                         Spacer()
                     }
@@ -88,22 +92,19 @@ struct SurveyOptionsSheet: View {
         let upper = isLast ? editor.lastUpperBound : editor.lowerBounds[index + 1] - 1
         return HStack {
             Text("\(L10n.Survey.ageGroup) \(index + 1)").frame(width: 70, alignment: .leading)
-            TextField("", value: Binding(get: { editor.lowerBounds[index] }, set: { editor.setLowerBound($0, at: index) }),
-                      format: .number)
-                .labelsHidden()
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 70)
+            MonthField(value: editor.lowerBounds[index]) { editor.setLowerBound($0, at: index) }
             Text(L10n.Survey.upTo)
             if isLast {
-                TextField("", value: $editor.lastUpperBound, format: .number)
-                    .labelsHidden()
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 70)
+                MonthField(value: editor.lastUpperBound) { editor.lastUpperBound = $0 }
             } else {
                 Text("\(upper)").monospacedDigit().frame(width: 70, alignment: .leading)
             }
             Spacer()
-            Button { editor.removeAgeGroup(at: index) } label: {
+            Button {
+                editor.removeAgeGroup(at: index)
+                // As linhas são identificadas pelo índice: recriá-las evita que um campo em foco mostre o valor de outro.
+                generation += 1
+            } label: {
                 Image(systemName: "minus.circle")
             }
             .buttonStyle(.borderless)
@@ -121,8 +122,9 @@ struct SurveyOptionsSheet: View {
     }
 }
 
-/// Limite de z digitado como texto; a avaliação (e o ajuste mínimo e máximo de `CheckZRanges`) acontece ao sair do
-/// campo ou confirmar, para não reescrever o número enquanto se digita.
+/// Limite de z digitado como texto. Cada alteração vai ao editor na hora (com o ajuste mínimo e máximo de
+/// `CheckZRanges`), para que Aplicar nunca ignore o último valor; o texto só é reescrito com o valor vigente ao sair do
+/// campo, para não mudar o número enquanto se digita.
 private struct ZBoundField: View {
     let editor: SurveyOptionsEditorModel
     let indicator: Indicator
@@ -141,8 +143,12 @@ private struct ZBoundField: View {
                 .monospacedDigit()
                 .frame(width: 70)
                 .focused($focused)
-                .onSubmit(commit)
-                .onChange(of: focused) { _, isFocused in if !isFocused { commit() } }
+                .onChange(of: text) { _, newValue in
+                    // Só a digitação envia: abrir a folha não pode reescrever um limite gravado com mais casas.
+                    if focused { editor.setZBound(text: newValue, indicator: indicator, range: range, isMax: isMax) }
+                }
+                .onSubmit(reformat)
+                .onChange(of: focused) { _, isFocused in if !isFocused { reformat() } }
             if let message = editor.zBoundOutcome(indicator, range: range, isMax: isMax).issueMessage {
                 Text(message).font(.caption2).foregroundStyle(.orange).frame(width: 120, alignment: .leading)
             }
@@ -154,8 +160,32 @@ private struct ZBoundField: View {
         ClinicalFormat.string(editor.zBound(indicator, range: range, isMax: isMax), places: 1)
     }
 
-    private func commit() {
-        editor.setZBound(text: text, indicator: indicator, range: range, isMax: isMax)
+    private func reformat() {
         if case .value = editor.zBoundOutcome(indicator, range: range, isMax: isMax) { text = formatted }
+    }
+}
+
+/// Mês inteiro de uma faixa etária; números válidos vão ao editor na hora, e o texto volta ao valor vigente ao sair.
+private struct MonthField: View {
+    let value: Int
+    let onChange: (Int) -> Void
+
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField("", text: $text)
+            .labelsHidden()
+            .textFieldStyle(.roundedBorder)
+            .multilineTextAlignment(.trailing)
+            .monospacedDigit()
+            .frame(width: 70)
+            .focused($focused)
+            .onChange(of: text) { _, newValue in
+                if focused, let number = Int(newValue.trimmingCharacters(in: .whitespaces)) { onChange(number) }
+            }
+            .onChange(of: focused) { _, isFocused in if !isFocused { text = String(value) } }
+            .onChange(of: value) { _, newValue in if !focused { text = String(newValue) } }
+            .onAppear { text = String(value) }
     }
 }

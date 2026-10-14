@@ -15,6 +15,8 @@ public enum L10n {
         public static let modules = "Módulos"
         public static let about = "Sobre o AnthroPlus"
         public static let exportDatabase = "Exportar cópia do banco de dados…"
+        public static let sheetOpenTitle = "Há uma janela de edição aberta"
+        public static let sheetOpenMessage = "Confirme ou cancele a edição antes de sair do AnthroPlus."
     }
 
     public enum Store {
@@ -49,7 +51,7 @@ public enum L10n {
         [
             appName, notAvailable,
             Section.calculator, Section.individualAssessment, Section.nutritionalSurvey, Section.emptyStateMessage,
-            Menu.modules, Menu.about, Menu.exportDatabase,
+            Menu.modules, Menu.about, Menu.exportDatabase, Menu.sheetOpenTitle, Menu.sheetOpenMessage,
             Store.corruptedTitle, Store.corruptedMessage, Store.restoreLatestBackup, Store.failedTitle,
             Store.noBackupFound, Store.exportFailed, Store.exportDone, Store.defaultExportName,
             About.title, About.versionLabel, About.attribution, About.references, About.disclaimer,

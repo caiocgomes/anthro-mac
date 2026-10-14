@@ -48,12 +48,15 @@ struct SurveyDetailPane: View {
             RecordEditorSheet(editor: presentation.editor, isNew: presentation.isNew, surveyName: detail.name) {
                 try detail.commit($0)
             }
+            .editingSheet()
         }
         .sheet(item: $optionsEditor) { presentation in
             SurveyOptionsSheet(editor: presentation.editor) { try detail.applyOptions($0) }
+                .editingSheet()
         }
         .sheet(isPresented: $showingFilter) {
             SurveyFilterSheet(columns: detail.columns) { detail.applyFilter($0) }
+                .editingSheet()
         }
         .confirmationDialog(L10n.Survey.discardTitle, isPresented: $confirmingDiscard) {
             Button(L10n.Survey.discard, role: .destructive) { discard() }

@@ -65,7 +65,7 @@ struct ChildDetailPane: View {
                 Divider()
                 saveBar
             }
-            .sheet(item: $sheet) { sheet in sheetContent(sheet) }
+            .sheet(item: $sheet) { sheet in sheetContent(sheet).editingSheet() }
             .sheet(item: $chart) { presentation in GrowthChartSheet(model: presentation.model) }
             .confirmationDialog(L10n.IndividualAssessment.cancelChangesTitle, isPresented: $confirmingCancel) {
                 Button(L10n.IndividualAssessment.discard, role: .destructive) {
