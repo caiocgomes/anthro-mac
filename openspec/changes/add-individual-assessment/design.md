@@ -86,6 +86,8 @@ As views SwiftUI (`Sources/AnthroPlusApp/IndividualAssessment/`) só ligam esses
 
 **D17. Pontos de extensão para outras changes.** `UnsavedChangesDecision` pertence a esta change; a change `add-nutritional-survey` o consome para o mesmo diálogo de alterações não salvas, sem redefini-lo. A change `add-additional-data` acrescentará `additionalData: AdditionalDataValuesModel` ao `VisitEditorModel` e lerá e gravará `visits.additional_data` pelo `VisitRepository`; aqui o editor só preserva `additionalDataXML` ao reeditar uma visita, e o comportamento de dados adicionais não é especificado. A change `add-individual-import-export` lê pelos repositórios desta change e exporta `CreatedBy` com valor padrão, porque esse campo não é guardado.
 
+**D18. Pergunta ao sair do módulo e do app (acréscimo de UI).** O `IAMain` chamava `AskForSave` também ao fechar o formulário. Aqui o módulo é uma seção da janela principal, então `ChildDetailModel` adota o protocolo `UnsavedChangesGuard` (em `AnthroFeatures`), registrado em `AppModel.unsavedChangesGuard` enquanto o módulo está aberto. `AppModel.requestSection(_:)` guarda a troca de módulo pedida pela barra lateral ou por ⌘1 a ⌘3 em `pendingSection` quando há alterações pendentes, e `resolvePendingSection(_:)` aplica Salvar, Descartar ou Cancelar; `handleShortcut(number:)` passa a usar `requestSection`, sem mudar o comportamento sem guarda. Ao encerrar o app, o `AppDelegate` pergunta o mesmo com `NSAlert`. A change `add-nutritional-survey` pode registrar o seu modelo no mesmo guarda.
+
 ### Divergências entre ajuda e código
 
 | Tema | Ajuda | Código | Cenário que fixa o código |
