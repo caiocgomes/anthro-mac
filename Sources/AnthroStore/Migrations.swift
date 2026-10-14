@@ -15,7 +15,7 @@ public enum Migrations {
     /// Todas as migrações do app, em ordem crescente de versão. Reservadas: 2 avaliação individual,
     /// 3 inquérito, 4 dados adicionais (design D3).
     public static var all: [Migration] {
-        [.appMeta, Migrations.individual]
+        [.appMeta, Migrations.individual, Migrations.survey]
     }
 }
 

@@ -15,7 +15,7 @@ struct MigrationIndividualUnitTests {
 
     @Test func bancoNovoFicaNaVersao2ComAsCincoTabelas() throws {
         let db = try AnthroDatabase.open(at: try freshURL())
-        #expect(try db.schemaVersion() == 2)
+        #expect(try db.schemaVersion() >= 2)
         let tables = try db.query("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
             .compactMap { row -> String? in if case .text(let name) = row["name"] { name } else { nil } }
         #expect(Set(["addresses", "children", "fathers", "mothers", "visits"]).isSubset(of: Set(tables)))
@@ -28,7 +28,7 @@ struct MigrationIndividualUnitTests {
         try v1.execute("INSERT INTO app_meta(key, value) VALUES ('probe', 'v1')")
         v1.close()
         let v2 = try AnthroDatabase.open(at: url)
-        #expect(try v2.schemaVersion() == 2)
+        #expect(try v2.schemaVersion() >= 2)
         #expect(try v2.query("SELECT value FROM app_meta WHERE key = 'probe'").first?["value"] == .text("v1"))
     }
 
