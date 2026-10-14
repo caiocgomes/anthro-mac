@@ -342,6 +342,20 @@
 - **Breaks if**: a série "50º" usa o índice de offset errado de `percentileOffsets`.
 - **Expected red**: `#require` da série "50º" falha: series is empty.
 
+#### Scenario: Peso para idade sem retorno aos 60 meses
+- **Test name**: `pesoParaIdadeSemRetornoAos60Meses`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o modelo desenha o mês 60 da referência depois de 60,98 meses dos padrões, como o `GraphDialog`.
+- **Expected red**: séries que voltam no eixo x iguais às cinco séries; ponto seguinte à costura em x = 60.
+
+#### Scenario: Percentis de IMC sem retorno aos 60 meses
+- **Test name**: `percentisDeImcSemRetornoAos60Meses`
+- **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
+- **Level**: acceptance
+- **Breaks if**: o filtro da costura vale só para o modo z-score.
+- **Expected red**: séries que voltam no eixo x iguais às cinco séries de percentil.
+
 #### Scenario: Marca no gráfico de IMC
 - **Test name**: `marcaDeTransicaoNoGraficoDeImc`
 - **Test file**: `Tests/AnthroFeaturesTests/GrowthChartModelTests.swift`
@@ -601,6 +615,8 @@
 | growth-charts | Exportações válidas | Tests/AnthroFeaturesTests/ChartExportTests.swift | exportacoesValidasPngPdfEImpressao | PDF com duas páginas | c1d4d0f: `ChartExportTests.swift:52 Expectation failed: ChartExport.pngData(image() -> <CGImage 0xc1edac140> (DP)` | 330b2de | green |
 | growth-charts | Nome de arquivo sem barra | Tests/AnthroFeaturesTests/ChartExportTests.swift | nomeDeArquivoSemBarra | barra mantida | c1d4d0f: `ChartExportTests.swift:62 Expectation failed: (ChartExport.suggestedFileName(indicator: .lengthOrHeightForAge, mode: .percentile, dat...` | 330b2de | green |
 | growth-charts | PDF inválido para impressão | Tests/AnthroFeaturesTests/ChartExportTests.swift | pdfInvalidoParaImpressaoDevolveNil | sem validar PDF | c1d4d0f: `ChartExportTests.swift:68 Expectation failed: ChartExport.pdfData(image() -> <CGImage 0xc1edac000> (DP)` | 330b2de | green |
+| growth-charts | Peso para idade sem retorno aos 60 meses | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | pesoParaIdadeSemRetornoAos60Meses | mês 60 desenhado depois de 60,98 meses | 10bfa36 + testes novos: `GrowthChartModelTests.swift:80 Expectation failed: (seriesGoingBack(in: model) -> ["-3 DP", "-2 DP", "Mediana", "+2 DP", "+3 DP"]) == []` | 8f8862b | green |
+| growth-charts | Percentis de IMC sem retorno aos 60 meses | Tests/AnthroFeaturesTests/GrowthChartModelTests.swift | percentisDeImcSemRetornoAos60Meses | filtro só no modo z-score | 10bfa36 + testes novos: `GrowthChartModelTests.swift:90 Expectation failed: (seriesGoingBack(in: model) -> ["3º", "15º", "50º", "85º", "97º"]) == []` | 8f8862b | green |
 
 ## Test Changes After Red
 
@@ -608,3 +624,4 @@
 
 - 2026-10-14, tarefa 3.2 (laço interno): `Tests/AnthroFeaturesTests/GrowthChartRangeUnitTests.swift` com `imcAte228MesesInteirosEntraE229Sai`, `idadeDesconhecidaFicaForaDoIntervalo` e `semZNaoMarcaForaDoIntervalo`. Os testes unitários foram escritos depois do código da regra, contra o pedido de "unit tests first"; para compensar, cada um foi visto falhando por mutação (limite 228 trocado por 229; guarda do z movida para depois da idade) e as mutações foram revertidas. Nenhum teste de cenário mudou.
 - 2026-10-14, tarefa 5.3: `autotesteEncontraOsRecursosDoNucleo` (de `bootstrap-macos-app`) endurecido para exigir que o autoteste carregue as tabelas da OMS por `SelfTest.run(loadTables:)`, e `autotesteFalhaSemAsTabelasDaOMS` acrescentado. Ambos falharam por asserção com o parâmetro ainda ignorado (`Expectation failed: loaded`; `!outcome.passed`) antes da implementação.
+- 2026-10-14, depois da checagem manual (pedido do usuário: "os graficos estão tendo umas quebrinhas estranhas"): requisito "Costura entre padrões e referência" acrescentado à spec de growth-charts, com os cenários "Peso para idade sem retorno aos 60 meses" e "Percentis de IMC sem retorno aos 60 meses". Testes `pesoParaIdadeSemRetornoAos60Meses` e `percentisDeImcSemRetornoAos60Meses` acrescentados a `GrowthChartModelTests.swift`, vistos falhando por asserção sobre o código de `10bfa36` (todas as séries voltavam no eixo x; ponto após a costura em x = 60) e verdes em `8f8862b`. Nenhum teste existente mudou.
