@@ -12,6 +12,7 @@ public final class VisitEditorModel {
     public var lengthOrHeightText: String = ""
     public var hasOedema: Bool = false
     public var notes: String = ""
+    public let additionalData: AdditionalDataValuesModel
 
     private var storedDate: Date
     private var storedRecumbent: Bool = false
@@ -24,7 +25,8 @@ public final class VisitEditorModel {
 
     /// `Visit(Child)`: hoje, em pé, sem edema e sem medidas; nunca antes do nascimento.
     public init(dateOfBirth: Date, sex: Sex?, existingDates: Set<Date>, editing: VisitRecord?, engine: AnthroEngine,
-                today: Date) {
+                today: Date, newVisitAdditionalData: AdditionalData = AdditionalData()) {
+        additionalData = AdditionalDataValuesModel(data: AdditionalData())
         self.dateOfBirth = IndividualAssessment.normalized(dateOfBirth)
         self.sex = sex
         self.existingDates = Set(existingDates.map(IndividualAssessment.normalized))

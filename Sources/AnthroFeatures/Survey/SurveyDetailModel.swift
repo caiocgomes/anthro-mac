@@ -187,6 +187,18 @@ public final class SurveyDetailModel {
         publish()
     }
 
+    // MARK: Dados adicionais
+
+    public var additionalDataDefinition: AdditionalData {
+        AdditionalData()
+    }
+
+    public func makeAdditionalDataDefinitionEditor() -> AdditionalDataEditorModel {
+        AdditionalDataEditorModel(definition: AdditionalData())
+    }
+
+    public func applyAdditionalDataDefinition(_ editor: AdditionalDataEditorModel) throws {}
+
     // MARK: Salvar e descartar
 
     /// Grava inquérito e registros numa transação (`ApplyDataChanges`); a ordem de inclusão vira `position`.
@@ -303,6 +315,8 @@ private enum SurveySortKey: Comparable {
             case .weightingFactor: self = .value(record.weightingFactor)
             case .estimatedDateOfBirth: self = flag(record.dateOfBirthIsApprox)
             }
+        case .additional:
+            self = .missing
         }
     }
 

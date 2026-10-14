@@ -22,6 +22,7 @@ public struct SurveyRecordRow: Sendable, Equatable {
     public func text(_ column: SurveyTableColumn) -> String {
         switch column {
         case .fixed(let fixed): text(fixed)
+        case .additional: ""
         }
     }
 

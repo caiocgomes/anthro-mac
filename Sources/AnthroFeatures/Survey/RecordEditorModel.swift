@@ -65,6 +65,8 @@ public final class RecordEditorModel {
     public private(set) var measuredRecumbent: Bool
     public var hasOedema: Bool
 
+    public let additionalData: AdditionalDataValuesModel
+
     private var texts: [RecordNumericField: String] = [:]
 
     @ObservationIgnored private let editing: SurveyRecord?
@@ -80,6 +82,7 @@ public final class RecordEditorModel {
         self.survey = survey
         self.existingRecords = existingRecords
         self.randomDay = randomDay
+        additionalData = AdditionalDataValuesModel(data: AdditionalData())
         let todayNoon = IndividualAssessment.normalized(today)
         visitDate = record?.visitDate.map(IndividualAssessment.normalized)
         // Registro novo: nascimento um ano antes de hoje; existente sem nascimento: a data da pesquisa ou hoje.

@@ -42,13 +42,15 @@ public enum SurveyColumn: Int, CaseIterable, Sendable {
     }
 }
 
-/// Coluna da tabela; as colunas de dados adicionais chegam na change add-additional-data.
+/// Coluna da tabela: as 19 fixas e as de dados adicionais da definição do inquérito.
 public enum SurveyTableColumn: Hashable, Sendable {
     case fixed(SurveyColumn)
+    case additional(AdditionalDataColumn)
 
     public var title: String {
         switch self {
         case .fixed(let column): column.title
+        case .additional: ""
         }
     }
 }
