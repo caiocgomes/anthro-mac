@@ -1,4 +1,5 @@
 /// Modelo padrão de dados adicionais da avaliação individual (`IAAdditionalDataTemplate` do `.exe.config`).
 public enum AdditionalDataTemplates {
-    public static let individualAssessmentDefaultXML: String = ""
+    public static let individualAssessmentDefaultXML =
+        #"<Data><Cat ID="Maturation" Descr=""><Txt ID="Menarche/spermarche" Descr=""></Txt><Txt ID="Self-reported" Descr=""></Txt></Cat><Cat ID="Physical activity" Descr="hours per week"><Num Min="0" Max="140" ID="Sport" Descr="" /><Num Min="0" Max="140" ID="TV/computer" Descr="" /></Cat><Cat ID="Food" Descr=""><Num Min="0" Max="10" ID="Fruit&amp;veg portions / day" Descr="" /></Cat><Cat ID="Health" Descr=""><Txt ID="Blood pressure" Descr=""></Txt><Txt ID="Blood lipids" Descr=""></Txt></Cat></Data>"#
 }
