@@ -4,7 +4,8 @@ import SwiftUI
 /// Painel de resultados, como `IndicatorDisplayPanel`: z-score com a cor de `SetZLabelColor`, percentil e barra.
 struct IndicatorPanelView: View {
     let rows: [IndicatorPanelRow]
-    let onShowChart: (Indicator) -> Void
+    /// `nil` esconde os botões de gráfico (o Inquérito não tem gráfico por registro nesta versão).
+    let onShowChart: ((Indicator) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -13,7 +14,7 @@ struct IndicatorPanelView: View {
             VStack(spacing: 0) {
                 ForEach(Array(rows.enumerated()), id: \.element.indicator) { index, row in
                     if index > 0 { Divider() }
-                    IndicatorRowView(row: row) { onShowChart(row.indicator) }
+                    IndicatorRowView(row: row, onShowChart: onShowChart.map { show in { show(row.indicator) } })
                 }
             }
             .background(.background.secondary, in: RoundedRectangle(cornerRadius: 10))
@@ -25,7 +26,7 @@ struct IndicatorPanelView: View {
 
 private struct IndicatorRowView: View {
     let row: IndicatorPanelRow
-    let onShowChart: () -> Void
+    let onShowChart: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 16) {
@@ -45,14 +46,16 @@ private struct IndicatorRowView: View {
                         .padding(.top, 14)
                 }
             }
-            Button(action: onShowChart) {
-                Image(systemName: "chart.xyaxis.line")
-                    .font(.title3)
-                    .frame(width: 34, height: 30)
+            if let onShowChart {
+                Button(action: onShowChart) {
+                    Image(systemName: "chart.xyaxis.line")
+                        .font(.title3)
+                        .frame(width: 34, height: 30)
+                }
+                .buttonStyle(.bordered)
+                .help(L10n.Calculator.showChart)
+                .accessibilityLabel("\(L10n.Calculator.showChart): \(row.title)")
             }
-            .buttonStyle(.bordered)
-            .help(L10n.Calculator.showChart)
-            .accessibilityLabel("\(L10n.Calculator.showChart): \(row.title)")
         }
         .padding(14)
     }

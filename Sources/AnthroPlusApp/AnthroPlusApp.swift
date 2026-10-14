@@ -10,8 +10,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard let unsaved = Self.model?.unsavedChangesGuard, unsaved.hasUnsavedChanges else { return .terminateNow }
         let alert = NSAlert()
-        alert.messageText = L10n.IndividualAssessment.unsavedTitle
-        alert.informativeText = L10n.IndividualAssessment.unsavedMessage
+        alert.messageText = UnsavedChangesText.title(for: unsaved)
+        alert.informativeText = UnsavedChangesText.message(for: unsaved)
         alert.addButton(withTitle: L10n.IndividualAssessment.save)
         alert.addButton(withTitle: L10n.IndividualAssessment.discard)
         alert.addButton(withTitle: L10n.IndividualAssessment.cancel)
@@ -25,7 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             let failure = NSAlert()
             failure.messageText = L10n.IndividualAssessment.saveFailed
-            failure.informativeText = IAErrorText.message(for: error)
+            failure.informativeText = SurveyErrorText.message(for: error)
             failure.runModal()
             return .terminateCancel
         }

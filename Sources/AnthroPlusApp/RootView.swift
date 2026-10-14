@@ -50,7 +50,7 @@ struct MainSplitView: View {
         do {
             try model.resolvePendingSection(decision)
         } catch {
-            errorMessage = IAErrorText.message(for: error)
+            errorMessage = SurveyErrorText.message(for: error)
         }
     }
 
@@ -80,7 +80,10 @@ struct MainSplitView: View {
                     }
                 }
         }
-        .unsavedChangesDialog(pending: pendingSection) { decision, _ in resolve(decision) }
+        .unsavedChangesDialog(pending: pendingSection, title: UnsavedChangesText.title(for: model.unsavedChangesGuard),
+                              message: UnsavedChangesText.message(for: model.unsavedChangesGuard)) { decision, _ in
+            resolve(decision)
+        }
         .alert(L10n.IndividualAssessment.saveFailed,
                isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK", role: .cancel) {}
@@ -90,7 +93,7 @@ struct MainSplitView: View {
     }
 }
 
-/// Módulo selecionado; Avaliação individual e Inquérito chegam nas changes seguintes.
+/// Módulo selecionado.
 struct ModuleView: View {
     let model: AppModel
 
@@ -101,20 +104,7 @@ struct ModuleView: View {
         case .individualAssessment:
             IndividualAssessmentHostView(model: model)
         case .nutritionalSurvey:
-            ModulePlaceholderView(section: model.selectedSection)
+            SurveyModuleHostView(model: model)
         }
-    }
-}
-
-/// Estado vazio de cada módulo enquanto as changes seguintes não chegam.
-struct ModulePlaceholderView: View {
-    let section: AppSection
-
-    var body: some View {
-        ContentUnavailableView(
-            section.title,
-            systemImage: section.systemImage,
-            description: Text(L10n.Section.emptyStateMessage)
-        )
     }
 }

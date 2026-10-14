@@ -30,6 +30,7 @@ struct IndividualAssessmentHostView: View {
 
     private func session(database: AnthroDatabase, tables: GrowthReferenceTables) -> IndividualAssessmentSession {
         if let existing = model.moduleSessions[.individualAssessment] as? IndividualAssessmentSession {
+            model.unsavedChangesGuard = existing.detail
             return existing
         }
         let created = IndividualAssessmentSession(database: database, settings: model.settings, tables: tables)
@@ -175,9 +176,10 @@ enum IAErrorText {
 extension View {
     /// Diálogo Salvar, Descartar ou Cancelar de `IAMain.AskForSave`; a ação recebe o pedido apresentado, então a ordem
     /// em que o SwiftUI limpa a binding não troca Salvar por Cancelar.
-    func unsavedChangesDialog<Pending>(pending: Binding<Pending?>,
+    func unsavedChangesDialog<Pending>(pending: Binding<Pending?>, title: String = L10n.IndividualAssessment.unsavedTitle,
+                                       message: String = L10n.IndividualAssessment.unsavedMessage,
                                        onDecision: @escaping (UnsavedChangesDecision, Pending) -> Void) -> some View {
-        alert(L10n.IndividualAssessment.unsavedTitle,
+        alert(title,
               isPresented: Binding(get: { pending.wrappedValue != nil }, set: { if !$0 { pending.wrappedValue = nil } }),
               presenting: pending.wrappedValue) { value in
             Button(L10n.IndividualAssessment.save) { onDecision(.save, value) }
@@ -185,7 +187,7 @@ extension View {
             Button(L10n.IndividualAssessment.discard, role: .destructive) { onDecision(.discard, value) }
             Button(L10n.IndividualAssessment.cancel, role: .cancel) { onDecision(.cancel, value) }
         } message: { _ in
-            Text(L10n.IndividualAssessment.unsavedMessage)
+            Text(message)
         }
     }
 }
