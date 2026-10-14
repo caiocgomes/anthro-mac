@@ -3,12 +3,17 @@ import AnthroStore
 import Foundation
 import Observation
 
-/// Inquérito aberto em memória, gravado numa transação ao salvar (`NSMain` e `BaseDataList`, design D2).
+/// Inquérito aberto em memória, gravado numa transação ao salvar (`NSMain` e `BaseDataList`, design D2): registros em
+/// ordem de inclusão, lista visível filtrada e ordenada, e alterações pendentes até `save()`.
 @MainActor
 @Observable
 public final class SurveyDetailModel {
-    public var name: String = ""
-    public var notes: String = ""
+    public var name: String {
+        didSet { if name != oldValue { hasUnsavedChanges = true } }
+    }
+    public var notes: String {
+        didSet { if notes != oldValue { hasUnsavedChanges = true } }
+    }
     public private(set) var survey: Survey
     public private(set) var options: SurveyOptions
     public private(set) var allRecords: [SurveyRecord] = []
@@ -19,6 +24,19 @@ public final class SurveyDetailModel {
     public private(set) var sortAscending: Bool = false
     public private(set) var selectedResult: AnthropometricResult? = nil
 
+    /// Registro com chave estável em memória (registros novos ainda não têm `id`).
+    private struct Entry {
+        let key: Int
+        var row: SurveyRecordRow
+    }
+
+    @ObservationIgnored private var entries: [Entry] = []
+    @ObservationIgnored private var visibleKeys: [Int] = []
+    @ObservationIgnored private var selectedKey: Int?
+    @ObservationIgnored private var nextKey = 0
+    /// Editores abertos sobre registros existentes; o editor fica retido até `commit` para que a chave não se confunda.
+    @ObservationIgnored private var editorKeys: [ObjectIdentifier: (editor: RecordEditorModel, key: Int)] = [:]
+
     @ObservationIgnored private let repository: SurveyRepository
     @ObservationIgnored private let engine: AnthroEngine
     @ObservationIgnored private let today: () -> Date
@@ -26,47 +44,276 @@ public final class SurveyDetailModel {
     public init(survey: Survey, records: [SurveyRecord], repository: SurveyRepository, engine: AnthroEngine,
                 today: @escaping () -> Date) {
         self.survey = survey
-        options = .default
+        name = survey.name
+        notes = survey.notes ?? ""
+        options = survey.options
         self.repository = repository
         self.engine = engine
         self.today = today
+        load(records)
     }
 
-    public var columns: [SurveyTableColumn] { [] }
+    public var columns: [SurveyTableColumn] {
+        SurveyColumn.allCases.map { .fixed($0) }
+    }
 
-    public var recordCountLabel: String { "" }
+    /// `NSMain_LabelNbRecords` sobre os registros visíveis.
+    public var recordCountLabel: String {
+        "\(visibleRows.count) \(L10n.Survey.recordCountSuffix)"
+    }
 
-    public func select(visibleIndex: Int?) {}
+    // MARK: Seleção
 
-    public func severity(_ indicator: Indicator) -> Severity { .undefined }
+    /// `dgvRecords_RowEnter`: o painel de resultados mostra o registro selecionado; `nil` limpa.
+    public func select(visibleIndex: Int?) {
+        selectedKey = visibleIndex.flatMap { visibleKeys.indices.contains($0) ? visibleKeys[$0] : nil }
+        refreshSelection()
+    }
+
+    /// Faixa de cor do z do registro selecionado (`IndicatorDisplayPanel`).
+    public func severity(_ indicator: Indicator) -> Severity {
+        SeverityClassifier.severity(selectedResult?.score(indicator).zScore)
+    }
+
+    // MARK: Registros
 
     public func makeNewRecordEditor() -> RecordEditorModel {
-        RecordEditorModel(record: nil, survey: survey, existingRecords: [], engine: engine, today: today())
+        RecordEditorModel(record: nil, survey: currentSurvey, existingRecords: allRecords, engine: engine, today: today())
     }
 
     public func makeEditor(visibleIndex: Int) -> RecordEditorModel {
-        RecordEditorModel(record: nil, survey: survey, existingRecords: [], engine: engine, today: today())
+        let key = visibleKeys[visibleIndex]
+        let editor = RecordEditorModel(record: entry(key)?.row.record, survey: currentSurvey, existingRecords: allRecords,
+                                       engine: engine, today: today())
+        editorKeys[ObjectIdentifier(editor)] = (editor, key)
+        return editor
     }
 
-    public func commit(_ editor: RecordEditorModel) throws {}
+    /// Inclui (no fim da ordem de inclusão e da lista visível, como `Records.Add`) ou atualiza o registro do editor.
+    public func commit(_ editor: RecordEditorModel) throws {
+        let record = try editor.makeRecord()
+        let row = SurveyRecordRow(record: record, engine: engine, options: options)
+        if let key = editorKeys.removeValue(forKey: ObjectIdentifier(editor))?.key,
+           let index = entries.firstIndex(where: { $0.key == key }) {
+            entries[index].row = row
+        } else {
+            let key = takeKey()
+            entries.append(Entry(key: key, row: row))
+            visibleKeys.append(key)
+        }
+        hasUnsavedChanges = true
+        publish()
+    }
 
-    public func deleteRecords(visibleIndices: IndexSet) {}
+    public func deleteRecords(visibleIndices: IndexSet) {
+        let removed = Set(visibleIndices.compactMap { visibleKeys.indices.contains($0) ? visibleKeys[$0] : nil })
+        guard !removed.isEmpty else { return }
+        entries.removeAll { removed.contains($0.key) }
+        visibleKeys.removeAll { removed.contains($0) }
+        if let selectedKey, removed.contains(selectedKey) { self.selectedKey = nil }
+        hasUnsavedChanges = true
+        publish()
+    }
 
-    public func sort(by column: SurveyTableColumn) {}
+    // MARK: Ordenação
 
-    public func applyFilter(_ filter: SurveyFilter) {}
+    /// `dgvRecords_ColumnHeaderMouseClick`: coluna nova ordena crescente (estável); a mesma coluna inverte a lista.
+    public func sort(by column: SurveyTableColumn) {
+        if column == sortColumn {
+            sortAscending.toggle()
+            visibleKeys.reverse()
+        } else {
+            sortColumn = column
+            sortAscending = true
+            let keyed = visibleKeys.enumerated().map { offset, key in
+                (offset: offset, key: key, value: SurveySortKey(entry(key)!.row, column))
+            }
+            visibleKeys = keyed.sorted { ($0.value, $0.offset) < ($1.value, $1.offset) }.map(\.key)
+        }
+        publish()
+    }
 
-    public func clearFilter() {}
+    // MARK: Filtro
 
-    public func clipboardText(selectedVisibleIndices: IndexSet) -> String { "" }
+    /// `FilterRecords` sobre a lista visível: cada filtro estreita o que já está visível (`BaseDataList.FilterAt`).
+    public func applyFilter(_ filter: SurveyFilter) {
+        visibleKeys = visibleKeys.filter { key in
+            SurveyFilterEvaluator.keeps(cellText: entry(key)!.row.text(filter.column), condition: filter.condition,
+                                        value1: filter.value1, value2: filter.value2)
+        }
+        isFiltered = true
+        if let selectedKey, !visibleKeys.contains(selectedKey) { self.selectedKey = nil }
+        publish()
+    }
 
+    /// `tsbFilterBack_Click` com `UnfilterAll`: todos visíveis na ordem de inclusão, sem indicador de ordenação.
+    public func clearFilter() {
+        guard isFiltered else { return }
+        visibleKeys = entries.map(\.key)
+        isFiltered = false
+        sortColumn = nil
+        sortAscending = false
+        publish()
+    }
+
+    // MARK: Cópia
+
+    /// `tsbCopyToClipboard_Click`: títulos e linhas selecionadas na ordem da tabela, cada célula seguida de tabulação e
+    /// cada linha terminada em CRLF.
+    public func clipboardText(selectedVisibleIndices: IndexSet) -> String {
+        let columns = columns
+        var text = columns.map { $0.title + "\t" }.joined() + "\r\n"
+        for index in selectedVisibleIndices where visibleRows.indices.contains(index) {
+            let row = visibleRows[index]
+            text += columns.map { row.text($0) + "\t" }.joined() + "\r\n"
+        }
+        return text
+    }
+
+    // MARK: Opções
+
+    /// Editor sobre uma cópia das opções correntes: cancelar é simplesmente não aplicar.
     public func makeOptionsEditor() -> SurveyOptionsEditorModel {
         SurveyOptionsEditorModel(options: options)
     }
 
-    public func applyOptions(_ editor: SurveyOptionsEditorModel) throws {}
+    /// Opções aplicadas marcam pendência e recalculam as flags de todas as linhas.
+    public func applyOptions(_ editor: SurveyOptionsEditorModel) throws {
+        options = try editor.apply()
+        for index in entries.indices {
+            entries[index].row = SurveyRecordRow(record: entries[index].row.record, engine: engine, options: options)
+        }
+        hasUnsavedChanges = true
+        publish()
+    }
 
-    public func save() throws {}
+    // MARK: Salvar e descartar
 
-    public func discardChanges() throws {}
+    /// Grava inquérito e registros numa transação (`ApplyDataChanges`); a ordem de inclusão vira `position`.
+    public func save() throws {
+        let saved = try repository.save(currentSurvey, records: entries.map(\.row.record))
+        survey = saved.survey
+        name = saved.survey.name
+        notes = saved.survey.notes ?? ""
+        for (index, record) in saved.records.enumerated() {
+            entries[index].row = SurveyRecordRow(record: record, engine: engine, options: options)
+        }
+        hasUnsavedChanges = false
+        publish()
+    }
+
+    /// `Survey.DiscardDataChanges`: relê o inquérito salvo; inquérito nunca salvo volta a vazio.
+    public func discardChanges() throws {
+        if let id = survey.id {
+            survey = try repository.survey(id: id)
+            load(try repository.records(surveyID: id))
+        } else {
+            load([])
+        }
+        name = survey.name
+        notes = survey.notes ?? ""
+        options = survey.options
+        rebuildRows()
+        hasUnsavedChanges = false
+    }
+
+    // MARK: Privado
+
+    /// Inquérito com nome, notas e opções em edição.
+    private var currentSurvey: Survey {
+        var current = survey
+        current.name = name
+        current.notes = notes
+        current.options = options
+        return current
+    }
+
+    private func load(_ records: [SurveyRecord]) {
+        entries = records.map { Entry(key: takeKey(), row: SurveyRecordRow(record: $0, engine: engine, options: options)) }
+        visibleKeys = entries.map(\.key)
+        editorKeys = [:]
+        selectedKey = nil
+        isFiltered = false
+        sortColumn = nil
+        sortAscending = false
+        publish()
+    }
+
+    private func rebuildRows() {
+        for index in entries.indices {
+            entries[index].row = SurveyRecordRow(record: entries[index].row.record, engine: engine, options: options)
+        }
+        publish()
+    }
+
+    private func takeKey() -> Int {
+        defer { nextKey += 1 }
+        return nextKey
+    }
+
+    private func entry(_ key: Int) -> Entry? {
+        entries.first { $0.key == key }
+    }
+
+    /// Atualiza as propriedades observadas a partir das entradas e da ordem visível.
+    private func publish() {
+        let rows = Dictionary(uniqueKeysWithValues: entries.map { ($0.key, $0.row) })
+        allRecords = entries.map(\.row.record)
+        visibleRows = visibleKeys.compactMap { rows[$0] }
+        refreshSelection()
+    }
+
+    private func refreshSelection() {
+        selectedResult = selectedKey.flatMap { key in entries.first { $0.key == key }?.row.result }
+    }
+}
+
+/// Valor tipado de ordenação de uma célula (`Record.CompareTo` com `SortBy`): valores antes de ausentes (`CompareNull`),
+/// mas z indefinido entra como o menor valor, porque o original guarda `decimal.MinValue` no campo.
+private enum SurveySortKey: Comparable {
+    case value(Decimal)
+    case missing
+
+    init(_ row: SurveyRecordRow, _ column: SurveyTableColumn) {
+        let record = row.record
+        func number(_ value: Int?) -> SurveySortKey { value.map { .value(Decimal($0)) } ?? .missing }
+        func number(_ value: Decimal?) -> SurveySortKey { value.map { .value($0) } ?? .missing }
+        func date(_ value: Date?) -> SurveySortKey { value.map { .value(Decimal($0.timeIntervalSinceReferenceDate)) } ?? .missing }
+        func flag(_ value: Bool?) -> SurveySortKey { value.map { .value($0 ? 1 : 0) } ?? .missing }
+        func z(_ indicator: Indicator) -> SurveySortKey { .value(row.result.score(indicator).zScore ?? -Decimal.greatestFiniteMagnitude) }
+        switch column {
+        case .fixed(let fixed):
+            switch fixed {
+            case .surveyDate: self = date(record.visitDate)
+            case .cluster: self = number(record.cluster)
+            case .team: self = number(record.team)
+            case .displayID: self = number(record.displayID)
+            case .household: self = number(record.household)
+            case .sex: self = .value(Decimal(record.sex.rawValue))
+            case .dateOfBirth: self = date(record.dateOfBirth)
+            case .ageInDays, .ageInMonths: self = number(SurveyRecordEvaluation.ageInMonths(record))
+            case .weight: self = number(record.weight)
+            case .oedema: self = flag(record.hasOedema)
+            case .recumbent: self = flag(record.measuredRecumbent)
+            case .lengthOrHeight: self = number(record.lengthOrHeight)
+            case .weightForAgeZ: self = z(.weightForAge)
+            case .lengthOrHeightForAgeZ: self = z(.lengthOrHeightForAge)
+            case .bmiForAgeZ: self = z(.bmiForAge)
+            case .flag: self = .value(Decimal(Self.rank(row.flag)))
+            case .weightingFactor: self = .value(record.weightingFactor)
+            case .estimatedDateOfBirth: self = flag(record.dateOfBirthIsApprox)
+            }
+        }
+    }
+
+    /// Ordem do enum `Flag` do original.
+    private static func rank(_ flag: PlausibilityFlag) -> Int {
+        switch flag {
+        case .none: 0
+        case .weightForAge: 1
+        case .lengthOrHeightForAge: 2
+        case .weightAndLengthOrHeightForAge: 3
+        case .bmiForAge: 4
+        }
+    }
 }

@@ -12,6 +12,10 @@ extension L10n {
         /// `NSMain_LabelNbRecords`: "{n} registro(s)".
         public static let recordCountSuffix = "registro(s)"
 
+        public enum Filter {
+            public static let range = "Intervalo"
+        }
+
         /// Títulos das 19 colunas (`colSurveyDate.HeaderText` a `colEDOB.HeaderText`).
         public enum Column {
             public static let surveyDate = "Data da pesquisa"
@@ -41,7 +45,7 @@ extension L10n {
         let s = Survey.self, c = Survey.Column.self
         return [
             s.required, s.minimumPrefix, s.flagWeightForAge, s.flagLengthOrHeightForAge, s.flagBMIForAge,
-            s.recordCountSuffix,
+            s.recordCountSuffix, s.Filter.range,
             c.surveyDate, c.cluster, c.team, c.displayID, c.household, c.sex, c.dateOfBirth, c.ageInDays, c.ageInMonths,
             c.weight, c.oedema, c.recumbent, c.lengthOrHeight, c.weightForAgeZ, c.lengthOrHeightForAgeZ, c.bmiForAgeZ,
             c.flag, c.weightingFactor, c.estimatedDateOfBirth,
