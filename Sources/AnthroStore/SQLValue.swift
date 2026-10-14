@@ -8,19 +8,50 @@ public enum SQLValue: Equatable, Sendable {
     case text(String)
     case blob(Data)
 
+    private static let posix = Locale(identifier: "en_US_POSIX")
+
     public init(_ decimal: Decimal?) {
-        self = .null
+        guard let decimal else {
+            self = .null
+            return
+        }
+        self = .text(NSDecimalNumber(decimal: decimal).description(withLocale: Self.posix))
     }
 
     public init(_ date: Date?) {
-        self = .null
+        guard let date else {
+            self = .null
+            return
+        }
+        self = .text(Self.calendarDate(date))
     }
 
     public var decimalValue: Decimal? {
-        0
+        switch self {
+        case .text(let text): Decimal(string: text, locale: Self.posix)
+        case .integer(let value): Decimal(value)
+        case .real(let value): Decimal(value)
+        case .null, .blob: nil
+        }
     }
 
+    /// Data de calendário (meia-noite UTC) a partir de TEXT `yyyy-MM-dd`; outro formato devolve `nil`.
     public var dateValue: Date? {
-        Date(timeIntervalSince1970: 0)
+        guard case .text(let text) = self else { return nil }
+        return Self.dateFormatter().date(from: text)
+    }
+
+    private static func calendarDate(_ date: Date) -> String {
+        dateFormatter().string(from: date)
+    }
+
+    private static func dateFormatter() -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = posix
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.isLenient = false
+        return formatter
     }
 }

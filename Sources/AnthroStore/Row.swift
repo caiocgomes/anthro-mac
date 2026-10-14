@@ -7,6 +7,6 @@ public struct Row: Sendable {
     }
 
     public subscript(_ column: String) -> SQLValue {
-        .null
+        values[column] ?? .null
     }
 }
