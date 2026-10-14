@@ -52,6 +52,7 @@ Fonte: `reference/decompiled/bll/WHOAnthroPlus.BLL.Core/AnthroComputation.cs` e 
 - **Inferido:** as tabelas `AnthroStd_*` (por dia) e `AnthroRef_*` (por mês) do `.sdf` equivalem às tabelas públicas da OMS. Base: (a) o limite de 1856 dias do código coincide com o último dia das tabelas expandidas da OMS; (b) as consultas de curva filtram `Age <= 120` e `Age <= 228`, o que só faz sentido se as tabelas forem além desses meses, como as do pacote R `anthroplus` (até 121 e 229).
 - **Desconhecido:** igualdade linha a linha com o `.sdf`. Fechar exige rodar o original em Windows (VM ou CrossOver) e comparar saídas.
 - O pacote R `anthro` vai só até 1826 dias; entre 1827 e 1856 dias a paridade usa as tabelas expandidas com o mesmo algoritmo, não o pacote R.
+- **Observado na paridade (14/10/2026):** o pacote R `anthro` 1.1.0 trata medida em pé abaixo de 9 meses como implausível e não soma 0,7 cm; o AnthroPlus 1.0.4 soma. Fora desse caso, 600 de 600 casos de 0 a 5 anos e 600 de 600 de 5 a 19 anos dão z idênticos aos pacotes R (3.110 z-scores, diferença máxima 0). A identidade das tabelas embutidas com as da OMS usadas pelo R fica observada; com o `.sdf` original continua inferida.
 
 ## Modelo de dados do original (observado nas strings SQL do DAL)
 

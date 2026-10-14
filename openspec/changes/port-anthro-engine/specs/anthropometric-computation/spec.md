@@ -194,7 +194,7 @@ O sistema SHALL classificar cada z-score como `.normal` para $|z| < 1$, `.modera
 O sistema SHALL reproduzir os z-scores das fixtures douradas geradas com `anthro` (0 a 1826 dias) e `anthroplus` (61 a 228 meses) com diferença absoluta de no máximo 0.01 em todos os casos e igualdade exata em pelo menos 99% deles.
 
 #### Scenario: Fixture de padrões
-- **WHEN** o teste calcula os 600 casos de `golden-standards.csv`
+- **WHEN** o teste calcula os 600 casos de `golden-standards.csv`, que não contêm medida em pé abaixo de 9 meses (o pacote `anthro` atual descarta o tipo de medida nessa idade e não soma 0,7 cm, enquanto o original soma)
 - **THEN** todas as diferenças de z são no máximo 0.01 e pelo menos 594 casos são idênticos
 
 #### Scenario: Fixture de referência

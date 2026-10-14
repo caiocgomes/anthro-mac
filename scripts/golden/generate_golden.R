@@ -50,12 +50,15 @@ len <- anthro:::growthstandards_lenanthro
 edge_days <- c(0L, 1L, 730L, 731L, 1095L, 1826L)
 std_rows <- list()
 std_resampled <- 0L
+std_excluded_9mo <- 0L
 i <- 0L
 while (length(std_rows) < N) {
   i <- i + 1L
   sex <- sample(1:2, 1)
   age <- if (i <= length(edge_days) * 2) edge_days[((i - 1L) %% length(edge_days)) + 1L] else sample(0:1826, 1)
   measure <- sample(c("l", "h"), 1)
+  # O anthro atual descarta "em pé" abaixo de 9 meses (c9mo_flag) e não soma 0,7 cm; o AnthroPlus soma.
+  if (measure == "h" && age / 30.4375 < 9) { std_excluded_9mo <- std_excluded_9mo + 1L; next }
   oedema <- if (runif(1) < 0.05) "y" else "n"
   lr <- row_of(len, sex, age)
   wr <- row_of(wei, sex, age)
@@ -73,8 +76,8 @@ while (length(std_rows) < N) {
 }
 std <- do.call(rbind, std_rows)
 write_fixture(std, file.path(out_dir, "golden-standards.csv"),
-              sprintf("%s; semente %d; %d casos; %d sorteios refeitos (medida fora de 40 a 125 cm, peso abaixo de 1 kg ou NA inesperado do R); bordas %s dias",
-                      versions, SEED, N, std_resampled, paste(edge_days, collapse = "/")))
+              sprintf("%s; semente %d; %d casos; %d sorteios refeitos (medida fora de 40 a 125 cm, peso abaixo de 1 kg ou NA inesperado do R); %d sorteios em pé abaixo de 9 meses excluídos (o anthro descarta a medida, o original soma 0,7 cm); bordas %s dias",
+                      versions, SEED, N, std_resampled, std_excluded_9mo, paste(edge_days, collapse = "/")))
 
 # ---------------------------------------------------------------- Referência 2007 (61 a 228 meses), pacote anthroplus
 set.seed(SEED + 1L)
