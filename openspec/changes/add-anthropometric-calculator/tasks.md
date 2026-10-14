@@ -2,10 +2,10 @@
 
 ## 0. Red gate
 
-- [ ] 0.1 Write every scenario test from tests.md (`CalculatorModelTests.swift`, `ApproximateBirthDateTests.swift`, `MeasurementInputTests.swift`, `IndicatorPanelTests.swift`, `GrowthChartModelTests.swift`, `ChartExportTests.swift`, mais `Support/ResultFixtures.swift`) and stubs with the exact signatures from Interface Under Test (neutral return values, no logic)
-- [ ] 0.2 Run the scenario tests with `swift test --filter AnthroFeaturesTests`; confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
-- [ ] 0.3 Commit tests and stubs only as `test(red): add-anthropometric-calculator`; write the SHA in the ledger
-- [ ] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing
+- [x] 0.1 Write every scenario test from tests.md (`CalculatorModelTests.swift`, `ApproximateBirthDateTests.swift`, `MeasurementInputTests.swift`, `IndicatorPanelTests.swift`, `GrowthChartModelTests.swift`, `ChartExportTests.swift`, mais `Support/ResultFixtures.swift`) and stubs with the exact signatures from Interface Under Test (neutral return values, no logic)
+- [x] 0.2 Run the scenario tests with `swift test --filter AnthroFeaturesTests`; confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
+- [x] 0.3 Commit tests and stubs only as `test(red): add-anthropometric-calculator`; write the SHA in the ledger
+- [x] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing (aprovação prévia do usuário em 14/10/2026: changes sem números clínicos seguem do vermelho ao verde sem parada; portão registrado no ledger)
 
 ## 1. Utilitários compartilhados
 
