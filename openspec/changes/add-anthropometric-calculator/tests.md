@@ -605,3 +605,6 @@
 ## Test Changes After Red
 
 <!-- Append-only. Vazio no planejamento. -->
+
+- 2026-10-14, tarefa 3.2 (laço interno): `Tests/AnthroFeaturesTests/GrowthChartRangeUnitTests.swift` com `imcAte228MesesInteirosEntraE229Sai`, `idadeDesconhecidaFicaForaDoIntervalo` e `semZNaoMarcaForaDoIntervalo`. Os testes unitários foram escritos depois do código da regra, contra o pedido de "unit tests first"; para compensar, cada um foi visto falhando por mutação (limite 228 trocado por 229; guarda do z movida para depois da idade) e as mutações foram revertidas. Nenhum teste de cenário mudou.
+- 2026-10-14, tarefa 5.3: `autotesteEncontraOsRecursosDoNucleo` (de `bootstrap-macos-app`) endurecido para exigir que o autoteste carregue as tabelas da OMS por `SelfTest.run(loadTables:)`, e `autotesteFalhaSemAsTabelasDaOMS` acrescentado. Ambos falharam por asserção com o parâmetro ainda ignorado (`Expectation failed: loaded`; `!outcome.passed`) antes da implementação.

@@ -40,6 +40,8 @@ public enum L10n {
     public enum SelfTest {
         public static let ok = "Autoteste concluído: recursos encontrados."
         public static let missingResources = "Autoteste falhou: diretório de recursos 'who' do AnthroCore não encontrado."
+        public static let missingTables = "Autoteste falhou: tabelas da OMS não carregaram:"
+        public static let wrongRowCount = "Autoteste falhou: tabelas da OMS com número de linhas diferente de 1857:"
     }
 
     /// Lista todas as strings do catálogo, para o teste de completude.
@@ -52,7 +54,7 @@ public enum L10n {
             Store.noBackupFound, Store.exportFailed, Store.exportDone, Store.defaultExportName,
             About.title, About.versionLabel, About.attribution, About.references, About.disclaimer,
             About.developmentVersion,
-            SelfTest.ok, SelfTest.missingResources,
+            SelfTest.ok, SelfTest.missingResources, SelfTest.missingTables, SelfTest.wrongRowCount,
         ] + anthroStrings
     }
 }
