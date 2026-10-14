@@ -28,5 +28,13 @@ public struct AddressRecord: Sendable, Equatable {
         self.email = email
     }
 
-    public var displayName: String { "" }
+    /// `Address.DisplayName`: campos preenchidos separados por ", ", " - " antes do país, ou "(Sem dados)", e o ID.
+    public var displayName: String {
+        var text = ""
+        for value in [streetInfo, place, zip, district, province, state] {
+            appendIfNotNull(&text, value, separator: ", ")
+        }
+        appendIfNotNull(&text, country, separator: " - ")
+        return (text.isEmpty ? noDataLabel : text) + idSuffix(id)
+    }
 }

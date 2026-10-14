@@ -9,7 +9,7 @@
 
 ## 1. Persistência de crianças, visitas, pais e endereços
 
-- [ ] 1.1 Implement `Migration002_individual` (tabelas, chaves, `CHECK` de sexo, `ON DELETE CASCADE`, índice) registrada em `Migrations.all`, com teste unitário de que `schemaVersion()` vira 2 e de que a migração roda sobre um banco na versão 1; verified when the unit tests pass
+- [x] 1.1 Implement `Migration002_individual` (tabelas, chaves, `CHECK` de sexo, `ON DELETE CASCADE`, índice) registrada em `Migrations.all`, com teste unitário de que `schemaVersion()` vira 2 e de que a migração roda sobre um banco na versão 1; verified when the unit tests pass
 - [ ] 1.2 Implement mapeamento de `ChildRecord`, `VisitRecord`, `ParentRecord` e `AddressRecord` para linhas (`SQLValue` de `Decimal`, datas e sexo), com `SQLValue` de data no calendário do usuário (D10: grava o dia local, relê ao meio-dia local; o unit test `dataViraTextoDeCalendarioEmUTC` da change 1 é trocado por um no calendário do usuário), unit tests first (inner loop); verified when [tests: childSavedAndReopenedKeepsAllFields] and its unit tests pass
 - [ ] 1.3 Implement `ChildRepository.list(archived:)`, `child(id:)`, `save(_:visits:)` e `VisitRepository` (`visits(childID:)`, `replaceVisits`), com `displayName` e `listTitle`; verified when [tests: childSavedAndReopenedKeepsAllFields, activeListOrdersByDisplayIDWithNilFirst, listTitleWithoutLastName] pass
 - [ ] 1.4 Implement `ParentRepository` e `AddressRepository` (`save`, leitura, `displayName`); verified when [tests: addressDisplayNameJoinsFilledFields, emptyAddressShowsNoDataLabel] pass

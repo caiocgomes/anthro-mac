@@ -40,6 +40,15 @@ public struct ChildRecord: Sendable, Equatable {
         self.isArchived = isArchived
     }
 
-    public var displayName: String { "" }
-    public var listTitle: String { "" }
+    /// `Child.DisplayName`: sobrenome, ", " se já houver texto, e nome.
+    public var displayName: String {
+        var text = lastName ?? ""
+        if !text.isEmpty { text += ", " }
+        return text + (firstName ?? "")
+    }
+
+    /// Linha da lista de `IAMain.LoadChildrenList`: `"{DisplayName} ({DisplayID})"`, com parênteses vazios sem ID.
+    public var listTitle: String {
+        "\(displayName) (\(displayID.map(String.init) ?? ""))"
+    }
 }

@@ -31,5 +31,11 @@ public struct ParentRecord: Sendable, Equatable {
         self.notes = notes
     }
 
-    public var displayName: String { "" }
+    /// `Parent.DisplayName`: sobrenome e nome separados por ", ", ou "(Sem dados)", e o ID entre parênteses.
+    public var displayName: String {
+        var text = ""
+        appendIfNotNull(&text, lastName, separator: ", ")
+        appendIfNotNull(&text, firstName, separator: ", ")
+        return (text.isEmpty ? noDataLabel : text) + idSuffix(id)
+    }
 }

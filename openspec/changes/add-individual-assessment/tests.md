@@ -556,3 +556,7 @@
 | visit-tracking | Nova visita ainda não confirmada | Tests/AnthroFeaturesTests/IndividualAssessment/ChildDetailModelTests.swift | chartInputInsertsUncommittedVisit | nova visita ignorada | c7e3cb1: `ChildDetailModelTests.swift:357 Expectation failed: (input.results.count -> 0) == 3` | | red |
 
 ## Test Changes After Red
+
+- 2026-10-14, tarefa 1.1 (laço interno): `MigrationIndividualUnitTests` acrescentado. Passou na primeira execução porque a migração 2 já existe desde o vermelho (tarefa 0.1, dado de partida); a capacidade de detectar defeito foi vista por mutação (sem o `CHECK (sex IN (1, 2))`, `sexoForaDe1e2EhRecusadoPeloBanco` falhou), revertida.
+- 2026-10-14, tarefa 1.2 (laço interno): `dataViraTextoDeCalendarioEmUTC` de `Tests/AnthroStoreTests/SQLValueUnitTests.swift` (laço interno da `bootstrap-macos-app`) trocado por `dataViraTextoDoDiaDeCalendarioDoUsuario`, pela emenda do D10; falhou por asserção contra o `SQLValue` em UTC (23h30 de 2021-04-01 em São Paulo gravado como "2021-04-02"; leitura à meia-noite UTC) antes da correção. `RecordMappingUnitTests` foi escrito depois do mapeamento e validado por mutação (códigos de sexo trocados), revertida. Nenhum teste de cenário mudou.
+
