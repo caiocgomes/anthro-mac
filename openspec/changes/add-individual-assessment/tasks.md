@@ -5,12 +5,12 @@
 - [ ] 0.1 Write every scenario test from tests.md (67 testes em `Tests/AnthroStoreTests/IndividualAssessment/` e `Tests/AnthroFeaturesTests/IndividualAssessment/`, mais `Support.swift` com `IAFixtures`) and stubs with the exact signatures from Interface Under Test (neutral return values, no logic; `LookupSearchOutcome` stub devolve `.results([])`; a migração 2 já cria as tabelas, porque é dado de partida e não lógica)
 - [ ] 0.2 Run the scenario tests (`swift test --filter IndividualAssessment`); confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
 - [ ] 0.3 Commit tests and stubs only as `test(red): add-individual-assessment`; write the SHA in the ledger
-- [ ] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing; nesta parada, confirmar também a decisão D4 do design (ID automático sobre o banco inteiro)
+- [ ] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing; nesta parada, confirmar também a decisão D4 do design (ID automático sobre o banco inteiro) (aprovação prévia do usuário em 14/10/2026: changes sem números clínicos seguem do vermelho ao verde sem parada; D4 confirmada no mesmo dia; portão registrado no ledger)
 
 ## 1. Persistência de crianças, visitas, pais e endereços
 
 - [ ] 1.1 Implement `Migration002_individual` (tabelas, chaves, `CHECK` de sexo, `ON DELETE CASCADE`, índice) registrada em `Migrations.all`, com teste unitário de que `schemaVersion()` vira 2 e de que a migração roda sobre um banco na versão 1; verified when the unit tests pass
-- [ ] 1.2 Implement mapeamento de `ChildRecord`, `VisitRecord`, `ParentRecord` e `AddressRecord` para linhas (`SQLValue` de `Decimal`, datas e sexo), unit tests first (inner loop); verified when [tests: childSavedAndReopenedKeepsAllFields] and its unit tests pass
+- [ ] 1.2 Implement mapeamento de `ChildRecord`, `VisitRecord`, `ParentRecord` e `AddressRecord` para linhas (`SQLValue` de `Decimal`, datas e sexo), com `SQLValue` de data no calendário do usuário (D10: grava o dia local, relê ao meio-dia local; o unit test `dataViraTextoDeCalendarioEmUTC` da change 1 é trocado por um no calendário do usuário), unit tests first (inner loop); verified when [tests: childSavedAndReopenedKeepsAllFields] and its unit tests pass
 - [ ] 1.3 Implement `ChildRepository.list(archived:)`, `child(id:)`, `save(_:visits:)` e `VisitRepository` (`visits(childID:)`, `replaceVisits`), com `displayName` e `listTitle`; verified when [tests: childSavedAndReopenedKeepsAllFields, activeListOrdersByDisplayIDWithNilFirst, listTitleWithoutLastName] pass
 - [ ] 1.4 Implement `ParentRepository` e `AddressRepository` (`save`, leitura, `displayName`); verified when [tests: addressDisplayNameJoinsFilledFields, emptyAddressShowsNoDataLabel] pass
 - [ ] 1.5 Refactor `Sources/AnthroStore/Individual/`; full suite stays green (`swift test`)
