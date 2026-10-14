@@ -49,7 +49,7 @@ struct MainSplitView: View {
                     }
                 }
             }
-            .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 320)
+            .navigationSplitViewColumnWidth(min: 280, ideal: 300, max: 380)
         } detail: {
             ModulePlaceholderView(section: model.selectedSection)
                 .navigationTitle(model.selectedSection.title)
