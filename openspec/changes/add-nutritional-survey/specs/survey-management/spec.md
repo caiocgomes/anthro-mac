@@ -238,7 +238,7 @@ Quando a idade em meses foi digitada, a coluna de dias SHALL mostrar `Round(mese
 Células de z implausível pelos limites do inquérito SHALL ser destacadas; a coluna de flag SHALL mostrar "P/I", "E/I", "E/I, P/I", "IMC/I" ou vazio, como `Utils.GetLocalizedFlagName`.
 
 #### Scenario: z de estatura implausível
-- **WHEN** um registro tem z de estatura 6.5 e z de peso 1.0 com limites padrão
+- **WHEN** um menino com idade digitada de 72 meses tem peso 24 kg e medida 148 cm (z de peso 1.14, z de estatura 6.51 e z de IMC -4.32) com limites padrão
 - **THEN** só a célula de z de estatura está destacada e a flag é "E/I"
 
 #### Scenario: z ausente sem destaque visível
@@ -253,7 +253,7 @@ Clicar no cabeçalho SHALL ordenar a lista visível em ordem crescente pelo valo
 - **THEN** a ordem após cada clique é (15, 20, ausente), (ausente, 20, 15) e (15, 20, ausente)
 
 #### Scenario: z indefinido ordenado primeiro
-- **WHEN** os z de peso visíveis são 1.00, indefinido e -0.50, e a usuária clica uma vez no cabeçalho de z de peso
+- **WHEN** os z de peso visíveis são 1.00 (menino de 72 meses com 23.52 kg), indefinido (sem peso) e -0.50 (19.20 kg), e a usuária clica uma vez no cabeçalho de z de peso
 - **THEN** a ordem é (indefinido, -0.50, 1.00)
 
 #### Scenario: Troca de coluna recomeça em ordem crescente
@@ -319,7 +319,7 @@ A cópia SHALL gerar texto com a linha de cabeçalhos e as linhas selecionadas n
 Selecionar uma linha SHALL expor o resultado antropométrico do registro e a gravidade de cada z para o painel de resultados; sem seleção, o painel SHALL ficar vazio.
 
 #### Scenario: Linha selecionada
-- **WHEN** a usuária seleciona o registro com z de estatura 2.50
+- **WHEN** a usuária seleciona o registro de um menino com idade digitada de 72 meses e medida 128.27 cm (z de estatura 2.50)
 - **THEN** `selectedResult` é o resultado desse registro e a gravidade de estatura é `.high`
 
 #### Scenario: Seleção removida

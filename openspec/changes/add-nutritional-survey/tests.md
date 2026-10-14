@@ -4,7 +4,7 @@
 
 - **Framework**: swift-testing (`import Testing`, `@Test`, `#expect`, `#require`), com `@MainActor` nos testes de view model.
 - **Full-suite command**: `swift test`
-- **Conventions**: um arquivo por área. Banco real em arquivo temporário (`AnthroDatabase.open(at: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString + ".sqlite"))`), nunca mock do banco. Motor real (`AnthroEngine.shared()`, já entregue por `port-anthro-engine`). Datas criadas em UTC por um helper `day("2021-04-01")`. Fixtures de registro em `Tests/AnthroFeaturesTests/Support/SurveyFixtures.swift` e `Tests/AnthroStoreTests/Support/SurveyFixtures.swift`. Asserções sobre opções padrão comparam com valores literais escritos no teste, nunca com `SurveyOptions.default`, para que o stub neutro não passe. Testes de cenário ficam em arquivos com sufixo `ScenarioTests.swift`; testes unitários do laço interno, em arquivos sem esse sufixo.
+- **Conventions**: um arquivo por área. Banco real em arquivo temporário (`AnthroDatabase.open(at: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString + ".sqlite"))`), nunca mock do banco. Motor real (`AnthroEngine.shared()`, já entregue por `port-anthro-engine`). Datas criadas por um helper `day("2021-04-01")` ao meio-dia do calendário do usuário (`Calendar.current`), a normalização das changes 3 e 4 (D10 da add-individual-assessment), porque o banco grava o dia de calendário do usuário; meia-noite UTC cairia no dia anterior em São Paulo. A migração 3 entra no commit vermelho como dado de partida, como a migração 2 na change 4: os testes de repositório e de tela semeiam linhas por SQL direto, e com a migração vazia falhariam por erro lançado, não por asserção. O vermelho dos dois testes da migração é observado antes, contra a migração 3 registrada com SQL vazio, e registrado no ledger; depois o SQL é preenchido e o vermelho dos demais é observado. Dados de partida de inquéritos e registros entram por SQL direto (`SurveyFixtures.insertSurvey`, `insertRecord`), nunca pelo repositório em teste. Fixtures de registro em `Tests/AnthroFeaturesTests/Support/SurveyFixtures.swift` e `Tests/AnthroStoreTests/Support/SurveyFixtures.swift`. Asserções sobre opções padrão comparam com valores literais escritos no teste, nunca com `SurveyOptions.default`, para que o stub neutro não passe. Testes de cenário ficam em arquivos com sufixo `ScenarioTests.swift`; testes unitários do laço interno, em arquivos sem esse sufixo.
 - **Mutation tool**: manual.
 
 ## Spec-to-Test Mapping
@@ -58,7 +58,7 @@
 - **Test file**: `Tests/AnthroStoreTests/SurveyRepositoryScenarioTests.swift`
 - **Level**: integration
 - **Breaks if**: a migração 3 perde `ON DELETE CASCADE` ou a abertura do banco perde `PRAGMA foreign_keys = ON`.
-- **Expected red**: o teste exige 3 linhas em `records` depois de salvar, antes de excluir; contra o stub, expected 3 rows, got 0.
+- **Expected red**: inquérito e 3 registros semeados por SQL; contra o stub de `delete`, expected 0 rows in `surveys`, got 1.
 
 #### Scenario: Exclusão do inquérito aberto
 - **Test name**: `deletingOpenSurveyClosesDetail`
@@ -576,14 +576,14 @@
 - **Test file**: `Tests/AnthroStoreTests/SurveyMigrationScenarioTests.swift`
 - **Level**: integration
 - **Breaks if**: `Migrations.survey` não é registrada em `Migrations.all`.
-- **Expected red**: expected table `records` to exist, got "no such table" (a migração stub tem SQL vazio).
+- **Expected red**: contra a migração 3 com SQL vazio, expected `sqlite_master` to contain `surveys` and `records`, got neither (ver Conventions).
 
 #### Scenario: Sexo inválido
 - **Test name**: `invalidSexIsRejectedByConstraint`
 - **Test file**: `Tests/AnthroStoreTests/SurveyMigrationScenarioTests.swift`
 - **Level**: integration
 - **Breaks if**: a coluna `sex` perde o `CHECK (sex IN (1, 2))`.
-- **Expected red**: o teste exige que a mensagem do `StoreError.sqlite` contenha "CHECK constraint failed"; contra o stub, got "no such table: records".
+- **Expected red**: o teste exige que a mensagem do `StoreError.sqlite` contenha "CHECK constraint failed"; contra a migração 3 com SQL vazio, got "no such table: surveys" (ver Conventions).
 
 ## Coverage Ledger
 

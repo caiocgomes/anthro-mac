@@ -17,7 +17,7 @@
 
 ## 2. Persistência do inquérito
 
-- [ ] 2.1 Implement `Migration003_survey.swift` (tabelas, cascata, CHECK de sexo, índice) e registrá-la em `Migrations.all`; verified when [tests: migrationThreeCreatesSurveyTables, invalidSexIsRejectedByConstraint] pass
+- [ ] 2.1 Implement `Migration003_survey.swift` (tabelas, cascata, CHECK de sexo, índice) e registrá-la em `Migrations.all` (escrita no vermelho como dado de partida, ver Conventions de tests.md; aqui se confirma o verde e a detecção por mutação do CHECK); verified when [tests: migrationThreeCreatesSurveyTables, invalidSexIsRejectedByConstraint] pass
 - [ ] 2.2 Implement `SurveyRepository` (`list`, `survey`, `records`, `save` transacional com `position`, `setArchived`, `delete`), unit tests first para o mapeamento de `SQLValue` de cada coluna; verified when [tests: newSurveyIsSavedWithTrimmedNameAndNilNotes, blankSurveyNameThrowsNameRequired, activeSurveysAreOrderedByNameThenID, deletingSurveyDeletesItsRecords, failedRecordInsertRollsBackSurveyInsert, recordRoundTripsWithoutLoss] pass with `swift test --filter SurveyRepositoryScenarioTests`
 - [ ] 2.3 Refactor `Sources/AnthroStore/SurveyRepository.swift`; `swift test` stays green
 
