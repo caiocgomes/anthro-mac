@@ -82,11 +82,9 @@ public struct AnthroEngine: Sendable {
             : score(.lengthOrHeightForAge, measurement: adjusted, restricted: false)
 
         // ComputeBMI4Age: edema, peso ou medida não positivos tornam o indicador indefinido.
-        let bmiForAge: IndicatorScore
-        if hasOedema || (weight ?? 0) <= 0 || (adjusted ?? 0) <= 0 {
-            bmiForAge = undefined
-        } else {
-            bmiForAge = score(.bmiForAge, measurement: Anthropometry.exactBMI(weight: weight!, lengthOrHeight: adjusted!), restricted: true)
+        var bmiForAge = undefined
+        if !hasOedema, let weight, let adjusted, weight > 0, adjusted > 0 {
+            bmiForAge = score(.bmiForAge, measurement: Anthropometry.exactBMI(weight: weight, lengthOrHeight: adjusted), restricted: true)
         }
 
         return AnthropometricResult(
