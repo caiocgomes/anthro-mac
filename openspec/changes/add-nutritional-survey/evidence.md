@@ -10,7 +10,7 @@
 ## Test Freeze
 
 - **Command**: `git diff 143cda8..HEAD --stat -- Tests/AnthroCoreTests/SurveyOptionsScenarioTests.swift Tests/AnthroCoreTests/SurveyPlausibilityScenarioTests.swift Tests/AnthroCoreTests/SurveyRecordEvaluationScenarioTests.swift Tests/AnthroFeaturesTests/RecordEditorScenarioTests.swift Tests/AnthroFeaturesTests/SurveyDetailScenarioTests.swift Tests/AnthroFeaturesTests/SurveyFilterScenarioTests.swift Tests/AnthroFeaturesTests/SurveyModuleScenarioTests.swift Tests/AnthroFeaturesTests/SurveyOptionsEditorScenarioTests.swift Tests/AnthroFeaturesTests/SurveyTableScenarioTests.swift Tests/AnthroStoreTests/SurveyMigrationScenarioTests.swift Tests/AnthroStoreTests/SurveyRepositoryScenarioTests.swift`
-- **Changes found**: nenhuma. `git diff 143cda8..HEAD --stat -- Tests/` lista só 8 arquivos novos de testes unitários do laço interno (`SurveyOptionsUnitTests`, `SurveyRecordUnitTests`, `SurveyRepositoryUnitTests`, `RecordEditorUnitTests`, `SurveyRecordRowUnitTests`, `SurveySortFilterUnitTests`, `SurveyOptionsEditorUnitTests`, `SurveyModuleUnitTests`); fixtures e cenários intactos. "Test Changes After Red" continua vazio.
+- **Changes found**: nenhuma. `git diff 143cda8..HEAD --stat -- Tests/` lista só 9 arquivos novos de testes unitários do laço interno (`SurveyOptionsUnitTests`, `SurveyRecordUnitTests`, `SurveyRepositoryUnitTests`, `RecordEditorUnitTests`, `SurveyRecordRowUnitTests`, `SurveySortFilterUnitTests`, `SurveyOptionsEditorUnitTests`, `SurveyModuleUnitTests` e `SheetGuardUnitTests`, este da correção da verificação); fixtures e cenários intactos. "Test Changes After Red" continua vazio.
 - **Ajuste anterior ao vermelho**: `MigrationIndividualUnitTests` (teste unitário da change 4, não cenário desta) passou a esperar `schemaVersion() >= 2` em vez de `== 2`, porque registrar a migração 3 muda a versão do banco novo; está no commit vermelho.
 
 ## Mutation Checks
@@ -25,9 +25,9 @@
 ## Full Suite
 
 - **Command**: `swift package clean && swift test`
-- **Result**: 408 testes passaram, 0 falharam, 0 pulados (276 anteriores, 82 cenários e 50 unitários desta change, 2 deles da correção da verificação em `SheetGuardUnitTests`); código de saída 0. Rodada do zero depois do commit `83175ec`.
+- **Result**: 408 testes passaram, 0 falharam, 0 pulados (276 anteriores, 82 cenários e 50 unitários desta change, 2 deles da correção da verificação em `SheetGuardUnitTests`); código de saída 0. Rodada do zero depois do commit `83175ec` e de novo em `d5c1bf1`, na segunda verificação, com o mesmo resultado.
 - **Output clean**: sim; nenhuma linha com `warning:` ou `error:` na saída do build e dos testes.
-- **App**: `scripts/build-app.sh` terminou com código 0 (autoteste positivo), sem avisos, e `codesign --verify build/AnthroPlus.app` com código 0 (critério mecânico das tarefas 7.1 e 7.2), no build de `83175ec`. O app não estava aberto ao reconstruir o bundle.
+- **App**: `scripts/build-app.sh` terminou com código 0 (autoteste positivo), sem avisos, e `codesign --verify build/AnthroPlus.app` com código 0 (critério mecânico das tarefas 7.1 e 7.2), no build de `83175ec`. O app não estava aberto ao reconstruir o bundle. O bundle atual em `build/` saiu às 16h26min53s de 14/10/2026, depois da última alteração em `Sources/` (`SurveyListView.swift`, 16h26min03s, commit `d5c1bf1`); nenhum arquivo de `Sources/` é mais novo que ele, e `codesign --verify` voltou a dar 0 na segunda verificação.
 - **Verificação manual (7.2, N/A não executável)**: não feita nesta sessão; a tela do Mac estava bloqueada e a regra do projeto é não enviar entrada sintética. Fica para o Caio: criar inquérito, incluir 3 registros, ordenar, filtrar, copiar para o Numbers, salvar, reabrir o app e conferir os dados.
 
 ## TDD Path
@@ -40,8 +40,8 @@ TDD path: superpowers
 
 | Dimension | Status |
 |-----------|--------|
-| Completeness | 37/37 tarefas; 35 requisitos ADDED, todos com implementação localizada |
-| Correctness | 35/35 requisitos mapeados; 82/82 cenários com teste verde no ledger |
+| Completeness | 37/37 tarefas; 39 requisitos ADDED, todos com implementação localizada |
+| Correctness | 39/39 requisitos mapeados; 82/82 cenários com teste verde no ledger |
 | Coherence | D1 a D13 seguidas; decisões novas da implementação registradas em D14 |
 
 - **CRITICAL**: nenhum.
@@ -53,6 +53,14 @@ TDD path: superpowers
 - **SUGGESTION**: se a gravação der certo e só a releitura da lista falhar, a mensagem diz que não foi possível salvar, embora o dado esteja gravado (`SurveyDetailPane.save`, `SurveyModuleModel.settle`).
 - **Conferido e correto pela revisão**: ida e volta de registro existente pelo editor sem mudança, chaves estáveis e `editorKeys` no inquérito aberto, seleção da tabela zerada a cada mudança da lista visível, `save()` atribuindo ids por posição, repositório transacional com exclusão dos registros removidos e ordem por `position`, ciclo de pendências do módulo (inclusive falha ao salvar e inquérito nunca salvo) e a reatribuição do guarda do `AppModel` pelos hosts.
 - **Não verificado**: comportamento visual e de teclado da interface (tarefa 7.2, N/A não executável), inclusive o `DatePicker` com campo digitado pela metade; fica com a conferência manual do Caio.
+
+### Segunda verificação (14/10/2026, 19h20, em `d5c1bf1`)
+
+- **Conferência mecânica**: o delta tem 39 requisitos ADDED e 82 cenários (a primeira passada registrou 35 requisitos por erro de contagem; todo requisito tem cenário, então nenhum ficou sem mapa). Cada cenário tem entrada em tests.md, a função de teste existe no arquivo indicado e a linha do ledger está verde com SHA posterior a `143cda8` e contido em `HEAD`. Nenhum arquivo de cenário ou fixture mudou depois do vermelho.
+- **Sexo no banco**: `SurveyRepositoryUnitTests` confere o valor cru da coluna `sex` (menino 1, menina 2, convenção D3), o que uma ida e volta sozinha não pegaria; a ordenação usa o enum do motor (`girl = 0`, `boy = 1`), menina antes de menino, como D6.
+- **Desempenho com 500 registros** (risco do design): medido com um teste temporário, apagado em seguida, sobre 500 registros de 60 a 120 meses mais 1 incluído pelo editor, só na camada de modelo (a renderização da `Table` não entra). Em release: carga 76 ms, inclusão 0,3 ms, ordenação por z de IMC 5 ms, aplicar opções (recalcula as 501 linhas) 73 ms, cópia das 501 linhas 48 ms, texto e destaque de todas as células 47 ms, salvar 84 ms. Em debug, nenhum passo passou de 89 ms. Não há otimização a fazer. Não ficou teste permanente: o design dizia "medir no teste de integração", mas a medição nunca entrou em tasks.md.
+- **Ligações das views revistas por leitura**: ⌘C por `onCopyCommand` na tabela; ordenação pelo cabeçalho por um `sortOrder` que só repassa a coluna clicada a `sort(by:)`, e o indicador sai ao limpar o filtro porque `sortColumn` volta a `nil`; as três folhas do inquérito com `editingSheet()`; `d5c1bf1` só separa a caixa do nome na lista. Continuam sem teste automatizado e sem exercício na interface.
+- **Resultado**: nenhum CRITICAL e nenhum WARNING novo; a SUGGESTION da mensagem de gravação continua aberta. Cobertura de cenários parcialmente verificada na camada de view (7.2 pendente).
 
 ## Decision
 
