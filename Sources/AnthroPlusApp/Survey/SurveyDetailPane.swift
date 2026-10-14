@@ -23,6 +23,7 @@ struct SurveyDetailPane: View {
     @State private var selection: Set<Int> = []
     @State private var recordEditor: RecordEditorPresentation?
     @State private var optionsEditor: OptionsEditorPresentation?
+    @State private var definitionEditor: AdditionalDataEditorPresentation?
     @State private var showingFilter = false
     @State private var confirmingDiscard = false
     @State private var confirmingDelete = false
@@ -54,6 +55,12 @@ struct SurveyDetailPane: View {
             SurveyOptionsSheet(editor: presentation.editor) { try detail.applyOptions($0) }
                 .editingSheet()
         }
+        .sheet(item: $definitionEditor) { presentation in
+            AdditionalDataEditorSheet(editor: presentation.editor, title: L10n.AddData.definitionTitle) {
+                try detail.applyAdditionalDataDefinition($0)
+            }
+            .editingSheet()
+        }
         .sheet(isPresented: $showingFilter) {
             SurveyFilterSheet(columns: detail.columns) { detail.applyFilter($0) }
                 .editingSheet()
@@ -84,6 +91,11 @@ struct SurveyDetailPane: View {
             }
             VStack(alignment: .trailing, spacing: 8) {
                 HStack {
+                    Button {
+                        definitionEditor = AdditionalDataEditorPresentation(editor: detail.makeAdditionalDataDefinitionEditor())
+                    } label: {
+                        Label(L10n.AddData.surveyButton, systemImage: "list.bullet.rectangle")
+                    }
                     Button { optionsEditor = OptionsEditorPresentation(editor: detail.makeOptionsEditor()) } label: {
                         Label(L10n.Survey.options, systemImage: "slider.horizontal.3")
                     }
@@ -219,38 +231,71 @@ struct SurveyTableView: View {
     }
 
     var body: some View {
-        Table(items, selection: $selection, sortOrder: sortOrder) {
-            Group {
-                column(.surveyDate)
-                column(.cluster)
-                column(.team)
-                column(.displayID)
-                column(.household)
-                column(.sex)
-                column(.dateOfBirth)
-                column(.ageInDays)
-                column(.ageInMonths)
-                column(.weight)
+        // `TableColumnForEach` e `if` no construtor de colunas exigem macOS 14.4 (design D13 da add-additional-data);
+        // antes disso a tabela mostra só as colunas fixas, e filtro e cópia continuam incluindo as adicionais.
+        if #available(macOS 14.4, *) {
+            decorated(Table(items, selection: $selection, sortOrder: sortOrder) {
+                fixedColumns
+                TableColumnForEach(additionalColumns, id: \.self) { column in
+                    TableColumn(SurveyTableColumn.additional(column).title,
+                                sortUsing: SurveyColumnSort(column: .additional(column))) { item in
+                        SurveyCell(row: item.row, column: .additional(column), numeric: isNumeric(column))
+                    }
+                }
+            })
+        } else {
+            decorated(Table(items, selection: $selection, sortOrder: sortOrder) { fixedColumns })
+        }
+    }
+
+    @TableColumnBuilder<Item, SurveyColumnSort>
+    private var fixedColumns: some TableColumnContent<Item, SurveyColumnSort> {
+        Group {
+            column(.surveyDate)
+            column(.cluster)
+            column(.team)
+            column(.displayID)
+            column(.household)
+            column(.sex)
+            column(.dateOfBirth)
+            column(.ageInDays)
+            column(.ageInMonths)
+            column(.weight)
+        }
+        Group {
+            column(.oedema)
+            column(.recumbent)
+            column(.lengthOrHeight)
+            column(.weightForAgeZ)
+            column(.lengthOrHeightForAgeZ)
+            column(.bmiForAgeZ)
+            column(.flag)
+            column(.weightingFactor)
+            column(.estimatedDateOfBirth)
+        }
+    }
+
+    private func decorated(_ table: some View) -> some View {
+        table
+            .contextMenu(forSelectionType: Int.self) { _ in
+            } primaryAction: { indices in
+                if indices.count == 1, let index = indices.first { onEdit(index) }
             }
-            Group {
-                column(.oedema)
-                column(.recumbent)
-                column(.lengthOrHeight)
-                column(.weightForAgeZ)
-                column(.lengthOrHeightForAgeZ)
-                column(.bmiForAgeZ)
-                column(.flag)
-                column(.weightingFactor)
-                column(.estimatedDateOfBirth)
+            .onCopyCommand {
+                [NSItemProvider(object: detail.clipboardText(selectedVisibleIndices: IndexSet(selection)) as NSString)]
             }
+    }
+
+    private var additionalColumns: [AdditionalDataColumn] {
+        detail.columns.compactMap { if case .additional(let column) = $0 { column } else { nil } }
+    }
+
+    /// Número alinhado à direita, pelo tipo da variável na definição do inquérito.
+    private func isNumeric(_ column: AdditionalDataColumn) -> Bool {
+        if case .number = detail.additionalDataDefinition.variable(section: column.sectionID, variable: column.variableID)?.kind {
+            return true
         }
-        .contextMenu(forSelectionType: Int.self) { _ in
-        } primaryAction: { indices in
-            if indices.count == 1, let index = indices.first { onEdit(index) }
-        }
-        .onCopyCommand {
-            [NSItemProvider(object: detail.clipboardText(selectedVisibleIndices: IndexSet(selection)) as NSString)]
-        }
+        return false
     }
 
     private func column(_ fixed: SurveyColumn) -> TableColumn<Item, SurveyColumnSort, SurveyCell, Text> {

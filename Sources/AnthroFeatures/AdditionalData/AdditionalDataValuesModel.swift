@@ -28,6 +28,9 @@ public final class AdditionalDataValuesModel {
         public let sectionIndex: Int
         public let variableIndex: Int
         public let kind: AdditionalDataEditorModel.KindChoice
+        /// Descrições traduzidas da seção e da variável (por exemplo, "horas por semana").
+        public let sectionDescription: String?
+        public let hint: String?
     }
 
     public private(set) var fields: [Field] = []
@@ -62,7 +65,9 @@ public final class AdditionalDataValuesModel {
                 }
                 fields.append(Field(id: key, sectionTitle: AdditionalDataLabels.display(section.identifier),
                                     label: AdditionalDataLabels.display(variable.identifier),
-                                    sectionIndex: sectionIndex, variableIndex: variableIndex, kind: kind))
+                                    sectionIndex: sectionIndex, variableIndex: variableIndex, kind: kind,
+                                    sectionDescription: AdditionalDataLabels.displayDescription(section.description),
+                                    hint: AdditionalDataLabels.displayDescription(variable.description)))
             }
         }
         loadedTexts = texts

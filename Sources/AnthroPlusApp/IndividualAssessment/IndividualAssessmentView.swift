@@ -7,12 +7,15 @@ final class IndividualAssessmentSession {
     let database: AnthroDatabase
     let list: ChildListModel
     let detail: ChildDetailModel
+    /// Modelo de dados adicionais; `nil` se não puder ser lido, e então o botão de gerenciar fica desabilitado.
+    let additionalData: IndividualAdditionalDataModel?
     var isLoaded = false
 
     init(database: AnthroDatabase, settings: AppSettings, tables: GrowthReferenceTables) {
         self.database = database
         list = ChildListModel(database: database, settings: settings)
         detail = ChildDetailModel(database: database, settings: settings, engine: AnthroEngine(tables: tables))
+        additionalData = try? IndividualAdditionalDataModel(repository: AdditionalDataTemplateRepository(database: database))
     }
 }
 
@@ -55,6 +58,7 @@ struct IndividualAssessmentView: View {
     @State private var selectedChildID: Int64?
     @State private var pending: PendingNavigation?
     @State private var errorMessage: String?
+    @State private var templateEditor: AdditionalDataEditorPresentation?
 
     private var list: ChildListModel { session.list }
     private var detail: ChildDetailModel { session.detail }
@@ -70,6 +74,26 @@ struct IndividualAssessmentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(\.locale, Locale(identifier: "pt_BR"))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                // `IAMain.miManageAddData_Click`: o modelo vale para as visitas criadas daqui em diante.
+                Button {
+                    if let model = session.additionalData {
+                        templateEditor = AdditionalDataEditorPresentation(editor: model.makeEditor())
+                    }
+                } label: {
+                    Label(L10n.AddData.manage, systemImage: "list.bullet.rectangle")
+                }
+                .help(L10n.AddData.manage)
+                .disabled(session.additionalData == nil)
+            }
+        }
+        .sheet(item: $templateEditor) { presentation in
+            AdditionalDataEditorSheet(editor: presentation.editor, title: L10n.AddData.templateTitle) {
+                try session.additionalData?.commit($0)
+            }
+            .editingSheet()
+        }
         .task {
             selectedChildID = detail.draft?.id
             guard !session.isLoaded else { return }
@@ -168,7 +192,7 @@ enum IAErrorText {
         case VisitValidationError.invalidMeasurement, ParentValidationError.invalidMeasurement:
             L10n.IndividualAssessment.invalidMeasurement
         case StoreError.recordNotFound: L10n.IndividualAssessment.recordGone
-        default: "\(L10n.IndividualAssessment.databaseError) \(error)"
+        default: AdditionalDataErrorText.knownMessage(for: error) ?? "\(L10n.IndividualAssessment.databaseError) \(error)"
         }
     }
 }

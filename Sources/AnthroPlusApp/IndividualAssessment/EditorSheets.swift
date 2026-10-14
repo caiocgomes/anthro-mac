@@ -73,6 +73,7 @@ struct VisitEditorSheet: View {
                     TextField(L10n.IndividualAssessment.notes, text: $editor.notes, axis: .vertical)
                         .lineLimit(2...4)
                 }
+                AdditionalDataFormSection(model: editor.additionalData)
             }
             .formStyle(.grouped)
             .datePickerStyle(.stepperField)
@@ -90,7 +91,7 @@ struct VisitEditorSheet: View {
             }
             .padding(16)
         }
-        .frame(width: 520)
+        .frame(width: 520, height: editor.additionalData.fields.isEmpty ? nil : 700)
         .environment(\.locale, Locale(identifier: "pt_BR"))
         .navigationTitle(editor.isDateEditable ? L10n.IndividualAssessment.newVisit : L10n.IndividualAssessment.editVisit)
         .sheet(item: $chart) { GrowthChartSheet(model: $0.model) }

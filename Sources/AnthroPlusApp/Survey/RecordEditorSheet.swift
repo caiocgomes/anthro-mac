@@ -75,6 +75,7 @@ struct RecordEditorSheet: View {
                     TextField(L10n.Survey.notes, text: $editor.notes, axis: .vertical)
                         .lineLimit(2...4)
                 }
+                AdditionalDataFormSection(model: editor.additionalData)
             }
             .formStyle(.grouped)
             .datePickerStyle(.stepperField)
