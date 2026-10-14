@@ -28,7 +28,10 @@ public struct SurveyRecord: Sendable, Equatable, Identifiable {
         self.weightingFactor = weightingFactor
     }
 
+    /// `Record.DisplayName`: sobrenome, ", " se já houver texto, e nome.
     public var displayName: String {
-        ""
+        var text = lastName ?? ""
+        if !text.isEmpty { text += ", " }
+        return text + (firstName ?? "")
     }
 }
