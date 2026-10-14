@@ -13,7 +13,7 @@ public struct ChildListRow: Identifiable, Sendable, Equatable {
     public let title: String
 }
 
-/// Lista de crianças de `IAMain` (ativas, arquivo e resultados de busca).
+/// Lista de crianças de `IAMain` (ativas, arquivo e resultados de busca) com as regras de `RefreshUI`.
 @MainActor
 @Observable
 public final class ChildListModel {
@@ -23,23 +23,72 @@ public final class ChildListModel {
 
     @ObservationIgnored private let database: AnthroDatabase
     @ObservationIgnored private let settings: AppSettings
+    @ObservationIgnored private let repository: ChildRepository
+    @ObservationIgnored private var lastCriteria = ChildSearchCriteria()
 
     public init(database: AnthroDatabase, settings: AppSettings) {
         self.database = database
         self.settings = settings
+        repository = ChildRepository(database: database)
     }
 
-    public var canCreate: Bool { false }
-    public var canDelete: Bool { false }
-    public var canArchive: Bool { false }
-    public var canRestore: Bool { false }
-    public var canSearch: Bool { false }
+    /// No arquivo só há restaurar e voltar.
+    public var canCreate: Bool { mode != .archive }
+    public var canSearch: Bool { mode != .archive }
+    public var canDelete: Bool { mode != .archive && !checkedIDs.isEmpty }
+    public var canArchive: Bool { mode != .archive && !checkedIDs.isEmpty }
+    public var canRestore: Bool { mode == .archive && !checkedIDs.isEmpty }
 
-    public func load() throws {}
-    public func showActive() throws {}
-    public func showArchive() throws {}
-    public func search(_ criteria: ChildSearchCriteria) throws {}
-    public func archiveChecked() throws {}
-    public func restoreChecked() throws {}
-    public func deleteChecked() throws {}
+    /// Abertura do módulo: limpeza de órfãos (`Global.Init` chama `CleanupOrphans`, design D6) e lista ativa.
+    public func load() throws {
+        try OrphanCleanup.run(in: database)
+        try showActive()
+    }
+
+    public func showActive() throws {
+        try show(.active, try repository.list(archived: false))
+    }
+
+    public func showArchive() throws {
+        try show(.archive, try repository.list(archived: true))
+    }
+
+    /// Critérios todos vazios encerram a busca e voltam à lista ativa (`OnSearchCleared`).
+    public func search(_ criteria: ChildSearchCriteria) throws {
+        guard !criteria.isEmpty else {
+            try showActive()
+            return
+        }
+        lastCriteria = criteria
+        try show(.searchResults, try repository.search(criteria))
+    }
+
+    public func archiveChecked() throws {
+        try repository.setArchived(Array(checkedIDs), archived: true)
+        try reload()
+    }
+
+    public func restoreChecked() throws {
+        try repository.setArchived(Array(checkedIDs), archived: false)
+        try reload()
+    }
+
+    public func deleteChecked() throws {
+        try repository.delete(Array(checkedIDs))
+        try reload()
+    }
+
+    private func reload() throws {
+        switch mode {
+        case .active: try showActive()
+        case .archive: try showArchive()
+        case .searchResults: try show(.searchResults, try repository.search(lastCriteria))
+        }
+    }
+
+    private func show(_ mode: ChildListMode, _ children: [ChildRecord]) throws {
+        self.mode = mode
+        rows = children.compactMap { child in child.id.map { ChildListRow(id: $0, title: child.listTitle) } }
+        checkedIDs = []
+    }
 }
