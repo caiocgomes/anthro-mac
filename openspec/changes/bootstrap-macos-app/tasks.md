@@ -2,9 +2,9 @@
 
 ## 0. Red gate
 
-- [ ] 0.1 Write every scenario test from tests.md (`AppShellTests.swift`, `ClinicalFormatTests.swift`, `LocalDataStoreTests.swift`) and stubs with the exact signatures from Interface Under Test (neutral return values per tests.md Test Strategy, no logic); inclui `Package.swift` com os seis targets e os targets de teste, `git init` e `.gitignore` (`.build/`, `build/`, `.rlib/`, `reference/decompiled/`, `*.exe`), porque sem o manifesto os testes não compilam
-- [ ] 0.2 Run the scenario tests (`swift test`); confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
-- [ ] 0.3 Commit tests, stubs and manifest only as `test(red): bootstrap-macos-app`; write the SHA in the ledger
+- [x] 0.1 Write every scenario test from tests.md (`AppShellTests.swift`, `ClinicalFormatTests.swift`, `LocalDataStoreTests.swift`) and stubs with the exact signatures from Interface Under Test (neutral return values per tests.md Test Strategy, no logic); inclui `Package.swift` com os seis targets e os targets de teste, `git init` e `.gitignore` (`.build/`, `build/`, `.rlib/`, `reference/decompiled/`, `*.exe`), porque sem o manifesto os testes não compilam
+- [x] 0.2 Run the scenario tests (`swift test`); confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
+- [x] 0.3 Commit tests, stubs and manifest only as `test(red): bootstrap-macos-app`; write the SHA in the ledger
 - [ ] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing
 
 ## 1. Shell do app (app-shell)

@@ -260,36 +260,36 @@
 | app-shell | Produto inexistente | shell | N/A (non-executable): `swift build --product AnthroPlusMac` falha | executável renomeado | | | N/A (non-executable) |
 | app-shell | Bundle gerado e assinado | shell | N/A (non-executable): PlistBuddy + `codesign --verify` + `--self-test` | bundle de recursos não copiado | | | N/A (non-executable) |
 | app-shell | Arquivo de versão ausente | shell | N/A (non-executable): código 2 e stderr com VERSION | versão padrão silenciosa | | | N/A (non-executable) |
-| app-shell | Primeira abertura | AppShellTests.swift | primeiraAberturaMostraCalculadora | ordem ou idioma dos títulos | | | planned |
-| app-shell | Reabertura lembra a seção | AppShellTests.swift | reaberturaLembraASecao | lastSection não gravado | | | planned |
-| app-shell | Atalho válido | AppShellTests.swift | atalhoValidoSelecionaModulo | índice base 0 | | | planned |
-| app-shell | Atalho fora do intervalo | AppShellTests.swift | atalhoForaDoIntervaloNaoMudaSelecao | clamp no último módulo | | | planned |
-| app-shell | Valores padrão | AppShellTests.swift | configuracoesTemValoresPadraoDoOriginal | padrão false | | | planned |
-| app-shell | Valor alterado sobrevive a nova instância | AppShellTests.swift | configuracaoAlteradaSobreviveANovaInstancia | só em memória | | | planned |
-| app-shell | Catálogo sem buracos | AppShellTests.swift | catalogoDeTextosSemBuracos | string vazia | | | planned |
-| app-shell | Nome do app | AppShellTests.swift | nomeDoAppEAnthroPlus | nome oficial da OMS | | | planned |
-| app-shell | Formatação com vírgula | ClinicalFormatTests.swift | formatacaoComVirgulaDecimal | Locale.current | | | planned |
-| app-shell | Valor indefinido | ClinicalFormatTests.swift | valorIndefinidoViraND | nil vira 0,00 | | | planned |
-| app-shell | Leitura de vírgula e ponto | ClinicalFormatTests.swift | leituraAceitaVirgulaEPonto | só ponto | | | planned |
-| app-shell | Texto inválido | ClinicalFormatTests.swift | textoInvalidoNaoViraNumero | vírgulas viram ponto | | | planned |
-| app-shell | Conteúdo do Sobre | AppShellTests.swift | sobreAtribuiAOMS | atribuição sem versão | | | planned |
-| app-shell | Versão ausente no bundle | AppShellTests.swift | versaoAusenteViraDesenvolvimento | string vazia | | | planned |
-| local-data-store | Primeira abertura cria diretório e banco | LocalDataStoreTests.swift | primeiraAberturaCriaDiretorioEBanco | diretório não criado | | | planned |
-| local-data-store | Diretório sem permissão de escrita | LocalDataStoreTests.swift | diretorioSemPermissaoFalha | erro engolido | | | planned |
-| local-data-store | Banco novo chega à última versão | LocalDataStoreTests.swift | bancoNovoChegaAUltimaVersao | user_version não gravado | | | planned |
-| local-data-store | Migração com defeito | LocalDataStoreTests.swift | migracaoComDefeitoFazRollback | versão gravada fora da transação | | | planned |
-| local-data-store | Pragmas ativos | LocalDataStoreTests.swift | pragmasDeChaveEstrangeiraEWal | foreign_keys omitido | | | planned |
-| local-data-store | Arquivo corrompido | LocalDataStoreTests.swift | arquivoCorrompidoNaoESobrescrito | arquivo recriado | | | planned |
-| local-data-store | Backup com nome datado | LocalDataStoreTests.swift | backupComNomeDatado | fuso local | | | planned |
-| local-data-store | Rotação dos backups | LocalDataStoreTests.swift | rotacaoMantemDezBackups | apaga o mais novo | | | planned |
-| local-data-store | Primeira abertura sem banco | LocalDataStoreTests.swift | primeiraAberturaSemBancoNaoFazBackup | backup vazio | | | planned |
-| local-data-store | Restauração com backup disponível | LocalDataStoreTests.swift | restauracaoUsaBackupMaisRecente | escolhe o mais antigo | | | planned |
-| local-data-store | Sem backup para restaurar | LocalDataStoreTests.swift | semBackupLancaErro | banco vazio criado | | | planned |
-| local-data-store | Cópia exportada | LocalDataStoreTests.swift | copiaExportadaAbreComMesmaVersao | cópia sem WAL | | | planned |
-| local-data-store | Destino já existe | LocalDataStoreTests.swift | destinoExistenteNaoESobrescrito | destino removido | | | planned |
-| local-data-store | Transação aninhada confirma com a externa | LocalDataStoreTests.swift | transacaoAninhadaConfirmaComAExterna | BEGIN aninhado | | | planned |
-| local-data-store | Erro na aninhada capturado pela externa | LocalDataStoreTests.swift | erroNaAninhadaDesfazSoOTrechoDela | rollback total | | | planned |
-| local-data-store | Erro propagado desfaz tudo | LocalDataStoreTests.swift | erroPropagadoDesfazTudo | commit com erro | | | planned |
+| app-shell | Primeira abertura | AppShellTests.swift | primeiraAberturaMostraCalculadora | ordem ou idioma dos títulos | 2a22a33: `AppShellTests.swift:31 Expectation failed: (AppSection.allCases.map(\.title) -> ["", "", ""]) == ([` | | red |
+| app-shell | Reabertura lembra a seção | AppShellTests.swift | reaberturaLembraASecao | lastSection não gravado | 2a22a33: `AppShellTests.swift:46 Expectation failed: (second.selectedSection -> .calculator) == .nutritionalSurvey` | | red |
+| app-shell | Atalho válido | AppShellTests.swift | atalhoValidoSelecionaModulo | índice base 0 | 2a22a33: `AppShellTests.swift:53 Expectation failed: (model.handleShortcut(number: 2) -> false) == true` | | red |
+| app-shell | Atalho fora do intervalo | AppShellTests.swift | atalhoForaDoIntervaloNaoMudaSelecao | clamp no último módulo | 2a22a33: `AppShellTests.swift:63 Expectation failed: (model.selectedSection -> .calculator) == .individualAssessment` | | red |
+| app-shell | Valores padrão | AppShellTests.swift | configuracoesTemValoresPadraoDoOriginal | padrão false | 2a22a33: `AppShellTests.swift:69 Expectation failed: (settings.useEnterForNextControl -> false) == true` | | red |
+| app-shell | Valor alterado sobrevive a nova instância | AppShellTests.swift | configuracaoAlteradaSobreviveANovaInstancia | só em memória | 2a22a33: `AppShellTests.swift:82 Expectation failed: (second.lastSection -> .calculator) == .individualAssessment` | | red |
+| app-shell | Catálogo sem buracos | AppShellTests.swift | catalogoDeTextosSemBuracos | string vazia | 2a22a33: `AppShellTests.swift:88 Expectation failed: (all.count -> 0) > 20` | | red |
+| app-shell | Nome do app | AppShellTests.swift | nomeDoAppEAnthroPlus | nome oficial da OMS | 2a22a33: `AppShellTests.swift:95 Expectation failed: (L10n.appName -> "") == "AnthroPlus"` | | red |
+| app-shell | Formatação com vírgula | ClinicalFormatTests.swift | formatacaoComVirgulaDecimal | Locale.current | 2a22a33: `ClinicalFormatTests.swift:14 Expectation failed: (ClinicalFormat.string(dec("16.5"), places: 1) -> "") == "16,5"` | | red |
+| app-shell | Valor indefinido | ClinicalFormatTests.swift | valorIndefinidoViraND | nil vira 0,00 | 2a22a33: `ClinicalFormatTests.swift:21 Expectation failed: (ClinicalFormat.string(nil, places: 2) -> "") == "N/D"` | | red |
+| app-shell | Leitura de vírgula e ponto | ClinicalFormatTests.swift | leituraAceitaVirgulaEPonto | só ponto | 2a22a33: `ClinicalFormatTests.swift:26 Expectation failed: (ClinicalFormat.parseDecimal("16,5") -> 0) == (dec("16.5") -> 16.5)` | | red |
+| app-shell | Texto inválido | ClinicalFormatTests.swift | textoInvalidoNaoViraNumero | vírgulas viram ponto | 2a22a33: `ClinicalFormatTests.swift:33 Expectation failed: (ClinicalFormat.parseDecimal("1,2,3") -> 0) == nil` | | red |
+| app-shell | Conteúdo do Sobre | AppShellTests.swift | sobreAtribuiAOMS | atribuição sem versão | 2a22a33: `AppShellTests.swift:100 Expectation failed: (L10n.About.attribution -> "").contains("WHO AnthroPlus 1.0.4")` | | red |
+| app-shell | Versão ausente no bundle | AppShellTests.swift | versaoAusenteViraDesenvolvimento | string vazia | 2a22a33: `AppShellTests.swift:118 Expectation failed: (AboutInfo.version(bundle: bundleWithoutVersion) -> "") == "desenvolvimento"` | | red |
+| local-data-store | Primeira abertura cria diretório e banco | LocalDataStoreTests.swift | primeiraAberturaCriaDiretorioEBanco | diretório não criado | 2a22a33: `LocalDataStoreTests.swift:64 Expectation failed: (AnthroDatabase.defaultDirectory().path -> "/dev/null").hasSuffix("Library/Application S...` | | red |
+| local-data-store | Diretório sem permissão de escrita | LocalDataStoreTests.swift | diretorioSemPermissaoFalha | erro engolido | 2a22a33: `LocalDataStoreTests.swift:86 Issue recorded` | | red |
+| local-data-store | Banco novo chega à última versão | LocalDataStoreTests.swift | bancoNovoChegaAUltimaVersao | user_version não gravado | 2a22a33: `LocalDataStoreTests.swift:102 Expectation failed: try db.schemaVersion() == 2` | | red |
+| local-data-store | Migração com defeito | LocalDataStoreTests.swift | migracaoComDefeitoFazRollback | versão gravada fora da transação | 2a22a33: `LocalDataStoreTests.swift:117 Issue recorded` | | red |
+| local-data-store | Pragmas ativos | LocalDataStoreTests.swift | pragmasDeChaveEstrangeiraEWal | foreign_keys omitido | 2a22a33: `LocalDataStoreTests.swift:140 Expectation failed: try db.pragma("foreign_keys") == "1"` | | red |
+| local-data-store | Arquivo corrompido | LocalDataStoreTests.swift | arquivoCorrompidoNaoESobrescrito | arquivo recriado | 2a22a33: `LocalDataStoreTests.swift:154 Issue recorded` | | red |
+| local-data-store | Backup com nome datado | LocalDataStoreTests.swift | backupComNomeDatado | fuso local | 2a22a33: `LocalDataStoreTests.swift:173 Expectation failed: (result?.lastPathComponent -> "null") == "anthroplus-20261014-103005.sqlite"` | | red |
+| local-data-store | Rotação dos backups | LocalDataStoreTests.swift | rotacaoMantemDezBackups | apaga o mais novo | 2a22a33: `LocalDataStoreTests.swift:198 Expectation failed: (names.count -> 0) == 10` | | red |
+| local-data-store | Primeira abertura sem banco | LocalDataStoreTests.swift | primeiraAberturaSemBancoNaoFazBackup | backup vazio | 2a22a33: `LocalDataStoreTests.swift:213 Expectation failed: (result -> file:///dev/null) == nil` | | red |
+| local-data-store | Restauração com backup disponível | LocalDataStoreTests.swift | restauracaoUsaBackupMaisRecente | escolhe o mais antigo | 2a22a33: `LocalDataStoreTests.swift:236 Expectation failed: (store.state -> .closed) == .ready` | | red |
+| local-data-store | Sem backup para restaurar | LocalDataStoreTests.swift | semBackupLancaErro | banco vazio criado | 2a22a33: `LocalDataStoreTests.swift:251 Expectation failed: an error was expected but none was thrown` | | red |
+| local-data-store | Cópia exportada | LocalDataStoreTests.swift | copiaExportadaAbreComMesmaVersao | cópia sem WAL | 2a22a33: `LocalDataStoreTests.swift:268 Expectation failed: (store -> AnthroStore.StoreController).database -> nil -> nil` | | red |
+| local-data-store | Destino já existe | LocalDataStoreTests.swift | destinoExistenteNaoESobrescrito | destino removido | 2a22a33: `LocalDataStoreTests.swift:286 Expectation failed: (store -> AnthroStore.StoreController).database -> nil -> nil` | | red |
+| local-data-store | Transação aninhada confirma com a externa | LocalDataStoreTests.swift | transacaoAninhadaConfirmaComAExterna | BEGIN aninhado | 2a22a33: `LocalDataStoreTests.swift:323 Expectation failed: (depthInside -> 0) == 2` | | red |
+| local-data-store | Erro na aninhada capturado pela externa | LocalDataStoreTests.swift | erroNaAninhadaDesfazSoOTrechoDela | rollback total | 2a22a33: `LocalDataStoreTests.swift:345 Expectation failed: try names(in: db) == [.text("A"), .text("C")]` | | red |
+| local-data-store | Erro propagado desfaz tudo | LocalDataStoreTests.swift | erroPropagadoDesfazTudo | commit com erro | 2a22a33: `LocalDataStoreTests.swift:366 Expectation failed: (visibleB -> -1) == 1` | | red |
 
 ## Test Changes After Red
 
