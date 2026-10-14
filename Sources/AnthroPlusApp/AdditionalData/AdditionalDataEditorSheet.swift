@@ -193,11 +193,13 @@ private struct TrimmedTextField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField(title, text: $text)
+        // Só a digitação envia, no próprio setter: mostrar o item não pode aparar um identificador lido de arquivo.
+        TextField(title, text: Binding(get: { text }, set: { newValue in
+            text = newValue
+            if focused { onChange(newValue) }
+        }))
             .focused($focused)
             .onAppear { text = initial }
-            // Só a digitação envia: mostrar o item não pode aparar um identificador lido de arquivo.
-            .onChange(of: text) { _, newValue in if focused { onChange(newValue) } }
     }
 }
 
@@ -213,7 +215,15 @@ private struct LimitField: View {
 
     var body: some View {
         LabeledContent(title) {
-            TextField(title, text: $text, prompt: Text(L10n.AddData.noLimit))
+            TextField(title, text: Binding(get: { text }, set: { newValue in
+                text = newValue
+                guard focused else { return }
+                if newValue.trimmingCharacters(in: .whitespaces).isEmpty {
+                    onChange(nil)
+                } else if let number = ClinicalFormat.parseDecimal(newValue) {
+                    onChange(number)
+                }
+            }), prompt: Text(L10n.AddData.noLimit))
                 .labelsHidden()
                 .textFieldStyle(.roundedBorder)
                 .multilineTextAlignment(.trailing)
@@ -221,14 +231,6 @@ private struct LimitField: View {
                 .frame(width: 140)
                 .focused($focused)
                 .onAppear { text = Self.format(value) }
-                .onChange(of: text) { _, newValue in
-                    guard focused else { return }
-                    if newValue.trimmingCharacters(in: .whitespaces).isEmpty {
-                        onChange(nil)
-                    } else if let number = ClinicalFormat.parseDecimal(newValue) {
-                        onChange(number)
-                    }
-                }
                 .onChange(of: focused) { _, isFocused in if !isFocused { text = Self.format(value) } }
                 .onChange(of: value) { _, newValue in if !focused { text = Self.format(newValue) } }
         }

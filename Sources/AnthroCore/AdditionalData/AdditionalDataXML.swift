@@ -91,13 +91,28 @@ public enum AdditionalDataXML {
     }
 
     private static func text(_ value: String) -> String {
-        value.replacingOccurrences(of: "&", with: "&amp;")
+        xmlCharacters(value).replacingOccurrences(of: "&", with: "&amp;")
             .replacingOccurrences(of: "<", with: "&lt;")
             .replacingOccurrences(of: ">", with: "&gt;")
     }
 
     private static func attribute(_ value: String) -> String {
         text(value).replacingOccurrences(of: "\"", with: "&quot;")
+    }
+
+    /// Só caracteres da produção `Char` do XML 1.0: texto colado com quebra suave do Word (U+000B) ou quebra de página
+    /// (U+000C) ganha um espaço, e os demais caracteres de controle saem. Gravados crus, tornariam o XML ilegível para o
+    /// próprio app (e para o original), e o registro perderia todas as células adicionais.
+    private static func xmlCharacters(_ value: String) -> String {
+        var scalars = String.UnicodeScalarView()
+        for scalar in value.unicodeScalars {
+            switch scalar.value {
+            case 0x9, 0xA, 0xD, 0x20...0xD7FF, 0xE000...0xFFFD, 0x10000...0x10FFFF: scalars.append(scalar)
+            case 0xB, 0xC: scalars.append(" ")
+            default: break
+            }
+        }
+        return String(scalars)
     }
 }
 

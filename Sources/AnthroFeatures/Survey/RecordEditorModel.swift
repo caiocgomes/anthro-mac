@@ -276,9 +276,14 @@ public final class RecordEditorModel {
         // Edema `nil` de um registro gravado fica `nil` se continuar desmarcado; registro novo grava falso.
         record.hasOedema = hasOedema ? true : (editing != nil && editing?.hasOedema == nil ? nil : false)
         record.notes = IndividualAssessment.nullable(notes)
-        record.additionalDataXML = additionalData.isUnchanged
-            ? editing?.additionalDataXML ?? survey.additionalDataDefinitionXML ?? "<Data />"
-            : AdditionalDataXML.encode(additionalValues)
+        // Sem alteração: o registro existente volta com o próprio XML, mesmo `nil`; o novo copia a definição.
+        if !additionalData.isUnchanged {
+            record.additionalDataXML = AdditionalDataXML.encode(additionalValues)
+        } else if let editing {
+            record.additionalDataXML = editing.additionalDataXML
+        } else {
+            record.additionalDataXML = survey.additionalDataDefinitionXML ?? "<Data />"
+        }
         return record
     }
 

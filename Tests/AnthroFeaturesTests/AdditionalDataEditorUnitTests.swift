@@ -80,12 +80,13 @@ struct AdditionalDataEditorUnitTests {
         #expect(throws: AdditionalDataEditorError.duplicateIdentifier(section: "A", variable: nil)) { try e.apply() }
     }
 
-    @Test func changingToTextOrToSameKindKeepsIdentifierAndClearsValue() {
+    /// `rbType_CheckedChanged` não dispara no tipo já marcado: escolher de novo o mesmo tipo não apaga os limites.
+    @Test func choosingTheSameKindKeepsLimitsAndOtherKindClearsThem() {
         let e = AdditionalDataEditorModel(definition: AdditionalData(sections: [AdditionalDataSection(identifier: "A",
             variables: [numberVariable("n", value: 3, minimum: 0, maximum: 9)])]))
         e.selection = .variable(section: 0, variable: 0)
         e.setKind(.number)
-        #expect(vars(e, 0).dropFirst(0).first == numberVariable("n"))
+        #expect(vars(e, 0).dropFirst(0).first == numberVariable("n", value: 3, minimum: 0, maximum: 9))
         e.setKind(.text)
         #expect(vars(e, 0).dropFirst(0).first == textVariable("n"))
     }

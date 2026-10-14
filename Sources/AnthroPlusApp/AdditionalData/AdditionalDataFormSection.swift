@@ -58,8 +58,8 @@ struct AdditionalDataFormSection: View {
     }
 }
 
-/// Número digitado como texto: cada tecla vai ao modelo, e o texto só é reescrito com 2 casas ao sair do campo, para
-/// não mudar o número enquanto se digita.
+/// Número digitado como texto: cada tecla vai ao modelo no próprio setter (antes de um Return que confirme a folha), e o
+/// texto só é reescrito com 2 casas ao sair do campo, para não mudar o número enquanto se digita.
 private struct AdditionalNumberField: View {
     let model: AdditionalDataValuesModel
     let field: AdditionalDataValuesModel.Field
@@ -70,7 +70,10 @@ private struct AdditionalNumberField: View {
     var body: some View {
         LabeledContent(field.label) {
             VStack(alignment: .trailing, spacing: 4) {
-                TextField(field.label, text: $text)
+                TextField(field.label, text: Binding(get: { text }, set: { newValue in
+                    text = newValue
+                    if focused { model.setNumber(newValue, section: field.sectionIndex, variable: field.variableIndex) }
+                }))
                     .labelsHidden()
                     .textFieldStyle(.roundedBorder)
                     .multilineTextAlignment(.trailing)
@@ -78,9 +81,6 @@ private struct AdditionalNumberField: View {
                     .frame(width: 140)
                     .focused($focused)
                     .onAppear { text = current }
-                    .onChange(of: text) { _, newValue in
-                        if focused { model.setNumber(newValue, section: field.sectionIndex, variable: field.variableIndex) }
-                    }
                     .onChange(of: focused) { _, isFocused in if !isFocused { text = current } }
                 if let warning = model.warnings[field.id] {
                     Label(warning, systemImage: "exclamationmark.triangle.fill")
@@ -97,10 +97,13 @@ private struct AdditionalNumberField: View {
     }
 }
 
-/// Data opcional (`NullableDateTimePicker`): marcar "Informar data" mostra o seletor.
+/// Data opcional (`NullableDateTimePicker`): marcar "Informar data" mostra o seletor; desmarcar e marcar de novo volta à
+/// última data escolhida, e não a hoje.
 private struct AdditionalDateField: View {
     let model: AdditionalDataValuesModel
     let field: AdditionalDataValuesModel.Field
+
+    @State private var lastDate: Date?
 
     var body: some View {
         let date = model.date(section: field.sectionIndex, variable: field.variableIndex)
@@ -108,8 +111,11 @@ private struct AdditionalDateField: View {
             HStack {
                 Toggle(L10n.AddData.informDate, isOn: Binding(
                     get: { date != nil },
-                    set: { model.setDate($0 ? (date ?? Date()) : nil, section: field.sectionIndex,
-                                         variable: field.variableIndex) }))
+                    set: { isOn in
+                        if !isOn { lastDate = date ?? lastDate }
+                        model.setDate(isOn ? (date ?? lastDate ?? Date()) : nil, section: field.sectionIndex,
+                                      variable: field.variableIndex)
+                    }))
                 if let date {
                     DatePicker(field.label, selection: Binding(
                         get: { date },

@@ -84,4 +84,18 @@ struct SurveyAdditionalDataUnitTests {
         let column = try #require(m.columns.last)
         #expect(m.visibleRows.first?.text(column) == "")
     }
+
+    @Test func applyingAnUnchangedDefinitionKeepsTheStoredText() throws {
+        for stored in [#"<Data><Cat ID="A" Descr=""><Num Min="0,5" Max="" ID="n" Descr="" /></Cat></Data>"#,
+                       #"<Data><Cat ID="A" /></Data>"#] {
+            let m = detail(definition: stored)
+            try m.applyAdditionalDataDefinition(m.makeAdditionalDataDefinitionEditor())
+            #expect(!m.hasUnsavedChanges, "\(stored)")
+            m.name = "Escola B"
+            try m.save()
+            let id = try #require(m.survey.id)
+            #expect(try SurveyRepository(database: db).survey(id: id).additionalDataDefinitionXML == stored)
+        }
+    }
 }
+

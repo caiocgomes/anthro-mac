@@ -51,4 +51,10 @@ struct RecordAdditionalDataUnitTests {
         e.additionalData.setNumber("x", section: 0, variable: 0)
         #expect(throws: AdditionalDataValueError(issues: [.invalid(section: "A", variable: "n")])) { try e.makeRecord() }
     }
+
+    @Test func untouchedExistingRecordWithoutXMLStaysWithout() throws {
+        let e = editor(record: record(nil), definition: #"<Data><Cat ID="Escola" Descr="" /></Data>"#)
+        #expect(try e.makeRecord().additionalDataXML == nil)
+    }
 }
+

@@ -84,5 +84,19 @@ struct AdditionalDataUnitTests {
             try AdditionalDataXML.decode(#"<Data><Cat Descr=""></Cat></Data>"#)
         }
     }
+
+    @Test func pastedControlCharactersDoNotMakeUnreadableXML() throws {
+        let data = AdditionalData(sections: [AdditionalDataSection(identifier: "Escola\u{0B}A", description: "x\u{00}y", variables: [
+            AdditionalDataVariable(identifier: "t", kind: .text("3º ano\u{0B}B\u{0C}C\u{1B}\u{FFFE}")),
+        ])])
+        let reread = try AdditionalDataXML.decode(AdditionalDataXML.encode(data))
+        #expect(reread.sections.first?.identifier == "Escola A")
+        #expect(reread.sections.first?.description == "xy")
+        #expect(reread.variable(section: "Escola A", variable: "t")?.kind == .text("3º ano B C"))
+        let kept = AdditionalData(sections: [AdditionalDataSection(identifier: "S", variables: [
+            AdditionalDataVariable(identifier: "t", kind: .text("linha 1\nlinha 2\ttab 😀")),
+        ])])
+        #expect(try AdditionalDataXML.decode(AdditionalDataXML.encode(kept)) == kept)
+    }
 }
 

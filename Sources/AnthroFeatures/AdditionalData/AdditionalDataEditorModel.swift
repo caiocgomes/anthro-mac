@@ -87,9 +87,15 @@ public final class AdditionalDataEditorModel {
     }
 
     /// `rbType_CheckedChanged`: nova variável do tipo escolhido na mesma posição, com identificador e descrição, sem
-    /// valor nem limites.
+    /// valor nem limites; o mesmo tipo de novo não muda nada, porque o rádio já marcado não dispara o evento.
     public func setKind(_ kind: KindChoice) {
         guard case .variable(let section, let variable) = selection, isValid(section, variable) else { return }
+        let current: KindChoice = switch definition.sections[section].variables[variable].kind {
+        case .text: .text
+        case .number: .number
+        case .date: .date
+        }
+        guard kind != current else { return }
         let kindValue: AdditionalDataVariable.Kind = switch kind {
         case .text: .text(nil)
         case .number: .number(value: nil, minimum: nil, maximum: nil)

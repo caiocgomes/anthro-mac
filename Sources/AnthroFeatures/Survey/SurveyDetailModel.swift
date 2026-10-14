@@ -201,9 +201,11 @@ public final class SurveyDetailModel {
     }
 
     /// Definição aplicada marca pendência e refaz as colunas (`SetModified` e `BindRecordsToGrid`); os registros
-    /// existentes guardam os seus próprios dados (D6).
+    /// existentes guardam os seus próprios dados (D6). Sem mudança, o texto gravado fica intacto, inclusive o ilegível
+    /// ou com vírgula decimal vindo do Windows (D11).
     public func applyAdditionalDataDefinition(_ editor: AdditionalDataEditorModel) throws {
         let applied = try editor.apply()
+        guard applied != additionalDataDefinition else { return }
         setDefinition(AdditionalDataXML.encode(applied))
         if let sortColumn, !columns.contains(sortColumn) {
             self.sortColumn = nil
