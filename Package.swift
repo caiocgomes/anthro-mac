@@ -26,7 +26,7 @@ let package = Package(
             dependencies: ["AnthroCore"],
             resources: [.copy("Fixtures")]
         ),
-        .testTarget(name: "AnthroStoreTests", dependencies: ["AnthroStore"]),
+        .testTarget(name: "AnthroStoreTests", dependencies: ["AnthroStore", "AnthroCore"]),
         .testTarget(
             name: "AnthroIOTests",
             dependencies: ["AnthroIO"],
