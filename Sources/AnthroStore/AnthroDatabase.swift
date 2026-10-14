@@ -99,17 +99,21 @@ public final class AnthroDatabase: @unchecked Sendable {
             result = try body()
         } catch {
             depth -= 1
-            try? executeScript(level == 0 ? "ROLLBACK" : "ROLLBACK TO sp_\(level); RELEASE sp_\(level)")
+            rollback(level: level)
             throw error
         }
         depth -= 1
         do {
             try executeScript(level == 0 ? "COMMIT" : "RELEASE sp_\(level)")
         } catch {
-            try? executeScript(level == 0 ? "ROLLBACK" : "ROLLBACK TO sp_\(level); RELEASE sp_\(level)")
+            rollback(level: level)
             throw error
         }
         return result
+    }
+
+    private func rollback(level: Int) {
+        try? executeScript(level == 0 ? "ROLLBACK" : "ROLLBACK TO sp_\(level); RELEASE sp_\(level)")
     }
 
     /// Nível de aninhamento atual: 0 fora de transação, 1 na externa, 2 na primeira aninhada.
