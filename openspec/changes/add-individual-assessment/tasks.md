@@ -2,10 +2,10 @@
 
 ## 0. Red gate
 
-- [ ] 0.1 Write every scenario test from tests.md (67 testes em `Tests/AnthroStoreTests/IndividualAssessment/` e `Tests/AnthroFeaturesTests/IndividualAssessment/`, mais `Support.swift` com `IAFixtures`) and stubs with the exact signatures from Interface Under Test (neutral return values, no logic; `LookupSearchOutcome` stub devolve `.results([])`; a migração 2 já cria as tabelas, porque é dado de partida e não lógica)
-- [ ] 0.2 Run the scenario tests (`swift test --filter IndividualAssessment`); confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
-- [ ] 0.3 Commit tests and stubs only as `test(red): add-individual-assessment`; write the SHA in the ledger
-- [ ] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing; nesta parada, confirmar também a decisão D4 do design (ID automático sobre o banco inteiro) (aprovação prévia do usuário em 14/10/2026: changes sem números clínicos seguem do vermelho ao verde sem parada; D4 confirmada no mesmo dia; portão registrado no ledger)
+- [x] 0.1 Write every scenario test from tests.md (67 testes em `Tests/AnthroStoreTests/IndividualAssessment/` e `Tests/AnthroFeaturesTests/IndividualAssessment/`, mais `Support.swift` com `IAFixtures`) and stubs with the exact signatures from Interface Under Test (neutral return values, no logic; `LookupSearchOutcome` stub devolve `.results([])`; a migração 2 já cria as tabelas, porque é dado de partida e não lógica)
+- [x] 0.2 Run the scenario tests (`swift test --filter IndividualAssessment`); confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
+- [x] 0.3 Commit tests and stubs only as `test(red): add-individual-assessment`; write the SHA in the ledger
+- [x] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing; nesta parada, confirmar também a decisão D4 do design (ID automático sobre o banco inteiro) (aprovação prévia do usuário em 14/10/2026: changes sem números clínicos seguem do vermelho ao verde sem parada; D4 confirmada no mesmo dia; portão registrado no ledger)
 
 ## 1. Persistência de crianças, visitas, pais e endereços
 
