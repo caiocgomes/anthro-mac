@@ -439,8 +439,8 @@
 | anthropometric-computation | Fronteiras das faixas | AnthropometricComputationTests.swift | fronteirasDasFaixasDeGravidade | `<=` nas fronteiras | 0da1e12: `AnthropometricComputationTests.swift:282 Expectation failed: (SeverityClassifier.severity(d("0.99")) -> .undefined) == .normal` | 532c740 | green |
 | anthropometric-computation | Negativo extremo e indefinido | AnthropometricComputationTests.swift | negativoExtremoEIndefinido | sem valor absoluto | 0da1e12: `AnthropometricComputationTests.swift:290 Expectation failed: (SeverityClassifier.severity(d("-3.50")) -> .undefined) == .extreme` | 532c740 | green |
 | anthropometric-computation | Peso para idade aos 121 meses informados | AnthropometricComputationTests.swift | pesoParaIdadeAos121MesesInformados | meses recalculados dos dias | 0da1e12: `AnthropometricComputationTests.swift:299 Expectation failed: (result.weightForAge -> IndicatorScore(zScore: Optional(0), percentile: Optional(0))) =...` | dfea316 | green |
-| anthropometric-computation | Fixture de padrões | GoldenParityTests.swift | fixtureDePadroesBateComAnthro | limiar de 0,7 cm errado | 0da1e12: `GoldenParityTests.swift:93 Expectation failed: (comparison.maxDifference -> 99) <= (d("0.01") -> 0.01)` | | red |
-| anthropometric-computation | Fixture de referência | GoldenParityTests.swift | fixtureDeReferenciaBateComAnthroplus | sem interpolação | 0da1e12: `GoldenParityTests.swift:102 Expectation failed: (comparison.maxDifference -> 99) <= (d("0.01") -> 0.01)` | | red |
+| anthropometric-computation | Fixture de padrões | GoldenParityTests.swift | fixtureDePadroesBateComAnthro | limiar de 0,7 cm errado | 0da1e12: `GoldenParityTests.swift:93 Expectation failed: (comparison.maxDifference -> 99) <= (d("0.01") -> 0.01)` | ecbf18d | green |
+| anthropometric-computation | Fixture de referência | GoldenParityTests.swift | fixtureDeReferenciaBateComAnthroplus | sem interpolação | 0da1e12: `GoldenParityTests.swift:102 Expectation failed: (comparison.maxDifference -> 99) <= (d("0.01") -> 0.01)` | ecbf18d | green |
 
 ## Test Changes After Red
 

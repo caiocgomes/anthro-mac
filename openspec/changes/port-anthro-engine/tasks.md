@@ -23,15 +23,15 @@
 - [x] 2.4 Implementar `ZScore.lms` (fórmula LMS, ramos ajustados, valor não finito vira nil) e `ZScore.centile` com os coeficientes truncados, unit tests first (inner loop: L negativo, z exatamente -3 e 3); verified when [tests: estaturaEmMais2Dp, estaturaAlemDe3DpNaoEAjustada, pesoAcimaDe3DpUsaAjuste, pesoAbaixoDeMenos3DpUsaAjuste, percentisDeZConhecidos, percentilAlemDe3DpEIndefinido] pass
 - [x] 2.5 Implementar `AnthroEngine.result` (arredondamento de entradas, faixa, sexo, edema, mínimos, peso só até 121 meses, meses informados preservados) e a sobrecarga por datas; verified when [tests: ultimaIdadeValidaEPrimeiraForaDosLimites, sexoAusenteZeraResultados, idadeAusenteDaFaixaDesconhecida, referenciaIgnoraOModoDeMedida, pesoComTresCasasArredondaAntes, pesoAusenteZeraPesoEImc, medidaInvalidaZeraEstatura, pesoNaMedianaDaZeroEPercentil50, criancaComEdemaZeraPesoEImc, pesoAbaixoDoMinimoZeraPeso, ultimaIdadeComPesoParaIdade, primeiraIdadeSemPesoParaIdade, pesoParaIdadeAos121MesesInformados] pass
 - [x] 2.6 Implementar `Plausibility` e `SeverityClassifier`; verified when [tests: limitesDosIntervalosDePlausibilidade, pesoEEstaturaImplausiveisAoMesmoTempo, fronteirasDasFaixasDeGravidade, negativoExtremoEIndefinido] pass
-- [ ] 2.7 Rodar a paridade e investigar cada divergência pela causa raiz antes de qualquer ajuste; verified when [tests: fixtureDePadroesBateComAnthro, fixtureDeReferenciaBateComAnthroplus] pass
-- [ ] 2.8 Refactor `AnthroEngine` e helpers numéricos (nomes, duplicação entre ramos ajustados); `swift test` stays green
+- [x] 2.7 Rodar a paridade e investigar cada divergência pela causa raiz antes de qualquer ajuste; verified when [tests: fixtureDePadroesBateComAnthro, fixtureDeReferenciaBateComAnthroplus] pass
+- [x] 2.8 Refactor `AnthroEngine` e helpers numéricos (nomes, duplicação entre ramos ajustados); `swift test` stays green
 
 ## 3. Verification
 
-- [ ] 3.1 Mutation check for growth-reference-data: trocar a regra de par da interpolação por "sempre mês inferior", ver `imcDeMeninosAos61eMeioMeses` falhar, reverter
-- [ ] 3.2 Mutation check for anthropometric-computation: remover o ramo `z > 3` de `ZScore.lms`, ver `pesoAcimaDe3DpUsaAjuste` falhar, reverter
-- [ ] 3.3 Mutation check for anthropometric-computation: trocar `<= 1856` por `< 1856` em `AgeMath.ageRange`, ver `ultimoDiaDosPadroesEPrimeiroDaReferencia` falhar, reverter
-- [ ] 3.4 Run the full suite fresh (`swift test`); all green, output free of errors and warnings
+- [x] 3.1 Mutation check for growth-reference-data: trocar a regra de par da interpolação por "sempre mês inferior", ver `imcDeMeninosAos61eMeioMeses` falhar, reverter
+- [x] 3.2 Mutation check for anthropometric-computation: remover o ramo `z > 3` de `ZScore.lms`, ver `pesoAcimaDe3DpUsaAjuste` falhar, reverter
+- [x] 3.3 Mutation check for anthropometric-computation: trocar `<= 1856` por `< 1856` em `AgeMath.ageRange`, ver `ultimoDiaDosPadroesEPrimeiroDaReferencia` falhar, reverter
+- [x] 3.4 Run the full suite fresh (`swift test`); all green, output free of errors and warnings
 
 ## Workflow follow-up
 
