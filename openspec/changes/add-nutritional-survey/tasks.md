@@ -2,10 +2,11 @@
 
 ## 0. Red gate
 
-- [ ] 0.1 Write every scenario test from tests.md and stubs with the exact signatures from Interface Under Test (neutral return values, no logic)
-- [ ] 0.2 Run the scenario tests; confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
-- [ ] 0.3 Commit tests and stubs only as `test(red): add-nutritional-survey`; write the SHA in the ledger
-- [ ] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing
+- [x] 0.1 Write every scenario test from tests.md and stubs with the exact signatures from Interface Under Test (neutral return values, no logic)
+- [x] 0.2 Run the scenario tests; confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
+- [x] 0.3 Commit tests and stubs only as `test(red): add-nutritional-survey`; write the SHA in the ledger
+- [x] 0.4 STOP: show the user the failing tests and wait for explicit approval before implementing
+  - Portão registrado sem parada: esta change não fixa números clínicos; por decisão do Caio (14/10/2026), a parada no vermelho vale só para `port-anthro-engine` e `add-survey-analysis`.
 
 ## 1. Domínio do inquérito em AnthroCore
 
