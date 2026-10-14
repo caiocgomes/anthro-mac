@@ -11,9 +11,19 @@ public struct OrphanCleanupResult: Sendable, Equatable {
     }
 }
 
-/// Mães, pais e endereços sem criança (`CleanupOrphans` do original, design D6).
+/// Mães, pais e endereços sem criança (`Mothers._DELETEORPHANS` e equivalentes do original, design D6).
 public enum OrphanCleanup {
     @discardableResult public static func run(in database: AnthroDatabase) throws -> OrphanCleanupResult {
-        OrphanCleanupResult(mothers: 0, fathers: 0, addresses: 0)
+        try database.transaction {
+            func deleteOrphans(_ table: String, _ key: String) throws -> Int {
+                try database.execute(
+                    "DELETE FROM \(table) WHERE NOT EXISTS (SELECT 1 FROM children WHERE children.\(key) = \(table).\(key))")
+                guard case .integer(let count) = try database.query("SELECT changes() AS n").first?["n"] else { return 0 }
+                return Int(count)
+            }
+            return OrphanCleanupResult(mothers: try deleteOrphans("mothers", "mother_id"),
+                                       fathers: try deleteOrphans("fathers", "father_id"),
+                                       addresses: try deleteOrphans("addresses", "address_id"))
+        }
     }
 }

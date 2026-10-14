@@ -34,7 +34,19 @@ public final class AddressRepository {
         try database.query("SELECT * FROM addresses WHERE address_id = ?", [.integer(id)]).first.map(Self.address)
     }
 
-    public func search(text: String, limit: Int = 50) throws -> LookupSearchOutcome<AddressRecord> { .results([]) }
+    /// `Addresses._SEARCH`: texto contido em qualquer campo; ordem por país, estado, província, distrito, CEP, local,
+    /// logradouro e ID.
+    public func search(text: String, limit: Int = 50) throws -> LookupSearchOutcome<AddressRecord> {
+        let all = try database.query(
+            """
+            SELECT * FROM addresses ORDER BY country COLLATE NOCASE, state COLLATE NOCASE, province COLLATE NOCASE,
+                district COLLATE NOCASE, zip COLLATE NOCASE, place COLLATE NOCASE, street_info COLLATE NOCASE, address_id
+            """
+        ).map(Self.address)
+        return lookupSearch(all, text: text, limit: limit) {
+            [$0.streetInfo, $0.place, $0.zip, $0.district, $0.province, $0.state, $0.country, $0.phoneNumber, $0.email]
+        }
+    }
 
     static func address(_ row: Row) -> AddressRecord {
         AddressRecord(id: row.int64("address_id"), streetInfo: row.string("street_info"), place: row.string("place"),

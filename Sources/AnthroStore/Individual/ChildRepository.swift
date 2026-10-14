@@ -56,7 +56,10 @@ public final class ChildRepository {
                 && (lastName.map { NameMatcher.matches(pattern: $0, value: child.lastName) } ?? true)
         }
     }
-    public func maxDisplayID() throws -> Int? { nil }
+    /// Maior ID de exibição entre todas as crianças, ativas e arquivadas (desvio deliberado D4).
+    public func maxDisplayID() throws -> Int? {
+        try database.query("SELECT MAX(display_id) AS max_id FROM children").first?.int("max_id")
+    }
 
     /// Grava a criança (inclui ou atualiza) e substitui as suas visitas numa só transação (design D3).
     @discardableResult public func save(_ child: ChildRecord, visits: [VisitRecord]) throws -> ChildRecord {
@@ -92,8 +95,27 @@ public final class ChildRepository {
         }
     }
 
-    public func setArchived(_ ids: [Int64], archived: Bool) throws {}
-    public func delete(_ ids: [Int64]) throws {}
+    /// Arquiva ou restaura as crianças, numa transação; as visitas ficam.
+    public func setArchived(_ ids: [Int64], archived: Bool) throws {
+        try database.transaction {
+            for id in ids {
+                try database.execute(
+                    "UPDATE children SET is_archived = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE child_id = ?",
+                    [.flag(archived), .integer(id)])
+            }
+        }
+    }
+
+    /// `Children.Delete` para cada criança (visitas e criança) e a limpeza de órfãos, numa só transação (design D6).
+    public func delete(_ ids: [Int64]) throws {
+        try database.transaction {
+            for id in ids {
+                try database.execute("DELETE FROM visits WHERE child_id = ?", [.integer(id)])
+                try database.execute("DELETE FROM children WHERE child_id = ?", [.integer(id)])
+            }
+            try OrphanCleanup.run(in: database)
+        }
+    }
 
     static func child(_ row: Row) -> ChildRecord? {
         guard let dateOfBirth = row.date("date_of_birth") else { return nil }

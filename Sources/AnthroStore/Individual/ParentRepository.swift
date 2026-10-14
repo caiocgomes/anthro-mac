@@ -39,8 +39,13 @@ public final class ParentRepository {
             .first.map { Self.parent($0, kind: kind) }
     }
 
+    /// `Mothers._SEARCH`: texto contido no nome, sobrenome ou notas; ordem por sobrenome, nome e ID.
     public func search(kind: ParentKind, text: String, limit: Int = 50) throws -> LookupSearchOutcome<ParentRecord> {
-        .results([])
+        let table = Self.table(kind)
+        let all = try database.query(
+            "SELECT * FROM \(table.name) ORDER BY last_name COLLATE NOCASE, first_name COLLATE NOCASE, \(table.key)"
+        ).map { Self.parent($0, kind: kind) }
+        return lookupSearch(all, text: text, limit: limit) { [$0.firstName, $0.lastName, $0.notes] }
     }
 
     static func table(_ kind: ParentKind) -> (name: String, key: String) {

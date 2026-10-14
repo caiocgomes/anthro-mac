@@ -70,3 +70,14 @@ let noDataLabel = "(Sem dados)"
 func idSuffix(_ id: Int64?) -> String {
     " (\(id.map(String.init) ?? ""))"
 }
+
+/// `ComboSearch.DoSearch`: conta antes, mais que o limite dá `.tooManyResults` e zero dá `.noResults`. O texto é literal
+/// (sem curingas), contido em algum campo, sem diferenciar maiúsculas (design D13).
+func lookupSearch<Item>(_ items: [Item], text: String, limit: Int, fields: (Item) -> [String?]) -> LookupSearchOutcome<Item> {
+    let needle = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    let found = needle.isEmpty ? items : items.filter { item in
+        fields(item).contains { $0?.range(of: needle, options: .caseInsensitive) != nil }
+    }
+    if found.count > limit { return .tooManyResults }
+    return found.isEmpty ? .noResults : .results(found)
+}
