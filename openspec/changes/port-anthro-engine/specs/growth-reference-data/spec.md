@@ -37,7 +37,7 @@ Para idade em meses não inteira, o sistema SHALL interpolar L, M e S linearment
 
 #### Scenario: Último intervalo válido de estatura
 - **WHEN** o sistema busca a referência de estatura para idade, sexo feminino, 228.5 meses
-- **THEN** o resultado não é `nil` e M fica estritamente entre o M de 228 e o M de 229 meses
+- **THEN** o resultado é L = 1, M = 163.1548, S = 0.04009, igual à linha de 228 meses, porque a linha de 229 da OMS repete a de 228 para permitir a interpolação até o fim do mês 228
 
 #### Scenario: Mês superior ausente
 - **WHEN** o sistema busca a referência de IMC para idade, sexo masculino, 229.5 meses

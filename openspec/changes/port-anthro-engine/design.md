@@ -59,7 +59,7 @@ O cálculo do WHO AnthroPlus está em `reference/decompiled/bll/WHOAnthroPlus.BL
 
 **D7. Percentil com os coeficientes truncados.** `ZScore.centile` replica literalmente `AnthroComputation.Centile`, inclusive 0.31938 e 1.82125 (os valores de Abramowitz e Stegun são 0.319381530 e 1.821255978). A diferença é menor que $10^{-5}$ pontos percentuais, mas a fidelidade é o objetivo.
 
-**D8. Data sem hora.** `AgeMath.ageInDays` usa `Calendar(identifier: .gregorian)` com `TimeZone(identifier: "UTC")` e `dateComponents([.day], from:to:)` sobre o início do dia de cada data, evitando que horário de verão desloque um dia.
+**D8. Data sem hora.** `AgeMath.ageInDays` extrai ano, mês e dia de cada `Date` no calendário do usuário (`Calendar.current`, o dia que a tela mostra), monta as duas datas à meia-noite UTC e conta os dias entre elas com `Calendar(identifier: .gregorian)` em UTC. Extrair o dia direto em UTC deslocaria um dia as datas escolhidas à noite em São Paulo (UTC-3); contar em fuso local deixaria o horário de verão encurtar um dia. O original usa `DateTime.Date` (dia local) e `TotalDays`.
 
 ## Risks / Trade-offs
 
