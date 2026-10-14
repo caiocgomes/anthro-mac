@@ -5,13 +5,29 @@ import Observation
 @MainActor
 @Observable
 public final class AppModel {
-    public var selectedSection: AppSection = .calculator
+    public let settings: AppSettings
+    public let store: StoreController
 
-    public init(settings: AppSettings, store: StoreController) {}
+    public var selectedSection: AppSection {
+        didSet { settings.lastSection = selectedSection }
+    }
 
-    public func select(_ section: AppSection) {}
+    public init(settings: AppSettings, store: StoreController) {
+        self.settings = settings
+        self.store = store
+        selectedSection = settings.lastSection
+    }
 
+    public func select(_ section: AppSection) {
+        selectedSection = section
+    }
+
+    /// Seleciona o módulo do atalho ⌘`number`; devolve `false` sem mudar nada fora de 1 a 3.
     public func handleShortcut(number: Int) -> Bool {
-        false
+        guard let section = AppSection.allCases.first(where: { $0.shortcutNumber == number }) else {
+            return false
+        }
+        select(section)
+        return true
     }
 }
