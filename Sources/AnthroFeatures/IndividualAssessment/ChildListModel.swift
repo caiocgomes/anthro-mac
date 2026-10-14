@@ -46,11 +46,11 @@ public final class ChildListModel {
     }
 
     public func showActive() throws {
-        try show(.active, try repository.list(archived: false))
+        show(.active, try repository.list(archived: false))
     }
 
     public func showArchive() throws {
-        try show(.archive, try repository.list(archived: true))
+        show(.archive, try repository.list(archived: true))
     }
 
     /// Critérios todos vazios encerram a busca e voltam à lista ativa (`OnSearchCleared`).
@@ -60,7 +60,7 @@ public final class ChildListModel {
             return
         }
         lastCriteria = criteria
-        try show(.searchResults, try repository.search(criteria))
+        show(.searchResults, try repository.search(criteria))
     }
 
     public func archiveChecked() throws {
@@ -82,11 +82,11 @@ public final class ChildListModel {
         switch mode {
         case .active: try showActive()
         case .archive: try showArchive()
-        case .searchResults: try show(.searchResults, try repository.search(lastCriteria))
+        case .searchResults: show(.searchResults, try repository.search(lastCriteria))
         }
     }
 
-    private func show(_ mode: ChildListMode, _ children: [ChildRecord]) throws {
+    private func show(_ mode: ChildListMode, _ children: [ChildRecord]) {
         self.mode = mode
         rows = children.compactMap { child in child.id.map { ChildListRow(id: $0, title: child.listTitle) } }
         checkedIDs = []
