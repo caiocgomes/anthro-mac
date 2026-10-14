@@ -27,4 +27,15 @@ struct AnthroDatabaseUnitTests {
         #expect(row["coluna_inexistente"] == .null)
         #expect(db.lastInsertRowID() == 1)
     }
+
+    @Test func migracoesForaDeOrdemSaoAplicadasEmOrdemCrescente() throws {
+        let url = try tempURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let second = Migration(version: 2, name: "cria", sql: "CREATE TABLE t2(x INTEGER);")
+        let third = Migration(version: 3, name: "usa", sql: "INSERT INTO t2(x) VALUES (3);")
+        let db = try AnthroDatabase.open(at: url, migrations: [third, second])
+        defer { db.close() }
+        #expect(try db.schemaVersion() == 3)
+        #expect(try db.query("SELECT x FROM t2").first?["x"] == .integer(3))
+    }
 }

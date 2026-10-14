@@ -41,6 +41,7 @@ public final class AnthroDatabase: @unchecked Sendable {
             guard try database.integrityCheck() else {
                 throw StoreError.corrupted(details: "integrity_check não devolveu ok")
             }
+            try database.migrate(migrations)
         } catch let StoreError.sqlite(code, message) where Self.isCorruption(code) {
             database.close()
             throw StoreError.corrupted(details: message)
