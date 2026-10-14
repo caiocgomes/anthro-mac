@@ -75,9 +75,7 @@ public final class CalculatorModel {
     /// `dtpDateOfVisit_ValueChanged`: visita antes do nascimento puxa o nascimento.
     public func setDateOfVisit(_ date: Date) {
         dateOfVisit = date
-        if Self.day(dateOfBirth) > Self.day(dateOfVisit) {
-            dateOfBirth = dateOfVisit
-        }
+        dateOfBirth = clampedToVisit(dateOfBirth)
         refresh()
     }
 
@@ -85,8 +83,7 @@ public final class CalculatorModel {
     public func setApproximateBirthDate(_ isOn: Bool) {
         isApproximateBirthDate = isOn
         if isOn {
-            let randomized = ApproximateBirthDate.randomized(dateOfBirth, randomDay: randomDay)
-            dateOfBirth = Self.day(randomized) > Self.day(dateOfVisit) ? dateOfVisit : randomized
+            dateOfBirth = clampedToVisit(ApproximateBirthDate.randomized(dateOfBirth, randomDay: randomDay))
         }
         refresh()
     }
@@ -155,14 +152,16 @@ public final class CalculatorModel {
         if !isMeasurementChoiceEnabled {
             measuredRecumbent = false
         }
-        let empty = engine.result(ageInDays: nil, ageInMonths: nil, sex: sex, weight: weight, lengthOrHeight: lengthOrHeight,
-                                  measuredRecumbent: measuredRecumbent, hasOedema: hasOedema)
+        // O nascimento nunca passa da visita, então o motor não lança; o resultado sem idade é só salvaguarda.
         result = (try? engine.result(dateOfBirth: dateOfBirth, dateOfVisit: dateOfVisit, sex: sex, weight: weight,
                                      lengthOrHeight: lengthOrHeight, measuredRecumbent: measuredRecumbent,
-                                     hasOedema: hasOedema)) ?? empty
+                                     hasOedema: hasOedema))
+            ?? engine.result(ageInDays: nil, ageInMonths: nil, sex: sex, weight: weight, lengthOrHeight: lengthOrHeight,
+                             measuredRecumbent: measuredRecumbent, hasOedema: hasOedema)
     }
 
-    private static func day(_ date: Date) -> Date {
-        Calendar.current.startOfDay(for: date)
+    private func clampedToVisit(_ date: Date) -> Date {
+        let calendar = Calendar.current
+        return calendar.startOfDay(for: date) > calendar.startOfDay(for: dateOfVisit) ? dateOfVisit : date
     }
 }

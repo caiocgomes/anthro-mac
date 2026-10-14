@@ -13,7 +13,7 @@
 - [x] 1.2 Implement o helper compartilhado `MeasurementInput` (`Outcome`, `issueMessage`, `evaluate`, `parse`, `truncate`; port de `NumericUpDownX.CheckValidValue` e `AnthroComputation.SymetricCrop`), unit tests first (inner loop); verified when [tests: helperTruncaTextoValido, helperApontaValorForaDoIntervalo, helperApontaTextoInvalidoEVazio] and their unit tests pass
 - [x] 1.3 Implement o helper compartilhado `ApproximateBirthDate.randomized` e `adjusted` (port do ramo aproximado de `ACMain.dtpDateOfBirth_ValueChanged` e `cbDateIsApprox_CheckStateChanged`), unit tests first (inner loop) para a aritmética de calendário no calendário do usuário; verified when [tests: helperNuncaSorteiaOUltimoDia, helperEmFevereiroBissextoUsaIntervaloDe29, helperDesfazTrocaDeDiaSemSortear, helperAceitaTrocaDeMesESorteiaDeNovo, helperSemDataAproximadaSoLimitaPelaVisita] and their unit tests pass
 - [x] 1.4 Implement `IndicatorPanel.rows(for:)` e `percentileBarValue` (port de `IndicatorDisplayPanel.DisplayResult` e `SetZLabelColor`); verified when [tests: zEPercentilFormatadosComVirgula, percentilAlemDe3DPMostraND, gravidadeAltaParaZMenos2v35, gravidadeIndefinidaParaZNulo, empateDaBarraArredondaParaPar, barraSemPercentilUsa100Zero50] pass
-- [ ] 1.5 Refactor `Sources/AnthroFeatures/Common/` e `IndicatorPanel/`; full suite stays green (`swift test`)
+- [x] 1.5 Refactor `Sources/AnthroFeatures/Common/` e `IndicatorPanel/`; full suite stays green (`swift test`)
 
 ## 2. Modelo da Calculadora
 
@@ -22,21 +22,21 @@
 - [x] 2.3 Implement modo de medida por idade (port de `ACMain.RefreshAge`); verified when [tests: escolhaHabilitadaCom334Dias, escolhaDesabilitadaCom335DiasForcaEmPe, criancaDe30MesesSemEscolhaContraAAjuda] pass
 - [x] 2.4 Implement campos de peso e medida com `MeasurementInput.evaluate`, valor `nil` para o cálculo e `weightIssue`/`lengthOrHeightIssue` para o aviso inline (política única, D2); verified when [tests: pesoTruncadoNaoArredondado, valoresForaDosLimitesEsvaziamOCampo, avisoDePesoForaDoIntervalo, avisoSomeComValorValido, avisoDeMedidaInvalida] pass
 - [x] 2.5 Implement texto do IMC, linhas do painel e rótulo de comprimento ou estatura; verified when [tests: imcDe20kgE110cmAosSeisAnosMostra16v5, imcIndisponivelMostraND, seisAnosMostraEstaturaParaIdade, quinzeMesesMedidoEmPeMostraComprimento] pass
-- [ ] 2.6 Implement `nextFocus(after:)` (port de `FormX.PreFilterMessage` com a ordem de tabulação de `ACMain`) e `makeChart(for:)`; verified when [tests: enterDoPesoVaiParaAMedida, enterPulaModoDeMedidaDesabilitado, enterVoltaAoInicioEDesligadoMantemFoco, graficoDeImcAbreComUmResultado, graficoSemMedidaCalculavelFicaVazio] pass (os dois testes de gráfico dependem do grupo 3 e ficam verdes ao fim dele)
-- [ ] 2.7 Refactor `Sources/AnthroFeatures/Calculator/`; full suite stays green (`swift test`)
+- [x] 2.6 Implement `nextFocus(after:)` (port de `FormX.PreFilterMessage` com a ordem de tabulação de `ACMain`) e `makeChart(for:)`; verified when [tests: enterDoPesoVaiParaAMedida, enterPulaModoDeMedidaDesabilitado, enterVoltaAoInicioEDesligadoMantemFoco, graficoDeImcAbreComUmResultado, graficoSemMedidaCalculavelFicaVazio] pass (os dois testes de gráfico dependem do grupo 3 e ficam verdes ao fim dele)
+- [x] 2.7 Refactor `Sources/AnthroFeatures/Calculator/`; full suite stays green (`swift test`)
 
 ## 3. Modelo do gráfico de crescimento
 
-- [ ] 3.1 Implement séries de DP e de percentis, marca de transição, faixas e títulos (port de `GraphDialog.DrawIndicatorGraph` e `GetOrdinateWorldMin`); verified when [tests: pesoParaIdadeSemLinhasDe1DP, imcParaIdadeComLinhasDe1DP, percentisDeEstaturaParaIdade, percentil50SobreAMediana, marcaDeTransicaoNoGraficoDeImc, pesoParaIdadeSemMarcaDeTransicao, faixaDosEixosDePesoParaIdade, faixaDosEixosDeImcParaIdade, titulosDosEixosDeEstaturaParaIdade] pass
-- [ ] 3.2 Implement pontos, limite de idade, gráfico vazio e legenda (port de `GraphDialog.DrawMeasures`), unit tests first (inner loop) para a regra de fora do intervalo; verified when [tests: tituloDoGraficoVazioSemDados, pontoDeImcUsaImcExatoDaMedidaAjustada, resultadoSemZOmitidoDeixaGraficoVazio, pesoAos109MesesForaDoGrafico, soPontosForaDoIntervaloDeixamGraficoVazio, legendaNoModoZScore, legendaNoModoPercentilSemPercentil, legendaSemIdadeNoNascimento] and their unit tests pass
-- [ ] 3.3 Implement ponto único ou vários pontos e troca de indicador e de modo (port de `InitToolStrip` e `RefreshGraph`); verified when [tests: tresVisitasComVariosPontos, pontoUnicoEntreTresVisitas, resultadoUnicoSemEscolhaDeVariosPontos, trocaDePesoParaImcRecalculaSeriesEFaixa, trocaDeModoDescartaOZoom] pass
-- [ ] 3.4 Implement zoom, deslocamento e restauração (interações `RubberBandSelection`, `HorizontalDrag`, `VerticalDrag`, `OriginalDimensions`); verified when [tests: zoomERestauracao, selecaoDegeneradaIgnorada, deslocamentoHorizontalDe12Meses] pass
-- [ ] 3.5 Refactor `Sources/AnthroFeatures/GrowthChart/`; full suite stays green (`swift test`)
+- [x] 3.1 Implement séries de DP e de percentis, marca de transição, faixas e títulos (port de `GraphDialog.DrawIndicatorGraph` e `GetOrdinateWorldMin`); verified when [tests: pesoParaIdadeSemLinhasDe1DP, imcParaIdadeComLinhasDe1DP, percentisDeEstaturaParaIdade, percentil50SobreAMediana, marcaDeTransicaoNoGraficoDeImc, pesoParaIdadeSemMarcaDeTransicao, faixaDosEixosDePesoParaIdade, faixaDosEixosDeImcParaIdade, titulosDosEixosDeEstaturaParaIdade] pass
+- [x] 3.2 Implement pontos, limite de idade, gráfico vazio e legenda (port de `GraphDialog.DrawMeasures`), unit tests first (inner loop) para a regra de fora do intervalo; verified when [tests: tituloDoGraficoVazioSemDados, pontoDeImcUsaImcExatoDaMedidaAjustada, resultadoSemZOmitidoDeixaGraficoVazio, pesoAos109MesesForaDoGrafico, soPontosForaDoIntervaloDeixamGraficoVazio, legendaNoModoZScore, legendaNoModoPercentilSemPercentil, legendaSemIdadeNoNascimento] and their unit tests pass
+- [x] 3.3 Implement ponto único ou vários pontos e troca de indicador e de modo (port de `InitToolStrip` e `RefreshGraph`); verified when [tests: tresVisitasComVariosPontos, pontoUnicoEntreTresVisitas, resultadoUnicoSemEscolhaDeVariosPontos, trocaDePesoParaImcRecalculaSeriesEFaixa, trocaDeModoDescartaOZoom] pass
+- [x] 3.4 Implement zoom, deslocamento e restauração (interações `RubberBandSelection`, `HorizontalDrag`, `VerticalDrag`, `OriginalDimensions`); verified when [tests: zoomERestauracao, selecaoDegeneradaIgnorada, deslocamentoHorizontalDe12Meses] pass
+- [x] 3.5 Refactor `Sources/AnthroFeatures/GrowthChart/`; full suite stays green (`swift test`)
 
 ## 4. Exportação do gráfico
 
-- [ ] 4.1 Implement `ChartExport.pngData`, `pdfData`, `copy(_:to:)`, `printOperation(pdfData:)` e `suggestedFileName` (substitui `CopyToClipboard` e `Print` do NPlot); verified when [tests: copiaEmPngParaAreaDeTransferencia, copiaSemImagemNaoAlteraAreaDeTransferencia, exportacoesValidasPngPdfEImpressao, nomeDeArquivoSemBarra, pdfInvalidoParaImpressaoDevolveNil] pass
-- [ ] 4.2 Refactor `ChartExport.swift`; full suite stays green (`swift test`)
+- [x] 4.1 Implement `ChartExport.pngData`, `pdfData`, `copy(_:to:)`, `printOperation(pdfData:)` e `suggestedFileName` (substitui `CopyToClipboard` e `Print` do NPlot); verified when [tests: copiaEmPngParaAreaDeTransferencia, copiaSemImagemNaoAlteraAreaDeTransferencia, exportacoesValidasPngPdfEImpressao, nomeDeArquivoSemBarra, pdfInvalidoParaImpressaoDevolveNil] pass
+- [x] 4.2 Refactor `ChartExport.swift`; full suite stays green (`swift test`)
 
 ## 5. Views SwiftUI
 
