@@ -77,9 +77,7 @@ public final class ParentEditorModel {
         set {
             storedApprox = newValue
             guard newValue else { return }
-            let drawn = ApproximateBirthDate.randomized(storedBirth, randomDay: randomDay)
-            storedBirth = IndividualAssessment.normalized(
-                Calendar.current.startOfDay(for: drawn) > Calendar.current.startOfDay(for: upperBound) ? upperBound : drawn)
+            storedBirth = IndividualAssessment.approximated(storedBirth, upperBound: upperBound, randomDay: randomDay)
         }
     }
 

@@ -85,15 +85,12 @@ public final class ChildDetailModel {
     /// `cbDateIsApprox_CheckedChanged`: marcar sorteia o dia do mês e aplica o limite.
     public func setDateOfBirthIsApprox(_ isApprox: Bool) {
         guard let current = draft else { return }
-        var birth = current.dateOfBirth
-        if isApprox {
-            let drawn = ApproximateBirthDate.randomized(birth, randomDay: randomDay)
-            birth = Calendar.current.startOfDay(for: drawn) > Calendar.current.startOfDay(for: birthUpperBound)
-                ? birthUpperBound : drawn
-        }
+        let birth = isApprox
+            ? IndividualAssessment.approximated(current.dateOfBirth, upperBound: birthUpperBound, randomDay: randomDay)
+            : current.dateOfBirth
         update {
             $0.dateOfBirthIsApprox = isApprox
-            $0.dateOfBirth = IndividualAssessment.normalized(birth)
+            $0.dateOfBirth = birth
         }
     }
 

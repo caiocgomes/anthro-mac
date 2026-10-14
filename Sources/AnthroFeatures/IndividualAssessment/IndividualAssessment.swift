@@ -39,6 +39,13 @@ public enum IndividualAssessment {
         return calendar.date(from: DateComponents(year: parts.year, month: parts.month, day: parts.day, hour: 12)) ?? date
     }
 
+    /// Marcar data aproximada: sorteia o dia do mês (`ApproximateBirthDate.randomized`) e aplica o limite superior.
+    static func approximated(_ birth: Date, upperBound: Date, randomDay: (Range<Int>) -> Int) -> Date {
+        let drawn = ApproximateBirthDate.randomized(birth, randomDay: randomDay)
+        let calendar = Calendar.current
+        return normalized(calendar.startOfDay(for: drawn) > calendar.startOfDay(for: upperBound) ? upperBound : drawn)
+    }
+
     static func sameDay(_ a: Date, _ b: Date) -> Bool {
         Calendar.current.isDate(a, inSameDayAs: b)
     }
