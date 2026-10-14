@@ -13,3 +13,10 @@
 - **Correção do usuário (literal):** "sim, mas é como TDD manda. vc faz a casca em vermelho,e ai no verde faz o codigo até eles passarem"
 - **Regra:** em `/opsx:apply`, vermelho e verde são uma sequência contínua: escrever testes e stubs, confirmar a falha por asserção, commitar o vermelho e seguir direto para o código até os testes passarem. O portão de aprovação só para de fato nas changes que fixam números clínicos (`port-anthro-engine` e `add-survey-analysis`), conforme a proposta aceita com "sim".
 - **Como aplicar:** nas demais changes, registrar o vermelho no ledger, anunciar em uma linha que o portão foi registrado e seguir implementando no mesmo turno; reportar só no fim (ou num bloqueio real).
+
+## 2026-10-14: manter artefato visual do original "por fidelidade"
+
+- **Erro concreto:** no gráfico de crescimento, as curvas fazem um "Z" aos 60 meses porque os padrões vão até 60,98 meses e a referência recomeça no mês 60, e a linha volta para trás. Vi o defeito na checagem manual, confirmei que o NPlot do original desenha igual e decidi manter, reportando "Mantive por fidelidade".
+- **Correção do usuário (literal):** "os graficos estão tendo umas quebrinhas estranhas"
+- **Regra:** o princípio de fidelidade vale para números e regras observáveis (z, percentil, IMC, limites, textos), não para artefatos de desenho que não carregam informação. Artefato visual que parece defeito para a usuária deve ser corrigido e registrado como desvio consciente, desde que nenhum valor plotado mude.
+- **Como aplicar:** ao achar uma esquisitice visual herdada do original, separar: (1) descontinuidade real dos dados (ex.: comprimento para estatura aos 24 meses), que fica e ganha explicação; (2) artefato de ordem de desenho, sobreposição ou costura de séries, que se corrige no modelo do gráfico com teste. Não usar "fidelidade" como justificativa para manter algo que a usuária vai estranhar sem antes perguntar.

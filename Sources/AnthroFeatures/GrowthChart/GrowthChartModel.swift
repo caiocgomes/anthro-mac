@@ -140,7 +140,13 @@ public final class GrowthChartModel {
     private func curveSeries() -> [ChartSeries] {
         let sex = results.indices.contains(currentIndex) ? (results[currentIndex].sex ?? .girl) : .girl
         let kind: CurveKind = mode == .zScore ? .zScore : .percentile
+        // Costura dos cinco anos: a referência recomeça no mês 60, antes do último ponto dos padrões (60,98 meses);
+        // esses pontos saem do desenho para que a linha não volte no eixo x, como voltava no `GraphDialog`.
         let curvePoints = GrowthCurves.points(indicator, sex: sex, kind: kind, tables: tables)
+            .reduce(into: [CurvePoint]()) { kept, point in
+                if let last = kept.last, point.xMonths <= last.xMonths { return }
+                kept.append(point)
+            }
         let lines: [(index: Int, label: String, style: CurveStyle)]
         switch mode {
         case .zScore:

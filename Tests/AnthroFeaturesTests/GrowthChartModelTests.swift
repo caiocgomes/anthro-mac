@@ -64,6 +64,32 @@ struct GrowthChartModelTests {
         #expect(percentile.points.map(\.y) == median.points.map(\.y))
     }
 
+    // MARK: Costura entre padrões e referência
+
+    /// Rótulos das séries em que algum ponto não avança no eixo x.
+    private func seriesGoingBack(in model: GrowthChartModel) -> [String] {
+        model.series.filter { series in
+            zip(series.points, series.points.dropFirst()).contains { $0.x >= $1.x }
+        }.map(\.label)
+    }
+
+    // Scenario: Peso para idade sem retorno aos 60 meses
+    @Test func pesoParaIdadeSemRetornoAos60Meses() throws {
+        let model = chart([girl()], .weightForAge)
+        #expect(model.series.count == 5)
+        #expect(seriesGoingBack(in: model) == [])
+        let median = try series("Mediana", in: model)
+        let seam = try #require(median.points.firstIndex { $0.x == 1856 / 30.4375 })
+        #expect(median.points.dropFirst(seam + 1).first?.x == 61)
+    }
+
+    // Scenario: Percentis de IMC sem retorno aos 60 meses
+    @Test func percentisDeImcSemRetornoAos60Meses() {
+        let model = chart([boy()], .bmiForAge, mode: .percentile)
+        #expect(model.series.count == 5)
+        #expect(seriesGoingBack(in: model) == [])
+    }
+
     // MARK: Marca de transição entre comprimento e estatura
 
     // Scenario: Marca no gráfico de IMC

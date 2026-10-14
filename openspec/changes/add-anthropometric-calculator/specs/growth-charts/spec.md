@@ -24,6 +24,17 @@ No modo percentil, o gráfico SHALL exibir as séries dos percentis 3, 15, 50, 8
 - **WHEN** o gráfico de IMC para idade de uma menina é exibido no modo percentil
 - **THEN** cada valor da série "50º" é igual ao valor da mediana na mesma posição da série de DP
 
+### Requirement: Costura entre padrões e referência
+Cada série de curva SHALL ter x estritamente crescente: na costura dos cinco anos, os pontos da referência OMS 2007 com x menor ou igual ao último x dos padrões (o mês 60, depois de 1856 dias, ou 60,98 meses) SHALL ser omitidos do desenho, para que a linha não volte no eixo x. O `GraphDialog` original desenhava o mês 60 depois de 60,98 meses e formava um "Z" em todas as curvas; nenhum valor desenhado muda, só deixa de haver o retorno.
+
+#### Scenario: Peso para idade sem retorno aos 60 meses
+- **WHEN** o gráfico de peso para idade de uma menina é exibido no modo z-score
+- **THEN** em toda série cada ponto tem x maior que o anterior, e o ponto seguinte a x = 1856 / 30.4375 tem x = 61
+
+#### Scenario: Percentis de IMC sem retorno aos 60 meses
+- **WHEN** o gráfico de IMC para idade de um menino é exibido no modo percentil
+- **THEN** em toda série cada ponto tem x maior que o anterior
+
 ### Requirement: Marca de transição entre comprimento e estatura
 Para estatura e IMC para idade, o gráfico SHALL exibir uma linha vertical em x = 24 meses com os rótulos "COMPRIMENTO" em x = 23.5 e "ESTATURA" em x = 24.5, na altura do primeiro valor da série mais baixa; peso para idade SHALL não ter essa marca.
 
