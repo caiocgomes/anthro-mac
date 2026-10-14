@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Children>
+  <Child DisplayID="12" FirstName="Ana" LastName="Silva" DateOfBirth="15-03-2016 00:00:00" DateOfBirthIsApprox="0" Sex="0" Notes="" CreatedBy="obs1">
+    <Mother FirstName="Maria" LastName="Silva" Height="162,5" Weight="61,2" DateOfBirth="02-05-1985 00:00:00" DateOfBirthIsApprox="1" Notes="" CreatedBy="obs1" />
+    <Address StreetInfo="Rua Botucatu, 740" Place="São Paulo" ZIP="04023-062" District="Vila Clementino" Province="" State="SP" Country="Brasil" SALBLevel1="123" SALBLevel2="" PhoneNumber="11 5555-0000" Email="" CreatedBy="obs1" />
+    <Visits>
+      <Visit Date="01-04-2021 00:00:00" Weight="16,5" Height="110,2" IsRecumbent="0" HasOedema="0" Notes="" AdditionalData="&lt;Data /&gt;" CreatedBy="obs1" />
+    </Visits>
+  </Child>
+</Children>
