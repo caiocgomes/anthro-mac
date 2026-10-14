@@ -35,7 +35,7 @@ O projeto está vazio: só o instalador original, `reference/` e a OpenSpec. A m
 | Backups | `public enum BackupManager { public static func backupOnLaunch(databaseURL: URL, backupsDirectory: URL, keep: Int = 10, now: Date) throws -> URL?; public static func backups(in directory: URL) -> [URL]; public static func restoreLatest(from directory: URL, to databaseURL: URL) throws -> URL }` | `Sources/AnthroStore/BackupManager.swift` |
 | Abertura | `@MainActor @Observable public final class StoreController { public init(directory: URL, now: @escaping () -> Date = Date.init); public enum State: Equatable { case closed, ready, corrupted(String), failed(String) }; public private(set) var state: State; public private(set) var database: AnthroDatabase?; public func openOnLaunch(); public func restoreLatestBackup() throws; public func exportCopy(to url: URL) throws }` | `Sources/AnthroStore/StoreController.swift` |
 | Sobre | `public enum AboutInfo { public static func version(bundle: Bundle) -> String }` (devolve `CFBundleShortVersionString` ou `"desenvolvimento"`) | `Sources/AnthroFeatures/AboutInfo.swift` |
-| Recursos do núcleo | `public enum AnthroCoreResources { public static var whoDirectory: URL? { get } }` (expõe `Bundle.module` do `AnthroCore`, que é interno ao módulo, para o autoteste) | `Sources/AnthroCore/AnthroCoreResources.swift` |
+| Recursos do núcleo | `public enum AnthroCoreResources { public static var bundle: Bundle? { get }; public static var whoDirectory: URL? { get } }` (dentro de um `.app`, só `Contents/Resources`; fora, `Bundle.module`; ver risco do acessor do SwiftPM) | `Sources/AnthroCore/AnthroCoreResources.swift` |
 | Autoteste | `AnthroPlusApp --self-test`: confere que o diretório de recursos `who` do bundle do `AnthroCore` é encontrado (nesta change ele só contém `README.txt`; a change 2 passa a carregar `GrowthReferenceTables.bundled()`) e sai com código 0, ou 1 com a causa em stderr, sem abrir janela | `Sources/AnthroPlusApp/AnthroPlusApp.swift` |
 | Build | `scripts/build-app.sh [--install]` (código 0 em sucesso; `--install` copia para `/Applications`, ou `~/Applications` sem permissão) | `scripts/build-app.sh` |
 
@@ -63,7 +63,7 @@ O projeto está vazio: só o instalador original, `reference/` e a OpenSpec. A m
 
 ## Risks / Trade-offs
 
-- [Recursos do SwiftPM não encontrados dentro do .app montado à mão] -> O script copia `AnthroPlus_AnthroCore.bundle` para `Contents/Resources`; um teste de fumaça do script abre o executável com `--self-test`, que carrega as tabelas e sai com código 0.
+- [Recursos do SwiftPM não encontrados dentro do .app montado à mão] -> Observado no build: o `Bundle.module` gerado procura o bundle na raiz do `.app` (onde o `codesign` recusa arquivos) e cai no caminho absoluto do `.build` desta máquina, o que faria o autoteste passar por engano. `AnthroCoreResources.bundle` só aceita `Contents/Resources` dentro de um `.app`; o script copia o bundle para lá, roda `--self-test` e também confere que um `.app` sem o bundle falha no autoteste. Todo código do `AnthroCore` que lê recurso (a partir da change 2) MUST usar `AnthroCoreResources.bundle`, nunca `Bundle.module` direto.
 - [Backup em cada abertura ocupa disco] -> Banco de 500 crianças fica na casa de poucos MB; 10 cópias são desprezíveis.
 - [Sem Xcode, sem previews nem inspeção visual automática] -> Lógica toda nos view models testáveis; verificação visual vira checagem manual registrada como N/A (non-executable) com critério mecânico (build e `codesign --verify` passam).
 
