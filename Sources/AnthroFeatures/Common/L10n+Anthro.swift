@@ -51,6 +51,12 @@ extension L10n {
         public static let zScore = "Z-score"
         public static let percentile = "Percentil"
         public static let showChart = "Mostrar gráfico"
+        public static let child = "Criança"
+        public static let measurements = "Medidas"
+        public static let kilograms = "kg"
+        public static let centimeters = "cm"
+        public static let measurementHint = "A escolha entre deitado e em pé só existe abaixo de 11 meses de idade."
+        public static let tablesUnavailable = "Tabelas da OMS indisponíveis"
         public static let invalidValue = "Valor inválido"
         /// "Fora do intervalo: {mín} a {máx}".
         public static let outOfRangePrefix = "Fora do intervalo:"
@@ -80,11 +86,13 @@ extension L10n {
         public static let multiplePoints = "Vários pontos"
         public static let resetZoom = "Restaurar"
         public static let copy = "Copiar"
+        public static let export = "Exportar"
         public static let exportPDF = "Exportar PDF…"
         public static let exportPNG = "Exportar PNG…"
         public static let print = "Imprimir…"
         public static let close = "Fechar"
         public static let exportFailed = "Não foi possível exportar o gráfico."
+        public static let zoomHint = "Arraste sobre o gráfico para ampliar; com Shift, arraste para deslocar."
     }
 
     /// Strings desta extensão, somadas a `L10n.allStrings`.
@@ -95,13 +103,15 @@ extension L10n {
             Calculator.dateOfBirth, Calculator.approximateDate, Calculator.dateOfVisit, Calculator.sex, Calculator.female,
             Calculator.male, Calculator.weight, Calculator.lengthOrHeight, Calculator.measurement, Calculator.recumbent,
             Calculator.standing, Calculator.oedema, Calculator.no, Calculator.yes, Calculator.bmi, Calculator.results,
-            Calculator.zScore, Calculator.percentile, Calculator.showChart, Calculator.invalidValue,
+            Calculator.zScore, Calculator.percentile, Calculator.showChart, Calculator.child, Calculator.measurements,
+            Calculator.kilograms, Calculator.centimeters, Calculator.measurementHint, Calculator.tablesUnavailable,
+            Calculator.invalidValue,
             Calculator.outOfRangePrefix, Calculator.rangeSeparator,
             Chart.title, Chart.noData, Chart.xAxis, Chart.outOfRangeSuffix, Chart.weightAxis, Chart.lengthOrHeightAxis,
             Chart.bmiAxis, Chart.median, Chart.standardDeviation, Chart.lengthMarker, Chart.heightMarker,
             Chart.zScoreMode, Chart.percentileMode, Chart.legendZScore, Chart.legendPercentile, Chart.indicator,
-            Chart.mode, Chart.multiplePoints, Chart.resetZoom, Chart.copy, Chart.exportPDF, Chart.exportPNG,
-            Chart.print, Chart.close, Chart.exportFailed,
+            Chart.mode, Chart.multiplePoints, Chart.resetZoom, Chart.copy, Chart.export, Chart.exportPDF, Chart.exportPNG,
+            Chart.print, Chart.close, Chart.exportFailed, Chart.zoomHint,
         ] + Chart.percentileLabels
     }
 }

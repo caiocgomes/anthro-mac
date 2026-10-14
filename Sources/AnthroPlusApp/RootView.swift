@@ -51,7 +51,7 @@ struct MainSplitView: View {
             }
             .navigationSplitViewColumnWidth(min: 280, ideal: 300, max: 380)
         } detail: {
-            ModulePlaceholderView(section: model.selectedSection)
+            ModuleView(model: model)
                 .navigationTitle(model.selectedSection.title)
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
@@ -64,6 +64,20 @@ struct MainSplitView: View {
                         .disabled(model.store.state != .ready)
                     }
                 }
+        }
+    }
+}
+
+/// Módulo selecionado; Avaliação individual e Inquérito chegam nas changes seguintes.
+struct ModuleView: View {
+    let model: AppModel
+
+    var body: some View {
+        switch model.selectedSection {
+        case .calculator:
+            CalculatorHostView(settings: model.settings)
+        case .individualAssessment, .nutritionalSurvey:
+            ModulePlaceholderView(section: model.selectedSection)
         }
     }
 }
