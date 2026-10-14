@@ -83,6 +83,8 @@ Política única para todas as changes que usam o helper: texto inválido ou for
 | Cópia da tela | "press ALT+Print Screen" | sem função própria | sem função equivalente; o Mac já oferece captura de tela |
 | Valor inválido no campo | não menciona | campo esvaziado em silêncio (`NumericUpDownX.SetToNull`) | valor `nil` como no original, mais aviso inline (desvio deliberado de UX, sem efeito numérico) |
 
+**D13. Autoteste do `.app` com as tabelas.** Esta é a primeira change que usa as tabelas da OMS dentro do app. `SelfTest.run` passa a carregar `GrowthReferenceTables.bundled()` e a conferir as contagens de linhas, para que `scripts/build-app.sh` prove que o recurso abre a partir de `Contents/Resources` (risco do acessor do SwiftPM no design da change 1). Até a `port-anthro-engine`, o autoteste conferia só o `README.txt`.
+
 ## Risks / Trade-offs
 
 - [`NSPrintOperation` ou `NSPasteboard` exigirem `NSApplication` ativo nos testes] -> Os testes chamam `NSApplication.shared` antes e usam `NSPasteboard(name:)` exclusivo por teste; se `NSPrintOperation` ainda exigir sessão gráfica, o teste afirma a página do `PDFDocument` e registra a operação como N/A no ledger com o motivo.
