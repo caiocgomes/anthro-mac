@@ -2,8 +2,39 @@ import AnthroFeatures
 import AppKit
 import SwiftUI
 
+/// Ao encerrar, pergunta se salva as alterações pendentes do módulo aberto (`FormClosing` com `AskForSave`).
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    static weak var model: AppModel?
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let unsaved = Self.model?.unsavedChangesGuard, unsaved.hasUnsavedChanges else { return .terminateNow }
+        let alert = NSAlert()
+        alert.messageText = L10n.IndividualAssessment.unsavedTitle
+        alert.informativeText = L10n.IndividualAssessment.unsavedMessage
+        alert.addButton(withTitle: L10n.IndividualAssessment.save)
+        alert.addButton(withTitle: L10n.IndividualAssessment.discard)
+        alert.addButton(withTitle: L10n.IndividualAssessment.cancel)
+        let decision: UnsavedChangesDecision = switch alert.runModal() {
+        case .alertFirstButtonReturn: .save
+        case .alertSecondButtonReturn: .discard
+        default: .cancel
+        }
+        do {
+            return try unsaved.proceedAfterUnsavedChanges(decision) ? .terminateNow : .terminateCancel
+        } catch {
+            let failure = NSAlert()
+            failure.messageText = L10n.IndividualAssessment.saveFailed
+            failure.informativeText = IAErrorText.message(for: error)
+            failure.runModal()
+            return .terminateCancel
+        }
+    }
+}
+
 @main
 struct AnthroPlusApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var model: AppModel
 
     init() {
@@ -18,7 +49,9 @@ struct AnthroPlusApp: App {
         }
         let settings = AppSettings(defaults: .standard)
         let store = StoreController(directory: AnthroDatabase.defaultDirectory())
-        _model = State(initialValue: AppModel(settings: settings, store: store))
+        let appModel = AppModel(settings: settings, store: store)
+        AppDelegate.model = appModel
+        _model = State(initialValue: appModel)
     }
 
     var body: some Scene {
@@ -26,7 +59,7 @@ struct AnthroPlusApp: App {
             RootView(model: model)
                 .frame(minWidth: 860, minHeight: 560)
         }
-        .defaultSize(width: 1100, height: 720)
+        .defaultSize(width: 1240, height: 780)
         .commands {
             AppCommands(model: model)
         }

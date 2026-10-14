@@ -12,6 +12,31 @@ public final class AppModel {
         didSet { settings.lastSection = selectedSection }
     }
 
+    /// Módulo aberto que tem de perguntar antes de sair, se houver alterações pendentes.
+    @ObservationIgnored public weak var unsavedChangesGuard: UnsavedChangesGuard?
+
+    /// Módulo pedido enquanto o guarda tem alterações pendentes; a janela mostra o diálogo de `AskForSave`.
+    public private(set) var pendingSection: AppSection?
+
+    /// Troca de módulo: com alterações pendentes no módulo aberto, guarda o pedido até a decisão da usuária.
+    public func requestSection(_ section: AppSection) {
+        guard section != selectedSection else { return }
+        if let unsavedChangesGuard, unsavedChangesGuard.hasUnsavedChanges {
+            pendingSection = section
+        } else {
+            select(section)
+        }
+    }
+
+    /// Aplica a decisão do diálogo ao pedido pendente: salvar ou descartar trocam de módulo; cancelar fica.
+    public func resolvePendingSection(_ decision: UnsavedChangesDecision) throws {
+        guard let section = pendingSection else { return }
+        pendingSection = nil
+        if try unsavedChangesGuard?.proceedAfterUnsavedChanges(decision) ?? true {
+            select(section)
+        }
+    }
+
     public init(settings: AppSettings, store: StoreController) {
         self.settings = settings
         self.store = store
@@ -27,7 +52,7 @@ public final class AppModel {
         guard let section = AppSection.allCases.first(where: { $0.shortcutNumber == number }) else {
             return false
         }
-        select(section)
+        requestSection(section)
         return true
     }
 }

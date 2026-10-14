@@ -85,6 +85,9 @@ extension L10n {
         public static let any = "Qualquer"
         public static let wildcardHint = "Use * para qualquer sequência e ? para um caractere."
         public static let checkedCount = "marcadas"
+        public static let automaticID = "Automático ao salvar"
+        public static let confirm = "Confirmar"
+        public static let searchPlaceholder = "Nome, sobrenome ou outro campo"
     }
 
     static var individualAssessmentStrings: [String] {
@@ -100,7 +103,8 @@ extension L10n {
             e.phoneNumber, e.email, e.tooManyResults, e.noResults, e.emptyList, e.noChildOpen, e.unsavedTitle,
             e.unsavedMessage, e.deleteChildrenTitle, e.deleteChildrenMessage, e.deleteVisitsTitle,
             e.deleteVisitsMessage, e.sexRequired, e.duplicateDate, e.invalidMeasurement, e.saveFailed, e.searchTitle,
-            e.idFrom, e.idTo, e.birthFrom, e.birthTo, e.any, e.wildcardHint, e.checkedCount,
+            e.idFrom, e.idTo, e.birthFrom, e.birthTo, e.any, e.wildcardHint, e.checkedCount, e.automaticID, e.confirm,
+            e.searchPlaceholder,
         ]
     }
 }
