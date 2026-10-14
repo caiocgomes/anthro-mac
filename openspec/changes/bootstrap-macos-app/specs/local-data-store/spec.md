@@ -62,7 +62,7 @@ No estado `.corrupted`, o sistema SHALL restaurar o backup mais recente sobre o 
 - **THEN** a chamada lança `StoreError.backupNotFound` e `state` continua `.corrupted`
 
 ### Requirement: Exportar cópia do banco
-O sistema SHALL gravar uma cópia consistente do banco aberto num caminho escolhido pelo usuário, sem sobrescrever arquivo existente.
+O sistema SHALL gravar uma cópia consistente do banco aberto num caminho escolhido pelo usuário. `exportCopy(to:)` SHALL recusar destino existente; a tela só substitui um arquivo existente depois que o usuário confirma a substituição no painel de salvar do macOS.
 
 #### Scenario: Cópia exportada
 - **WHEN** `exportCopy(to:)` recebe um caminho livre com o banco aberto

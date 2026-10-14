@@ -61,6 +61,8 @@ O projeto está vazio: só o instalador original, `reference/` e a OpenSpec. A m
 
 **D9. Atalhos.** ⌘1, ⌘2 e ⌘3 selecionam os módulos, na ordem de `AppSection.allCases`. A seção ativa é lembrada em `AppSettings.lastSection` e restaurada na próxima abertura.
 
+**D10. Exportação com confirmação do macOS (emenda de spec em 14/10/2026).** A função `exportCopy(to:)` recusa destino existente, como testado em `destinoExistenteNaoESobrescrito`. A tela usa `NSSavePanel`, que já pergunta "Substituir?" quando o arquivo existe; com a confirmação, `DatabaseExporter` remove o arquivo e chama `exportCopy(to:)`. O texto do requisito "Exportar cópia do banco" foi ajustado para dizer isso, porque a versão anterior proibia a substituição mesmo com confirmação, ao contrário da convenção do Mac. Nenhum teste mudou.
+
 ## Risks / Trade-offs
 
 - [Recursos do SwiftPM não encontrados dentro do .app montado à mão] -> Observado no build: o `Bundle.module` gerado procura o bundle na raiz do `.app` (onde o `codesign` recusa arquivos) e cai no caminho absoluto do `.build` desta máquina, o que faria o autoteste passar por engano. `AnthroCoreResources.bundle` só aceita `Contents/Resources` dentro de um `.app`; o script copia o bundle para lá, roda `--self-test` e também confere que um `.app` sem o bundle falha no autoteste. Todo código do `AnthroCore` que lê recurso (a partir da change 2) MUST usar `AnthroCoreResources.bundle`, nunca `Bundle.module` direto.
