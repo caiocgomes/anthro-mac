@@ -1,0 +1,56 @@
+# Compila, testa e empacota o AnthroPlus para Mac a cada push na main.
+# O pacote é o mesmo zip da distribuição manual: build/AnthroPlus.app (scripts/build-app.sh, assinatura ad-hoc) compactado
+# com ditto, que preserva permissões, links e assinatura. O artefato do Actions embrulha esse zip num segundo zip.
+name: Build e pacote
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Testes, app e zip
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      # Os testes de datas rodam no fuso da usuária (há dias sem meia-noite no horário de verão de São Paulo).
+      TZ: America/Sao_Paulo
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Selecionar o Xcode com Swift 6.1
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          swift --version
+
+      - name: Testes
+        run: swift test
+
+      - name: Montar o app
+        run: scripts/build-app.sh
+
+      - name: Empacotar
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          ZIP="AnthroPlus-${VERSION}-${GITHUB_SHA::7}.zip"
+          ditto -c -k --sequesterRsrc --keepParent build/AnthroPlus.app "build/$ZIP"
+          (cd build && shasum -a 256 "$ZIP" | tee "$ZIP.sha256")
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
+
+      - name: Publicar o artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP }}
+          path: |
+            build/${{ env.ZIP }}
+            build/${{ env.ZIP }}.sha256
+          if-no-files-found: error
+          retention-days: 90
