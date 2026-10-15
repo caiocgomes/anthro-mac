@@ -89,6 +89,15 @@ Como `Survey` e `SurveyRecord` estão em `AnthroCore`, de que `AnthroIO` depende
 - O rascunho chega ao editor da change 5 por `SurveyModuleModel.openDraft`, que pede a decisão de salvar quando o inquérito aberto tem alterações, como `AskForSave` antes de `importFromFileToolStripMenuItem_Click`.
 - Pergunta do DBF decidida sem consulta, por orientação do Caio de decidir o que for pequeno: registros marcados como apagados continuam ignorados (D8).
 
+**D19. Decisões tomadas na implementação (15/10/2026).**
+- Conglomerado, equipe, ID e domicílio acima de 2147483647 são inválidos, como o `int.Parse` do original e o `DisplayID` da change 7: ficam ausentes com aviso na planilha e rejeitam o XML.
+- O rascunho importado abre marcado como alteração não salva (`SurveyDetailModel.markUnsaved`). No original, preencher o nome do inquérito com o nome do arquivo marca a pendência; sem isso, abrir outro inquérito ou trocar de módulo descartaria o rascunho sem perguntar. Cancelar a pergunta sobre o inquérito aberto descarta o rascunho e o aviso da importação.
+- A pergunta de salvar o inquérito aberto vem quando o rascunho fica pronto, não antes do diálogo de arquivo como no `AskForSave` do original; a importação XML não pergunta, porque não troca o inquérito aberto, só grava e recarrega a lista ativa, como o original.
+- O app só enxerga `AnthroFeatures` (D1 da change 1): a folha de associação recebe os campos por `SurveyExchangeModel.importFields`, e o módulo é o `SurveyDraftPresenter`.
+- Exportar com o inquérito aberto marcado e alterado pede para salvar antes, como a exportação de crianças da change 7: a exportação lê o banco e sairia sem as alterações.
+- `HasOedema` sem valor sai `0` no XML e no TXT/CSV, porque o original guarda um booleano não anulável.
+- A exportação delimitada não lança: definição ou valores de dados adicionais ilegíveis saem sem colunas ou vazios. O banco só recebe esses textos validados (importação XML, montagem externa e editor da change 6).
+
 ## Divergências entre ajuda e código
 
 | Tema | Ajuda (`reference/original-help/NS.htm`) | Código | Decisão |

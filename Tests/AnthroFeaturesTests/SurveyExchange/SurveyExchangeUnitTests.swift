@@ -87,6 +87,10 @@ struct SurveyExchangeUnitTests {
                                                          fileName: "a.csv")
         #expect(message?.contains("linha 3, campo 'Sex'.") == true)
         #expect(message?.contains("um ou mais campos estavam ausentes ou continham valores inválidos.") == true)
+        // `DisplayImportWarningRows`: "Detalhes:" e os itens em sequência, depois de uma linha em branco.
+        let rows = SurveyExchangeModel.warningMessage(rowErrors: [ImportFieldError(line: 3, field: "Sex"), ImportFieldError(line: 5, field: "Sex")],
+                                                      hadFieldWarnings: false, fileName: "a.csv")
+        #expect(rows?.hasSuffix("\n\nDetalhes: linha 3, campo 'Sex'. linha 5, campo 'Sex'.") == true)
         #expect(SurveyExchangeModel.warningMessage(rowErrors: [], hadFieldWarnings: false, fileName: "a.csv") == nil)
     }
 

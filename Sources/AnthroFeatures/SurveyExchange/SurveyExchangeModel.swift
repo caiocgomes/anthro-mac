@@ -135,15 +135,15 @@ public final class SurveyExchangeModel {
             .joined(separator: ", ") + "."
     }
 
-    /// `DisplayImportWarningRows` com linha e campo de cada registro descartado, ou `DisplayImportWarningFields`; com os
-    /// dois, a frase dos campos vem depois da lista de linhas.
+    /// `DisplayImportWarningRows` com linha e campo de cada registro descartado, ou `DisplayImportWarningFields`. Com os
+    /// dois, o original mostra só as linhas; aqui a frase dos campos vem depois delas, para não esconder o segundo aviso.
     public static func warningMessage(rowErrors: [ImportFieldError], hadFieldWarnings: Bool, fileName: String) -> String? {
         let file = "\(L10n.SurveyExchange.filePrefix) '\(fileName)'"
         guard !rowErrors.isEmpty else {
             return hadFieldWarnings ? "\(file) \(L10n.SurveyExchange.fieldsInvalid)" : nil
         }
-        var message = "\(file) \(L10n.SurveyExchange.rowsIgnored)\n\n"
-            + rowErrors.map { "\(L10n.Exchange.line) \($0.line), \(L10n.SurveyExchange.field) '\($0.field)'." }.joined(separator: "\n")
+        var message = "\(file) \(L10n.SurveyExchange.rowsIgnored)\n\n\(L10n.SurveyExchange.details)"
+            + rowErrors.map { " \(L10n.Exchange.line) \($0.line), \(L10n.SurveyExchange.field) '\($0.field)'." }.joined()
         if hadFieldWarnings { message += "\n\n\(L10n.SurveyExchange.alsoFieldsInvalid)" }
         return message
     }

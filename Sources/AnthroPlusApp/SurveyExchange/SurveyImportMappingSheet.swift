@@ -1,9 +1,12 @@
 import AnthroFeatures
 import SwiftUI
 
-/// `NSImportDialog`: um seletor de coluna por campo do inquérito, começando pela proposta automática.
+/// `NSImportDialog`: um seletor de coluna por campo do inquérito, começando pela proposta automática. Confirmar só
+/// fecha a folha; quem a abriu monta o rascunho depois, para que a pergunta sobre o inquérito aberto não apareça por
+/// cima dela.
 struct SurveyImportMappingSheet: View {
     let model: SurveyExchangeModel
+    let onConfirm: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
@@ -28,13 +31,10 @@ struct SurveyImportMappingSheet: View {
                 .formStyle(.grouped)
                 HStack {
                     Spacer()
-                    Button(L10n.Survey.cancel, role: .cancel) {
-                        model.cancelImport()
-                        dismiss()
-                    }
+                    Button(L10n.Survey.cancel, role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
                     Button(L10n.SurveyExchange.confirmImport) {
-                        model.confirmMapping()
+                        onConfirm()
                         dismiss()
                     }
                     .keyboardShortcut(.defaultAction)

@@ -46,6 +46,7 @@ struct SurveyModuleView: View {
 
     @State private var errorMessage: String?
     @State private var showingMapping = false
+    @State private var mappingConfirmed = false
     @State private var showingExport = false
     @State private var exchangeAlert: ExchangeAlert?
     /// Aviso da importação externa, mostrado depois da pergunta sobre o inquérito aberto, se houver.
@@ -83,7 +84,7 @@ struct SurveyModuleView: View {
             }
         }
         .sheet(isPresented: $showingMapping, onDismiss: mappingClosed) {
-            SurveyImportMappingSheet(model: session.exchange)
+            SurveyImportMappingSheet(model: session.exchange) { mappingConfirmed = true }
                 .editingSheet()
         }
         .sheet(isPresented: $showingExport) {
@@ -143,6 +144,7 @@ struct SurveyModuleView: View {
         session.exchange.beginImport(from: url)
         switch session.exchange.phase {
         case .mapping:
+            mappingConfirmed = false
             showingMapping = true
         case .finished:
             perform { try module.list.showArchive(false) }
@@ -154,8 +156,15 @@ struct SurveyModuleView: View {
         }
     }
 
-    /// Depois da folha: o rascunho já foi entregue ao módulo; resta o aviso ou a falha da montagem.
+    /// Depois da folha: confirmada, monta o rascunho e o entrega ao módulo (que pergunta antes, se o inquérito aberto
+    /// tiver alterações); fechada de outro jeito, cancela. Resta o aviso ou a falha da montagem.
     private func mappingClosed() {
+        if mappingConfirmed {
+            mappingConfirmed = false
+            session.exchange.confirmMapping()
+        } else {
+            session.exchange.cancelImport()
+        }
         switch session.exchange.phase {
         case .mapping:
             session.exchange.cancelImport()
