@@ -1,5 +1,7 @@
 import AnthroFeatures
+import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Estado do módulo guardado no `AppModel`: sobrevive ao fechamento da janela, então a ficha em edição não se perde.
 @MainActor
@@ -9,6 +11,8 @@ final class IndividualAssessmentSession {
     let detail: ChildDetailModel
     /// Modelo de dados adicionais; `nil` se não puder ser lido, e então o botão de gerenciar fica desabilitado.
     let additionalData: IndividualAdditionalDataModel?
+    /// Importação, exportação e relatório (`tsbChildrenImport_Click`, `tsbChildrenExport_Click`, `GenerateChildReport`).
+    let exchange: ChildExchangeModel
     var isLoaded = false
 
     init(database: AnthroDatabase, settings: AppSettings, tables: GrowthReferenceTables) {
@@ -16,6 +20,11 @@ final class IndividualAssessmentSession {
         list = ChildListModel(database: database, settings: settings)
         detail = ChildDetailModel(database: database, settings: settings, engine: AnthroEngine(tables: tables))
         additionalData = try? IndividualAdditionalDataModel(repository: AdditionalDataTemplateRepository(database: database))
+        let repositories = RepositoryChildExchange(
+            database: database, children: ChildRepository(database: database), visits: VisitRepository(database: database),
+            parents: ParentRepository(database: database), addresses: AddressRepository(database: database),
+            templates: AdditionalDataTemplateRepository(database: database), engine: AnthroEngine(tables: tables))
+        exchange = ChildExchangeModel(source: repositories, sink: repositories)
     }
 }
 
@@ -59,6 +68,8 @@ struct IndividualAssessmentView: View {
     @State private var pending: PendingNavigation?
     @State private var errorMessage: String?
     @State private var templateEditor: AdditionalDataEditorPresentation?
+    @State private var showingExport = false
+    @State private var exchangeAlert: ExchangeAlert?
 
     private var list: ChildListModel { session.list }
     private var detail: ChildDetailModel { session.detail }
@@ -87,6 +98,30 @@ struct IndividualAssessmentView: View {
                 .help(L10n.AddData.manage)
                 .disabled(session.additionalData == nil)
             }
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button(L10n.Exchange.importChildren) { importChildren() }
+                    Button(L10n.Exchange.exportChildren) { startExport() }
+                        .disabled(list.checkedIDs.isEmpty)
+                    Button(L10n.Exchange.childReport) { writeReport() }
+                        .disabled(detail.draft?.id == nil)
+                } label: {
+                    Label(L10n.Exchange.menu, systemImage: "square.and.arrow.up.on.square")
+                }
+                .help(L10n.Exchange.menu)
+            }
+        }
+        .sheet(isPresented: $showingExport) {
+            ChildExportSheet(model: session.exchange) { error in
+                if let error { exchangeAlert = ExchangeAlert(title: L10n.Exchange.fileErrorTitle, message: "\(error.localizedDescription)") }
+            }
+            .editingSheet()
+        }
+        .alert(exchangeAlert?.title ?? "", isPresented: Binding(get: { exchangeAlert != nil }, set: { if !$0 { exchangeAlert = nil } }),
+               presenting: exchangeAlert) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { alert in
+            Text(alert.message)
         }
         .sheet(item: $templateEditor) { presentation in
             AdditionalDataEditorSheet(editor: presentation.editor, title: L10n.AddData.templateTitle) {
@@ -181,6 +216,55 @@ struct IndividualAssessmentView: View {
     private func show(_ error: Error) {
         errorMessage = IAErrorText.message(for: error)
     }
+
+    // MARK: Importação, exportação e relatório
+
+    /// `tsbChildrenImport_Click`: só XML; o arquivo é lido inteiro antes de gravar e, aceito, a lista ativa é recarregada.
+    private func importChildren() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.xml]
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        switch session.exchange.importXML(from: url) {
+        case .imported(let count):
+            perform { try list.showActive() }
+            exchangeAlert = ExchangeAlert(title: L10n.Exchange.importedTitle, message: "\(count) \(L10n.Exchange.importedSuffix)")
+        case .failed(let message):
+            exchangeAlert = ExchangeAlert(title: L10n.Exchange.importFailedTitle, message: message)
+        }
+    }
+
+    /// As crianças marcadas, na ordem da lista.
+    private func startExport() {
+        session.exchange.selectedChildIDs = list.rows.map(\.id).filter(list.checkedIDs.contains)
+        showingExport = true
+    }
+
+    /// `GenerateChildReport`: relatório da ficha gravada; com alterações pendentes, pede para salvar antes.
+    private func writeReport() {
+        guard let id = detail.draft?.id else { return }
+        guard !detail.hasUnsavedChanges else {
+            exchangeAlert = ExchangeAlert(title: L10n.Exchange.childReport, message: L10n.Exchange.reportNeedsSave)
+            return
+        }
+        do {
+            let panel = NSSavePanel()
+            panel.nameFieldStringValue = try session.exchange.suggestedReportFileName(childID: id)
+            panel.allowedContentTypes = [.plainText]
+            guard panel.runModal() == .OK, let url = panel.url else { return }
+            try session.exchange.writeReport(childID: id, to: url)
+            NSWorkspace.shared.open(url)
+        } catch {
+            exchangeAlert = ExchangeAlert(title: L10n.Exchange.fileErrorTitle, message: "\(error.localizedDescription)")
+        }
+    }
+}
+
+/// Aviso de importação, exportação ou relatório.
+struct ExchangeAlert: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
 }
 
 /// Mensagem em pt-BR para os erros de validação e de banco.
