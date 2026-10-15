@@ -7,7 +7,7 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 ## Perguntas em aberto para o Caio
 
 1. **Versão do macOS do Mac da Suzan.** A tabela do inquérito só mostra as colunas de dados adicionais a partir do macOS 14.4; o pacote declara 14.0. Mantive o alvo e escolho a tabela na view (D13 de `add-additional-data`). Se o Mac dela tiver 14.4 ou mais, subo o alvo e o ramo degradado some.
-2. **Limite de tamanho nos editores da Avaliação individual.** O original limita nomes e campos de endereço a 50 caracteres, observações a 250, CEP a 15 e telefone a 20; os editores do Mac (change 4) não limitam. A importação corta o excedente (a spec exige) e hoje avisa. Recomendo impor os limites nos editores, porque o AnthroPlus de Windows também corta ao importar. Não fiz porque mexe na tela de uma change arquivada.
+2. **Limite de tamanho nos editores da Avaliação individual e do Inquérito.** O original limita nomes e campos de endereço a 50 caracteres, observações a 250, CEP a 15 e telefone a 20, e no inquérito o nome a 50, nome e sobrenome do registro a 50 e notas a 250; os editores do Mac (changes 4 e 5) não limitam. A importação XML corta o excedente (a spec exige) e hoje avisa, nas duas telas. Recomendo impor os limites nos editores, porque o AnthroPlus de Windows também corta ao importar e a ida e volta pelo XML só fica exata assim. Não fiz porque mexe na tela de changes arquivadas.
 
 ## add-nutritional-survey (change 5, arquivada em 14/10/2026)
 
@@ -44,3 +44,14 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 - **[desvio corrigido no plano]** Idade lida com as duas datas é descartada, na planilha e no XML, como o setter de `Record.Age` do original; o cenário de ida e volta que prometia "idade calculada" foi corrigido antes do vermelho (D18).
 - **[proteção]** Lições da change 7 aplicadas ao XML de inquéritos: datas num fuso fixo, codecs aninhados decodificados depois da leitura, elementos fora do lugar recusados, caracteres de controle filtrados na escrita (D18).
 - **[proteção]** O rascunho importado só substitui o inquérito aberto depois da pergunta de salvar, se houver alterações (D18).
+- **[proteção]** O rascunho importado abre como alteração não salva: abrir outro inquérito, trocar de módulo ou fechar o app pergunta antes de descartá-lo. Se salvar o inquérito aberto falhar nessa pergunta, o rascunho é descartado e o aviso da importação some (D19, D20).
+- **[forma]** A pergunta sobre o inquérito aberto vem quando o rascunho fica pronto, não antes do diálogo de arquivo como no original; a importação XML não pergunta, porque só grava e recarrega a lista (D19).
+- **[desvio]** Conglomerado, equipe, ID e domicílio acima de 2147483647 são inválidos, como o `int.Parse` do original (D19).
+- **[proteção]** Exportar com o inquérito aberto marcado e alterado pede para salvar antes, como na Avaliação individual (D19).
+- **[forma]** Aviso de linhas descartadas no formato do original ("Detalhes: linha 3, campo 'Sex'. ..."); com linhas descartadas e campos inválidos, a frase dos campos vem depois, em vez de sumir como no original (D19).
+- **[proteção]** Data com ano de dois dígitos (`01/04/21`, comum no LibreOffice e no Numbers) lida pela janela do .NET (00 a 29 viram 20xx); antes virava o ano 21, sem aviso. Vale também para a importação de crianças (D20).
+- **[proteção]** REC e DBF malformados viram "formato inválido" em vez de derrubar o app; nome de campo repetido é recusado, como no original; DBF do Visual FoxPro lido (D20).
+- **[desvio]** Separador: o padrão da extensão vence quando aparece no cabeçalho, como no original; a detecção só entra quando o original leria o arquivo numa coluna só (D4, D20).
+- **[proteção]** Aspas abertas até o fim do arquivo são "formato inválido" (engoliam os registros seguintes); linhas só de separadores (`;;;`, da área usada do Excel) são ignoradas (D20).
+- **[proteção]** XML de inquéritos avisa os textos cortados nos limites do original (como o de crianças), recusa inquérito sem nome e informa quando o arquivo não tem nenhum inquérito (D20).
+- **[risco conhecido]** Fiéis ao original e não alterados: booleanos só em inglês (edema `S` ou `T` vira inválido e então "sem edema", com o aviso genérico de campos inválidos); CSV em Mac Roman lido como Windows-1252; a "linha N" do aviso conta registros depois das linhas vazias ignoradas. Se a Suzan usar planilhas com "S/N" no edema, vale reabrir (D20).
