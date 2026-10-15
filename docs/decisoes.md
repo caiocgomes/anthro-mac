@@ -62,5 +62,5 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 - **[forma]** `AnthroIO` passa a depender de `AnthroAnalysis`, porque os relatórios consomem o cálculo das prevalências (D16).
 - **[forma]** O oráculo do IC por cluster (pacote R `survey` 4.5) deixa de fora os desenhos em que o próprio R não devolve limites finitos (2 clusters, t com 1 grau de liberdade); o arquivo gerado é idêntico em duas execuções (D16).
 - **[forma]** Gráfico por sexo como o original: sexo sem z não forma série, e sem nenhuma série o gráfico mostra "(Sem dados)" (D16).
-- **Parada obrigatória no vermelho** (tarefa 0.4): change de números clínicos; aguardando o Caio aprovar os testes e decidir a regra de peso para idade acima de 108 meses.
+- **Decisão do Caio no portão vermelho (15/10/2026):** testes aprovados; peso para idade acima de 108 meses segue o original (conta no N sem z). Consequência: a prevalência e a média de peso para idade dos 9 anos ficam diluídas, como no AnthroPlus de Windows.
 

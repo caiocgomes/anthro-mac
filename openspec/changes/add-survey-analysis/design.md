@@ -103,4 +103,4 @@ As views `SurveyResultsView` (aba de resultados com seletor de indicador e filtr
 
 ## Open Questions
 
-- Peso para idade acima de 108 meses contado em N sem z (D2, passo 3) foi resolvido pela regra de fidelidade do `openspec/config.yaml` (vale o código). Afeta a faixa de 9 anos da pesquisa da Suzan; se ela preferir excluir essas crianças de N, a mudança fica isolada no requisito "Peso para idade após 108 meses" e na task 1.2, sem tocar o resto. Confirmar com o usuário antes do apply.
+- Nenhuma. O peso para idade acima de 108 meses contado em N sem z (D2, passo 3) foi confirmado pelo Caio no portão vermelho, em 15/10/2026: fidelidade ao original. A diluição na faixa de 9 anos (uns 20% de uma coorte de 5 a 10 anos) fica documentada; se a pesquisa precisar de peso para idade limpo aos 9 anos, o cálculo dessa faixa sai à parte, e a mudança no app ficaria isolada no requisito "Peso para idade após 108 meses" e na task 1.2.
