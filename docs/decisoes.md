@@ -58,7 +58,7 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 - **[risco conhecido]** Fiéis ao original e não alterados: booleanos só em inglês (edema `S` ou `T` vira inválido e então "sem edema", com o aviso genérico de campos inválidos); CSV em Mac Roman lido como Windows-1252; a "linha N" do aviso conta registros depois das linhas vazias ignoradas. Se a Suzan usar planilhas com "S/N" no edema, vale reabrir (D20).
 - **[forma]** Arquivada com a spec sincronizada (`survey-data-exchange` criada), a mesma escolha das changes 5 a 7, sem perguntar.
 
-## add-survey-analysis (change 9, em andamento desde 15/10/2026)
+## add-survey-analysis (change 9, arquivada em 15/10/2026)
 
 - **[forma]** `AnthroIO` passa a depender de `AnthroAnalysis`, porque os relatórios consomem o cálculo das prevalências (D16).
 - **[forma]** O oráculo do IC por cluster (pacote R `survey` 4.5) deixa de fora os desenhos em que o próprio R não devolve limites finitos (2 clusters, t com 1 grau de liberdade); o arquivo gerado é idêntico em duas execuções (D16).
@@ -70,4 +70,4 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 - **[proteção]** Correção por cluster que falha por causa do peso para idade acima de 108 meses explica a causa em vez de "variável cluster vazia" (D17; pergunta 3).
 - **[forma]** O app reexporta os tipos da análise para as views; a análise usa os registros atuais do inquérito aberto, inclusive não gravados, como o original (D17).
 - **Decisão do Caio no portão vermelho (15/10/2026):** testes aprovados; peso para idade acima de 108 meses segue o original (conta no N sem z). Consequência: a prevalência e a média de peso para idade dos 9 anos ficam diluídas, como no AnthroPlus de Windows.
-
+- **[forma]** Arquivada com as specs sincronizadas (`survey-analysis`, `survey-reports` e `survey-graphs` criadas; requisito "Arredondamento clínico" de `anthropometric-computation` modificado), a mesma escolha das changes anteriores, sem perguntar.
