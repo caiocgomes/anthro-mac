@@ -48,11 +48,11 @@
 
 ## 6. Verification
 
-- [ ] 6.1 Mutation check for survey-analysis: trocar `> 108` por `> 120` no ramo de peso para idade, ver `pesoParaIdadeComCriancasDe110Meses` falhar, reverter
-- [ ] 6.2 Mutation check for survey-analysis: remover o termo $1/(2n)$ de `ConfidenceIntervals.simple`, ver `icDasPrevalenciasDosDezRegistros` falhar, reverter
-- [ ] 6.3 Mutation check for survey-reports: usar "próximo limite - 1" também na última faixa fixa, ver `faixasFixasDeEstatura` falhar, reverter
-- [ ] 6.4 Mutation check for survey-graphs: gerar a grade da curva normal por índice inteiro, ver `curvaNormalComResolucao500` falhar, reverter
-- [ ] 6.5 Run the full suite fresh (`swift test`) e a checagem N/A (`scripts/build-app.sh` mais `grep -a -c`); all green, output free of errors and warnings
+- [x] 6.1 Mutation check for survey-analysis: trocar `> 108` por `> 120` no ramo de peso para idade, ver `pesoParaIdadeComCriancasDe110Meses` falhar, reverter
+- [x] 6.2 Mutation check for survey-analysis: remover o termo $1/(2n)$ de `ConfidenceIntervals.simple`, ver `icDasPrevalenciasDosDezRegistros` falhar, reverter
+- [x] 6.3 Mutation check for survey-reports: usar "próximo limite - 1" também na última faixa fixa, ver `faixasFixasDeEstatura` falhar, reverter
+- [x] 6.4 Mutation check for survey-graphs: gerar a grade da curva normal por índice inteiro, ver `curvaNormalComResolucao500` falhar, reverter
+- [x] 6.5 Run the full suite fresh (`swift test`) e a checagem N/A (`scripts/build-app.sh` mais `grep -a -c`); all green, output free of errors and warnings
 
 ## Workflow follow-up
 
