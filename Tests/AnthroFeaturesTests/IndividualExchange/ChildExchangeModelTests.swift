@@ -68,7 +68,14 @@ struct ChildExchangeModelTests {
         let text = String(decoding: (try? Data(contentsOf: url)) ?? Data(), as: UTF8.self)
         let lines = text.components(separatedBy: "\r\n").filter { !$0.isEmpty }
         #expect(lines.count == 3)
-        #expect(lines.first?.split(separator: ";", omittingEmptySubsequences: false).count == 43)
+        // 43 colunas fixas seguidas das 7 do modelo padrão de dados adicionais, que a migração 4 grava.
+        let header = (lines.first.map { $0.hasPrefix("\u{FEFF}") ? String($0.dropFirst()) : $0 } ?? "")
+            .split(separator: ";", omittingEmptySubsequences: false).map(String.init)
+        #expect(header.count == 50)
+        #expect(header.first == "DisplayID")
+        #expect(header.count < 43 || header[42] == "CreatedBy")
+        #expect(Array(header.suffix(7)) == ["Menarche/spermarche", "Self-reported", "Sport", "TV/computer",
+                                            "Fruit&veg portions / day", "Blood pressure", "Blood lipids"])
         #expect(!text.contains("Fora"))
     }
 

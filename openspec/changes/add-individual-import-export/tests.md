@@ -396,3 +396,5 @@
 ## Test Changes After Red
 
 <!-- Append-only. Vazio no planejamento. -->
+
+- **2026-10-14, `duasCriancasMarcadasEmCsvGeramTresLinhas`** (`Tests/AnthroFeaturesTests/IndividualExchange/ChildExchangeModelTests.swift`): a expectação de 43 campos no cabeçalho passou a 43 campos fixos seguidos das 7 colunas do modelo padrão de dados adicionais (50 no total). O cenário foi escrito sem considerar que a migração 4 da change `add-additional-data` grava o `IAAdditionalDataTemplate` do original, cujas 7 variáveis a exportação acrescenta, como o próprio requisito "Colunas da exportação delimitada de crianças" pede e o original faz numa instalação nova. O que o teste protege (só as crianças marcadas, no formato CSV) não mudou; o texto do cenário na spec foi ajustado junto. Para conferir o nome da primeira coluna, o teste passou a descartar o BOM UTF-8 antes de ler o cabeçalho. A falha que revelou o erro: `(lines.first?.split(separator: ";", omittingEmptySubsequences: false).count -> 50) == 43`.

@@ -237,7 +237,7 @@ O modelo da tela SHALL habilitar a exportação só com ao menos uma criança ma
 
 #### Scenario: Duas crianças marcadas em CSV
 - **WHEN** duas crianças sem visitas estão marcadas e a exportação CSV é gravada
-- **THEN** o arquivo tem três linhas e 43 campos no cabeçalho
+- **THEN** o arquivo tem três linhas e o cabeçalho tem os 43 campos fixos seguidos das 7 colunas do modelo padrão de dados adicionais
 
 ### Requirement: Mensagens de falha de importação
 O modelo SHALL traduzir cada falha para a mensagem pt-BR equivalente a `Utils.DisplayImportError`, com o nome do arquivo, e SHALL acrescentar o detalhe de linha, elemento e atributo quando a leitura o informar.
