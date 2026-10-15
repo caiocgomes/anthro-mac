@@ -39,6 +39,17 @@ extension L10n {
         public static let fileErrorTitle = "Não foi possível gravar o arquivo"
         public static let reportNeedsSave = "Salve a ficha da criança antes de gerar o relatório."
         public static let defaultExportName = "Crianças"
+        /// "Atenção: {n} texto(s) do arquivo passavam do limite do AnthroPlus e foram cortados. Primeiro caso: linha {l},
+        /// {Elemento.Atributo}."
+        public static let truncatedPrefix = "Atenção:"
+        public static let truncatedSuffix = "texto(s) do arquivo passavam do limite do AnthroPlus e foram cortados."
+        public static let firstCase = "Primeiro caso:"
+        /// "Os dados adicionais da visita de {data} de {criança} não puderam ser lidos; a exportação foi cancelada."
+        public static let unreadableVisitPrefix = "Os dados adicionais da visita de"
+        public static let unreadableVisitOf = "de"
+        public static let unreadableVisitSuffix = "não puderam ser lidos; a exportação foi cancelada."
+        public static let unnamedChild = "criança sem nome"
+        public static let exportNeedsSave = "A criança aberta está marcada e tem alterações não salvas. Salve a ficha antes de exportar."
     }
 
     /// Strings desta extensão, somadas a `L10n.allStrings`.
@@ -48,7 +59,8 @@ extension L10n {
                 e.attribute, e.unreadableFile, e.menu, e.importChildren, e.exportChildren, e.childReport, e.exportTitle,
                 e.format, e.formatXML, e.formatTabText, e.formatCSV, e.includeResults, e.export, e.cancel,
                 e.checkedChildren, e.importedTitle, e.importedSuffix, e.importFailedTitle, e.fileErrorTitle,
-                e.reportNeedsSave, e.defaultExportName, r.title, r.firstName, r.lastName, r.dateOfBirth, r.male, r.female, r.results,
+                e.reportNeedsSave, e.defaultExportName, e.truncatedPrefix, e.truncatedSuffix, e.firstCase,
+                e.unreadableVisitPrefix, e.unreadableVisitOf, e.unreadableVisitSuffix, e.unnamedChild, e.exportNeedsSave, r.title, r.firstName, r.lastName, r.dateOfBirth, r.male, r.female, r.results,
                 r.yearSuffix, r.monthSuffix, r.yes, r.no, r.footnote, r.untitledFileName] + r.columns
     }
 }

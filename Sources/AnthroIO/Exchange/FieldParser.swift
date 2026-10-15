@@ -43,7 +43,7 @@ public enum FieldParser {
     public static func date(_ text: String?, nullable: Bool, notBefore: Date? = nil,
                             notAfter: Date? = nil) throws(FieldParseError) -> Date? {
         guard let text = try present(text, nullable: nullable) else { return nil }
-        guard let date = parseDate(text) else { throw .invalid }
+        guard let date = parseDate(text, timeZone: .current) else { throw .invalid }
         if let notBefore, date < noon(notBefore) { throw .outOfRange }
         if let notAfter, date > noon(notAfter) { throw .outOfRange }
         return date
@@ -104,21 +104,31 @@ public enum FieldParser {
     private static let fallbackFormats = ["dd/MM/yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss",
                                           "dd-MM-yyyy"]
 
-    private static func parseDate(_ text: String) -> Date? {
+    /// O texto é lido num fuso fixo (UTC), em que toda meia-noite existe: no fuso do usuário, a meia-noite do dia em que
+    /// começa o horário de verão não existe (16/10/2016 em São Paulo), e um formatador estrito recusaria a data. Ano, mês
+    /// e dia saem nesse mesmo fuso e viram o meio-dia daquele dia no fuso pedido.
+    static func parseDate(_ text: String, timeZone: TimeZone) -> Date? {
+        let utc = TimeZone(secondsFromGMT: 0)!
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = utc
         for format in ["dd-MM-yyyy HH:mm:ss"] + fallbackFormats {
             let formatter = DateFormatter()
             formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.calendar = Calendar(identifier: .gregorian)
-            formatter.timeZone = .current
+            formatter.calendar = utcCalendar
+            formatter.timeZone = utc
             formatter.isLenient = false
             formatter.dateFormat = format
-            if let date = formatter.date(from: text) { return noon(date) }
+            if let parsed = formatter.date(from: text) {
+                let parts = utcCalendar.dateComponents([.year, .month, .day], from: parsed)
+                guard let year = parts.year, let month = parts.month, let day = parts.day else { return nil }
+                return validDay(year, month, day, timeZone: timeZone)
+            }
         }
         let prefix = text.prefix(8)
         guard prefix.count == 8, prefix.allSatisfy(\.isASCII), prefix.allSatisfy(\.isNumber),
               let year = Int(prefix.prefix(4)), let month = Int(prefix.dropFirst(4).prefix(2)),
               let day = Int(prefix.dropFirst(6)) else { return nil }
-        return validDay(year, month, day)
+        return validDay(year, month, day, timeZone: timeZone)
     }
 
     /// Meio-dia do dia de calendário do usuário.
@@ -128,11 +138,12 @@ public enum FieldParser {
             ?? date
     }
 
-    private static func validDay(_ year: Int, _ month: Int, _ day: Int) -> Date? {
-        guard let date = Calendar.current.date(from: DateComponents(year: year, month: month, day: day, hour: 12)) else {
-            return nil
-        }
-        let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
+    /// Meio-dia do dia dado no fuso pedido, ou `nil` se o dia não existe.
+    private static func validDay(_ year: Int, _ month: Int, _ day: Int, timeZone: TimeZone) -> Date? {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        guard let date = calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12)) else { return nil }
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
         return parts.year == year && parts.month == month && parts.day == day ? date : nil
     }
 }

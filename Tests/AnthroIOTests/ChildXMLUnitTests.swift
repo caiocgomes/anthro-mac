@@ -41,4 +41,29 @@ struct ChildXMLUnitTests {
         let children = try ChildXML.read(F.xml(F.child(inner: F.visits(F.visitXML("01-04-2021 00:00:00", ["AdditionalData": ""])))))
         #expect(children.first?.visits.first?.additionalData == nil)
     }
+
+    @Test func nestedChildIsInvalidStructureNotACrash() {
+        let inner = F.child(["DisplayID": "2"], inner: F.visits(F.visitXML("01-04-2021 00:00:00")))
+        expectInvalidStructure(F.xml(F.child(inner: F.visits(F.visitXML("01-04-2021 00:00:00")) + inner)))
+    }
+
+    @Test func elementsOutsideAChildAreInvalidStructure() {
+        expectInvalidStructure(F.xml(F.visits(F.visitXML("01-04-2021 00:00:00")) + F.child()))
+        let mother = "<Mother FirstName=\"Maria\" LastName=\"\" Height=\"\" Weight=\"\" DateOfBirth=\"\" DateOfBirthIsApprox=\"0\" Notes=\"\" CreatedBy=\"\" />"
+        expectInvalidStructure(F.xml(F.child() + mother))
+    }
+
+    @Test func displayIDAboveTheOriginalIntegerIsInvalidStructure() throws {
+        expectInvalidStructure(F.xml(F.child(["DisplayID": "2147483648"])))
+        #expect(try ChildXML.read(F.xml(F.child(["DisplayID": "2147483647"]))).first?.displayID == 2_147_483_647)
+    }
+
+    @Test func truncatedTextsAreReportedWithLineAndField() throws {
+        let long = String(repeating: "a", count: 260)
+        let report = try ChildXML.readReport(F.xml(F.child(["Notes": long], inner: F.visits(F.visitXML("01-04-2021 00:00:00", ["Notes": long])))))
+        #expect(report.children.first?.notes?.count == 250)
+        #expect(report.truncated == [ImportFieldError(line: 3, field: "Child.Notes"), ImportFieldError(line: 3, field: "Visit.Notes")])
+        #expect(try ChildXML.readReport(F.xml(F.child())).truncated.isEmpty)
+    }
 }
+

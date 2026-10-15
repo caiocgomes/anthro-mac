@@ -228,15 +228,23 @@ struct IndividualAssessmentView: View {
         switch session.exchange.importXML(from: url) {
         case .imported(let count):
             perform { try list.showActive() }
-            exchangeAlert = ExchangeAlert(title: L10n.Exchange.importedTitle, message: "\(count) \(L10n.Exchange.importedSuffix)")
+            let warning = session.exchange.lastImportWarning.map { "\n\n\($0)" } ?? ""
+            exchangeAlert = ExchangeAlert(title: L10n.Exchange.importedTitle,
+                                          message: "\(count) \(L10n.Exchange.importedSuffix)\(warning)")
         case .failed(let message):
             exchangeAlert = ExchangeAlert(title: L10n.Exchange.importFailedTitle, message: message)
         }
     }
 
     /// As crianças marcadas, na ordem da lista.
+    /// A exportação lê o banco: a criança aberta com alterações pendentes sairia sem elas, então pede para salvar antes.
     private func startExport() {
-        session.exchange.selectedChildIDs = list.rows.map(\.id).filter(list.checkedIDs.contains)
+        let selected = list.rows.map(\.id).filter(list.checkedIDs.contains)
+        if detail.hasUnsavedChanges, let openID = detail.draft?.id, selected.contains(openID) {
+            exchangeAlert = ExchangeAlert(title: L10n.Exchange.exportTitle, message: L10n.Exchange.exportNeedsSave)
+            return
+        }
+        session.exchange.selectedChildIDs = selected
         showingExport = true
     }
 

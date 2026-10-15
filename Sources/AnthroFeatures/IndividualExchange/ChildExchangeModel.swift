@@ -29,6 +29,8 @@ public final class ChildExchangeModel {
     public var selectedChildIDs: [Int64] = []
     /// A pergunta "incluir resultados?" do original começa com não.
     public var includeResults: Bool = false
+    /// Aviso da última importação aceita: textos cortados nos limites do original.
+    public private(set) var lastImportWarning: String?
 
     @ObservationIgnored private let source: any ChildExchangeSource
     @ObservationIgnored private let sink: any ChildImportSink
@@ -60,6 +62,7 @@ public final class ChildExchangeModel {
 
     /// Lê o XML inteiro antes de gravar: qualquer falha rejeita o arquivo sem tocar no banco (design D6 e D10).
     public func importXML(from url: URL) -> ChildImportOutcome {
+        lastImportWarning = nil
         let fileName = url.lastPathComponent
         let data: Data
         do {
@@ -67,14 +70,19 @@ public final class ChildExchangeModel {
         } catch {
             return .failed(message: "\(Self.prefix(fileName)) \(L10n.Exchange.unreadableFile)")
         }
-        let children: [ExchangeChild]
+        let report: (children: [ExchangeChild], truncated: [ImportFieldError])
         do {
-            children = try ChildXML.read(data)
+            report = try ChildXML.readReport(data)
         } catch {
             return .failed(message: Self.message(for: error, fileName: fileName))
         }
         do {
-            return .imported(count: try sink.insertAll(children))
+            let count = try sink.insertAll(report.children)
+            if let first = report.truncated.first {
+                lastImportWarning = "\(L10n.Exchange.truncatedPrefix) \(report.truncated.count) \(L10n.Exchange.truncatedSuffix) "
+                    + "\(L10n.Exchange.firstCase) \(L10n.Exchange.line) \(first.line), \(first.field)."
+            }
+            return .imported(count: count)
         } catch {
             return .failed(message: "\(Self.prefix(fileName)) \(L10n.IndividualAssessment.databaseError) \(error)")
         }

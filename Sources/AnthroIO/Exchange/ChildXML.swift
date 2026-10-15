@@ -24,6 +24,12 @@ public enum ChildXML {
     /// arquivo inteiro com `invalidStructure` (com o detalhe de linha, elemento e atributo, design D6); visitas fora de
     /// ordem estritamente crescente rejeitam com `invalidFieldValue` (`CheckImportedVisitDates`).
     public static func read(_ data: Data) throws(ImportFailure) -> [ExchangeChild] {
+        try readReport(data).children
+    }
+
+    /// A leitura de `read(_:)` com os textos cortados nos limites do original (`Child.Notes`, `Address.Place`...),
+    /// para avisar a usuária de que o arquivo tinha mais do que o AnthroPlus guarda.
+    public static func readReport(_ data: Data) throws(ImportFailure) -> (children: [ExchangeChild], truncated: [ImportFieldError]) {
         let reader = ChildXMLReader()
         let parser = XMLParser(data: data)
         parser.delegate = reader
@@ -35,6 +41,9 @@ public enum ChildXML {
         // `XMLParser` não é reentrante: os dados adicionais lidos são decodificados depois da leitura (design D15).
         var children = reader.children
         for pending in reader.pendingAdditionalData {
+            guard children.indices.contains(pending.child), children[pending.child].visits.indices.contains(pending.visit) else {
+                throw .invalidStructure(ImportFailureDetail(line: pending.line, element: "Visit", attribute: nil))
+            }
             do {
                 children[pending.child].visits[pending.visit].additionalData = try AdditionalDataXML.decode(pending.text)
             } catch {
@@ -44,7 +53,7 @@ public enum ChildXML {
         for child in children where !visitDatesIncrease(child.visits) {
             throw .invalidFieldValue([])
         }
-        return children
+        return (children, reader.truncated)
     }
 
     /// `CheckImportedVisitDates`: cada visita, na ordem do documento, depois da anterior.
@@ -154,7 +163,11 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
     private(set) var failure: ImportFailure?
     /// Texto de `AdditionalData` de cada visita, para decodificar depois da leitura.
     private(set) var pendingAdditionalData: [(child: Int, visit: Int, text: String, line: Int)] = []
+    /// Textos cortados nos limites do original, com a linha e `Elemento.Atributo`.
+    private(set) var truncated: [ImportFieldError] = []
     private var current: ExchangeChild?
+    private var element = ""
+    private var line = 0
 
     /// Atributo que falhou, para o detalhe da mensagem.
     private struct AttributeError: Error {
@@ -163,15 +176,27 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
 
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?,
                 attributes: [String: String] = [:]) {
+        element = elementName
+        line = parser.lineNumber
+        // `Child` dentro de `Child` e `Mother`, `Father`, `Address` ou `Visit` fora de `Child` são estrutura inválida:
+        // aceitá-los perderia dados em silêncio (design D17).
+        if elementName == "Child", current != nil {
+            fail(parser, element: elementName, attribute: nil)
+            return
+        }
+        if ["Mother", "Father", "Address", "Visit", "Visits"].contains(elementName), current == nil {
+            fail(parser, element: elementName, attribute: nil)
+            return
+        }
         do {
             switch elementName {
             case "Child":
                 current = try child(attributes)
-            case "Mother" where current != nil:
+            case "Mother":
                 current?.mother = try person(attributes)
-            case "Father" where current != nil:
+            case "Father":
                 current?.father = try person(attributes)
-            case "Address" where current != nil:
+            case "Address":
                 current?.address = try address(attributes)
             case "Visit":
                 guard let dateOfBirth = current?.dateOfBirth, let visitIndex = current?.visits.count else { return }
@@ -203,14 +228,14 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
     // MARK: Elementos
 
     private func child(_ a: [String: String]) throws(AttributeError) -> ExchangeChild {
-        let displayID = try field("DisplayID") { () throws(FieldParseError) in try FieldParser.unsignedInteger(a["DisplayID"], nullable: true) }
-        let firstName = try field("FirstName") { () throws(FieldParseError) in try FieldParser.text(a["FirstName"], nullable: true, maxLength: 50) }
-        let lastName = try field("LastName") { () throws(FieldParseError) in try FieldParser.text(a["LastName"], nullable: true, maxLength: 50) }
+        let displayID = try field("DisplayID") { () throws(FieldParseError) in try FieldParser.unsignedInteger(a["DisplayID"], nullable: true, max: Int(Int32.max)) }
+        let firstName = try text(a, "FirstName", nullable: true, limit: 50)
+        let lastName = try text(a, "LastName", nullable: true, limit: 50)
         let birth = try field("DateOfBirth") { () throws(FieldParseError) in try FieldParser.date(a["DateOfBirth"], nullable: false) }
         let approx = try field("DateOfBirthIsApprox") { () throws(FieldParseError) in try FieldParser.boolean(a["DateOfBirthIsApprox"], nullable: false) }
         let sex = try field("Sex") { () throws(FieldParseError) in try FieldParser.sex(a["Sex"]) }
-        let notes = try field("Notes") { () throws(FieldParseError) in try FieldParser.text(a["Notes"], nullable: true, maxLength: 250) }
-        _ = try field("CreatedBy") { () throws(FieldParseError) in try FieldParser.text(a["CreatedBy"], nullable: true, maxLength: 20) }
+        let notes = try text(a, "Notes", nullable: true, limit: 250)
+        _ = try text(a, "CreatedBy", nullable: true, limit: 20)
         guard let birth else { throw AttributeError(attribute: "DateOfBirth") }
         return ExchangeChild(displayID: displayID, firstName: firstName, lastName: lastName, dateOfBirth: birth,
                              dateOfBirthIsApprox: approx ?? false, sex: sex, notes: notes)
@@ -218,31 +243,28 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
 
     /// Mãe ou pai: tudo opcional; `DateOfBirthIsApprox` vazio vale falso (design D7).
     private func person(_ a: [String: String]) throws(AttributeError) -> ExchangePerson {
-        let firstName = try field("FirstName") { () throws(FieldParseError) in try FieldParser.text(a["FirstName"], nullable: true, maxLength: 50) }
-        let lastName = try field("LastName") { () throws(FieldParseError) in try FieldParser.text(a["LastName"], nullable: true, maxLength: 50) }
+        let firstName = try text(a, "FirstName", nullable: true, limit: 50)
+        let lastName = try text(a, "LastName", nullable: true, limit: 50)
         let height = try field("Height") { () throws(FieldParseError) in try FieldParser.decimal(a["Height"], nullable: true, unsigned: true) }
         let weight = try field("Weight") { () throws(FieldParseError) in try FieldParser.decimal(a["Weight"], nullable: true, unsigned: true) }
         let birth = try field("DateOfBirth") { () throws(FieldParseError) in try FieldParser.date(a["DateOfBirth"], nullable: true) }
         let approx = try field("DateOfBirthIsApprox") { () throws(FieldParseError) in try FieldParser.boolean(a["DateOfBirthIsApprox"], nullable: true) }
-        let notes = try field("Notes") { () throws(FieldParseError) in try FieldParser.text(a["Notes"], nullable: true, maxLength: 250) }
-        _ = try field("CreatedBy") { () throws(FieldParseError) in try FieldParser.text(a["CreatedBy"], nullable: true, maxLength: 20) }
+        let notes = try text(a, "Notes", nullable: true, limit: 250)
+        _ = try text(a, "CreatedBy", nullable: true, limit: 20)
         return ExchangePerson(firstName: firstName, lastName: lastName, height: height, weight: weight, dateOfBirth: birth,
                               dateOfBirthIsApprox: approx ?? false, notes: notes)
     }
 
     /// Endereço: textos cortados nos limites do original; SALB e `CreatedBy` lidos e descartados (D9, D16).
     private func address(_ a: [String: String]) throws(AttributeError) -> ExchangeAddress {
-        func text(_ name: String, _ limit: Int) throws(AttributeError) -> String? {
-            try field(name) { () throws(FieldParseError) in try FieldParser.text(a[name], nullable: true, maxLength: limit) }
-        }
-        let result = ExchangeAddress(streetInfo: try text("StreetInfo", 50), place: try text("Place", 50),
-                                     zip: try text("ZIP", 15), district: try text("District", 50),
-                                     province: try text("Province", 50), state: try text("State", 50),
-                                     country: try text("Country", 50), phoneNumber: try text("PhoneNumber", 20),
-                                     email: try text("Email", 50))
-        _ = try text("SALBLevel1", 3)
-        _ = try text("SALBLevel2", 3)
-        _ = try text("CreatedBy", 20)
+        let result = ExchangeAddress(streetInfo: try text(a, "StreetInfo", nullable: true, limit: 50), place: try text(a, "Place", nullable: true, limit: 50),
+                                     zip: try text(a, "ZIP", nullable: true, limit: 15), district: try text(a, "District", nullable: true, limit: 50),
+                                     province: try text(a, "Province", nullable: true, limit: 50), state: try text(a, "State", nullable: true, limit: 50),
+                                     country: try text(a, "Country", nullable: true, limit: 50), phoneNumber: try text(a, "PhoneNumber", nullable: true, limit: 20),
+                                     email: try text(a, "Email", nullable: true, limit: 50))
+        _ = try text(a, "SALBLevel1", nullable: true, limit: 3)
+        _ = try text(a, "SALBLevel2", nullable: true, limit: 3)
+        _ = try text(a, "CreatedBy", nullable: true, limit: 20)
         return result
     }
 
@@ -259,12 +281,19 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
         }
         let recumbent = try field("IsRecumbent") { () throws(FieldParseError) in try FieldParser.measureType(a["IsRecumbent"]) }
         let oedema = try field("HasOedema") { () throws(FieldParseError) in try FieldParser.boolean(a["HasOedema"], nullable: false) }
-        let notes = try field("Notes") { () throws(FieldParseError) in try FieldParser.text(a["Notes"], nullable: true, maxLength: 250) }
+        let notes = try text(a, "Notes", nullable: true, limit: 250)
         let additionalText = try field("AdditionalData") { () throws(FieldParseError) in try FieldParser.text(a["AdditionalData"], nullable: true) }
-        _ = try field("CreatedBy") { () throws(FieldParseError) in try FieldParser.text(a["CreatedBy"], nullable: false, maxLength: 20) }
+        _ = try text(a, "CreatedBy", nullable: false, limit: 20)
         guard let date else { throw AttributeError(attribute: "Date") }
         return (ExchangeVisit(date: date, weight: weight, height: height, isRecumbent: recumbent,
                               hasOedema: oedema ?? false, notes: notes), additionalText)
+    }
+
+    /// Texto com limite do original; o corte é registrado para o aviso da importação.
+    private func text(_ a: [String: String], _ name: String, nullable: Bool, limit: Int) throws(AttributeError) -> String? {
+        let value = try field(name) { () throws(FieldParseError) in try FieldParser.text(a[name], nullable: nullable, maxLength: limit) }
+        if let raw = a[name], raw.count > limit { truncated.append(ImportFieldError(line: line, field: "\(element).\(name)")) }
+        return value
     }
 
     private func field<T>(_ name: String, _ parse: () throws(FieldParseError) -> T) throws(AttributeError) -> T {
@@ -275,7 +304,7 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
         }
     }
 
-    private func fail(_ parser: XMLParser, element: String, attribute: String) {
+    private func fail(_ parser: XMLParser, element: String, attribute: String?) {
         failure = failure ?? .invalidStructure(ImportFailureDetail(line: parser.lineNumber, element: element, attribute: attribute))
         parser.abortParsing()
     }

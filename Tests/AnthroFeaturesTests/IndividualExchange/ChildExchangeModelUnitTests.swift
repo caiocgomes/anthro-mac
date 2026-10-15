@@ -70,4 +70,34 @@ struct ChildExchangeModelUnitTests {
         let header = String(decoding: try Data(contentsOf: url), as: UTF8.self).components(separatedBy: "\r\n").first ?? ""
         #expect(header.hasSuffix("WAZ\tHAZ\tBAZ\tBMI\tMenarche/spermarche\tSelf-reported\tSport\tTV/computer\tFruit&veg portions / day\tBlood pressure\tBlood lipids"))
     }
+
+    @Test func importWarnsWhenTextsWereCutToTheOriginalLimits() throws {
+        let url = directory.appendingPathComponent("longo.xml")
+        let notes = String(repeating: "a", count: 300)
+        try Data("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Children>\n<Child DisplayID=\"1\" FirstName=\"Ana\" DateOfBirth=\"15-03-2016 00:00:00\" DateOfBirthIsApprox=\"0\" Sex=\"0\" Notes=\"\(notes)\" />\n</Children>".utf8).write(to: url)
+        #expect(model.importXML(from: url) == .imported(count: 1))
+        let warning = try #require(model.lastImportWarning)
+        #expect(warning.contains("1 texto(s)"))
+        #expect(warning.contains("linha 3"))
+        #expect(warning.contains("Child.Notes"))
+        let ok = directory.appendingPathComponent("curto.xml")
+        try Data("<?xml version=\"1.0\" encoding=\"utf-8\"?><Children><Child FirstName=\"Bia\" DateOfBirth=\"15-03-2016 00:00:00\" DateOfBirthIsApprox=\"0\" Sex=\"0\" /></Children>".utf8).write(to: ok)
+        #expect(model.importXML(from: ok) == .imported(count: 1))
+        #expect(model.lastImportWarning == nil)
+    }
+
+    @Test func unreadableAdditionalDataStopsExportWithAClearMessage() throws {
+        let id = try IAFixtures.insertChild(db, firstName: "Ana", lastName: "Silva")
+        try db.execute("INSERT INTO visits(child_id, date, weight, is_recumbent, has_oedema, additional_data) VALUES (?, '2021-04-01', '18', 0, 0, '<Data><Cat ID=\"A\" /></Data>')",
+                       [.integer(id)])
+        model.selectedChildIDs = [id]
+        do {
+            try model.export(format: .xml, to: directory.appendingPathComponent("x.xml"))
+            Issue.record("expected the export to fail")
+        } catch {
+            #expect(error.localizedDescription.contains("Ana Silva"))
+            #expect(error.localizedDescription.contains("01/04/2021"))
+        }
+    }
 }
+

@@ -16,8 +16,20 @@ public enum ChildExchangeMapping {
                       visits: try visits.map { visit in
                           ExchangeVisit(date: visit.date, weight: visit.weight, height: visit.lengthOrHeight,
                                         isRecumbent: visit.measuredRecumbent, hasOedema: visit.hasOedema, notes: visit.notes,
-                                        additionalData: try visit.additionalDataXML.map(AdditionalDataXML.decode))
+                                        additionalData: try additionalData(visit, of: child))
                       })
+    }
+
+    /// XML ilegível interrompe a exportação com o nome da criança e a data da visita, em vez de sair sem os valores.
+    private static func additionalData(_ visit: VisitRecord, of child: ChildRecord) throws -> AdditionalData? {
+        guard let xml = visit.additionalDataXML else { return nil }
+        do {
+            return try AdditionalDataXML.decode(xml)
+        } catch {
+            let name = [child.firstName, child.lastName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+            throw ChildExchangeError.unreadableAdditionalData(childName: name.isEmpty ? L10n.Exchange.unnamedChild : name,
+                                                              visitDate: visit.date)
+        }
     }
 
     public static func records(from child: ExchangeChild) throws -> (child: ChildRecord, mother: ParentRecord?,
