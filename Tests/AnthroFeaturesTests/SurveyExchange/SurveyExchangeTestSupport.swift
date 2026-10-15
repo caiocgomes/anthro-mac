@@ -1,0 +1,50 @@
+import AnthroCore
+import AnthroFeatures
+import AnthroIO
+import AnthroStore
+import Foundation
+
+/// Porta de saída de teste: guarda os rascunhos que a tela entregaria ao editor.
+@MainActor
+final class RecordingDraftPresenter: SurveyDraftPresenter {
+    private(set) var drafts: [ExchangeSurvey] = []
+
+    func presentDraft(_ draft: ExchangeSurvey) {
+        drafts.append(draft)
+    }
+}
+
+enum SurveyExchangeTestFiles {
+    static func directory() throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("anthro-survey-exchange", isDirectory: true)
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
+    /// O XML de `Tests/AnthroIOTests/Fixtures/ns-two-surveys.xml` (este alvo não tem recursos), com o sexo do registro
+    /// do segundo inquérito substituível.
+    static func twoSurveysXML(secondSex: String = "1") -> String {
+        """
+        <?xml version="1.0" encoding="utf-8" standalone="yes"?>
+        <Surveys>
+          <Survey Name="Escola A" Notes="Turma da manhã" Options="&lt;Opt&gt;&lt;O ID=&quot;AutoIDRecord&quot;&gt;True&lt;/O&gt;&lt;/Opt&gt;" CreatedBy="obs1">
+            <Records>
+              <Record Date="01-04-2021 00:00:00" Cluster="1" Team="" DisplayID="1" Household="1" WeightingFactor="1" FirstName="Ana" LastName="Silva" DateOfBirth="15-03-2016 00:00:00" DateOfBirthIsApprox="0" Age="60.5503080082" Sex="0" Weight="18,4" Height="110" IsRecumbent="0" HasOedema="0" Notes="" AdditionalData="&lt;Data /&gt;" CreatedBy="obs1" />
+              <Record Date="01-04-2021 00:00:00" Cluster="1" Team="" DisplayID="2" Household="2" WeightingFactor="2.5" FirstName="Bia" LastName="Souza" DateOfBirth="" DateOfBirthIsApprox="0" Age="70" Sex="1" Weight="20.1" Height="115.3" IsRecumbent="0" HasOedema="0" Notes="" AdditionalData="&lt;Data /&gt;" CreatedBy="obs1" />
+            </Records>
+          </Survey>
+          <Survey Name="Escola B" Notes="" Options="&lt;Opt /&gt;" CreatedBy="obs1">
+            <Records>
+              <Record Date="02-04-2021 00:00:00" Cluster="2" Team="1" DisplayID="1" Household="1" WeightingFactor="0.75" FirstName="Caio" LastName="" DateOfBirth="10-01-2015 00:00:00" DateOfBirthIsApprox="1" Age="" Sex="\(secondSex)" Weight="22" Height="120" IsRecumbent="0" HasOedema="0" Notes="" AdditionalData="&lt;Data /&gt;" CreatedBy="obs1" />
+            </Records>
+          </Survey>
+        </Surveys>
+        """
+    }
+
+    static func count(_ db: AnthroDatabase, _ table: String) throws -> Int64 {
+        guard case .integer(let n) = try db.query("SELECT COUNT(*) AS n FROM \(table)").first?["n"] else { return -1 }
+        return n
+    }
+}
