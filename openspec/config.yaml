@@ -49,8 +49,9 @@ context: |
   CONVENÇÕES NUMÉRICAS (espelham o .NET decimal do original)
   Valores clínicos em `Decimal`; pow/exp/sqrt em `Double`, convertendo nos mesmos pontos
   em que o C# converte. Conversão Double -> Decimal MUST arredondar para 15 dígitos
-  significativos (semântica do cast explícito do .NET Framework). Arredondamento
-  exibido: meio para longe de zero, `sign(x) * floor(|x| * 10^p + 0.5) / 10^p`.
+  significativos (semântica do cast explícito do .NET Framework); Decimal -> Double dá o
+  Double mais próximo. Arredondamento exibido: `Sign(x) * Abs(Floor(x * 10^p + 0.5)) / 10^p`
+  (piso sobre o valor com sinal: empate positivo para longe de zero, negativo para zero).
   Valor indefinido do original (decimal.MinValue) vira `nil` (Optional) no Swift.
   Idade em dias: diferença de datas de calendário (sem hora, fuso fixo UTC).
   Idade em meses: dias / 30.4375.

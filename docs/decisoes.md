@@ -8,6 +8,7 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 
 1. **Versão do macOS do Mac da Suzan.** A tabela do inquérito só mostra as colunas de dados adicionais a partir do macOS 14.4; o pacote declara 14.0. Mantive o alvo e escolho a tabela na view (D13 de `add-additional-data`). Se o Mac dela tiver 14.4 ou mais, subo o alvo e o ramo degradado some.
 2. **Limite de tamanho nos editores da Avaliação individual e do Inquérito.** O original limita nomes e campos de endereço a 50 caracteres, observações a 250, CEP a 15 e telefone a 20, e no inquérito o nome a 50, nome e sobrenome do registro a 50 e notas a 250; os editores do Mac (changes 4 e 5) não limitam. A importação XML corta o excedente (a spec exige) e hoje avisa, nas duas telas. Recomendo impor os limites nos editores, porque o AnthroPlus de Windows também corta ao importar e a ida e volta pelo XML só fica exata assim. Não fiz porque mexe na tela de changes arquivadas.
+3. **Relatório com correção por cluster numa coorte de 5 a 10 anos.** No original (e aqui, por fidelidade), a correção por cluster falha sempre que alguma faixa de peso para idade só tem crianças acima de 108 meses, porque elas entram em N antes de o cluster ser registrado. Basta uma criança de 120 meses para o relatório com correção não sair, mesmo com a coluna de cluster completa. Deixei a mensagem explicando isso em vez de "variável cluster vazia". Se a pesquisa da Suzan tiver conglomerados, recomendo divergir só nesse ponto: não falhar quando a faixa não teve nenhum registro levado ao cálculo com cluster. As linhas de peso dessas faixas já saem em branco no relatório; só a faixa 108-119 mudaria. Se a amostra é de ambulatório sem conglomerados, como o design supõe, nada muda e a fidelidade basta.
 
 ## add-nutritional-survey (change 5, arquivada em 14/10/2026)
 
@@ -62,5 +63,11 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 - **[forma]** `AnthroIO` passa a depender de `AnthroAnalysis`, porque os relatórios consomem o cálculo das prevalências (D16).
 - **[forma]** O oráculo do IC por cluster (pacote R `survey` 4.5) deixa de fora os desenhos em que o próprio R não devolve limites finitos (2 clusters, t com 1 grau de liberdade); o arquivo gerado é idêntico em duas execuções (D16).
 - **[forma]** Gráfico por sexo como o original: sexo sem z não forma série, e sem nenhuma série o gráfico mostra "(Sem dados)" (D16).
+- **[desvio corrigido]** O arredondamento clínico seguia uma transcrição errada do original ("meio para longe de zero"); o original arredonda o empate negativo para zero (-1,235 dá -1,23). Achado pela revisão com o próprio código do original compilado em .NET, corrigido no motor inteiro (requisito MODIFIED de `anthropometric-computation`). Muda a média de relatórios em empate e, raramente, um z negativo exatamente em empate (D17).
+- **[desvio corrigido]** A conversão de `Decimal` para `Double` passou a dar o valor mais próximo, como o .NET; antes, um IC simples em 1 de 125 mil combinações saía 0,1 diferente (D17).
+- **[forma]** A grade da densidade emula o `decimal` de 96 bits do .NET, para ter os mesmos pontos (D17).
+- **[desvio]** Barras de média negativa pretas e positivas tomate; o original pinta todas de tomate (D17).
+- **[proteção]** Correção por cluster que falha por causa do peso para idade acima de 108 meses explica a causa em vez de "variável cluster vazia" (D17; pergunta 3).
+- **[forma]** O app reexporta os tipos da análise para as views; a análise usa os registros atuais do inquérito aberto, inclusive não gravados, como o original (D17).
 - **Decisão do Caio no portão vermelho (15/10/2026):** testes aprovados; peso para idade acima de 108 meses segue o original (conta no N sem z). Consequência: a prevalência e a média de peso para idade dos 9 anos ficam diluídas, como no AnthroPlus de Windows.
 

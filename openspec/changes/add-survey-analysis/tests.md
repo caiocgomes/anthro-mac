@@ -669,6 +669,29 @@ Todos os valores esperados abaixo foram calculados à mão e conferidos por uma 
 - **Breaks if**: `canCopyGraph` fica sempre `true`, ou sempre `false`.
 - **Expected red**: expected canCopyGraph true after density data, got false
 
+### Capability: anthropometric-computation (MODIFIED)
+
+#### Scenario: Empates longe de zero
+- **Test name**: empatesArredondamLongeDeZero
+- **Test file**: Tests/AnthroCoreTests/AnthropometricComputationTests.swift
+- **Level**: acceptance
+- **Breaks if**: o empate positivo deixa de ir para longe de zero (2.345 dando 2.34).
+- **Expected red**: sem vermelho próprio: os empates positivos já passavam com a regra antiga; o cenário perdeu o caso negativo.
+
+#### Scenario: Empate negativo vai para zero
+- **Test name**: empateNegativoVaiParaZero
+- **Test file**: Tests/AnthroCoreTests/AnthropometricComputationTests.swift
+- **Level**: acceptance
+- **Breaks if**: o piso volta a agir sobre o valor absoluto (-2.345 dando -2.35).
+- **Expected red**: expected -2.34, got -2.35
+
+#### Scenario: Valor indefinido
+- **Test name**: valorIndefinidoContinuaIndefinido
+- **Test file**: Tests/AnthroCoreTests/AnthropometricComputationTests.swift
+- **Level**: acceptance
+- **Breaks if**: `nil` vira 0.
+- **Expected red**: sem vermelho próprio: cenário sem mudança, coberto desde a change port-anthro-engine.
+
 ## Coverage Ledger
 
 | Capability | Scenario | Test file | Test name | Breaks if | Red (SHA: failure) | Green (SHA) | State |
@@ -764,5 +787,11 @@ Todos os valores esperados abaixo foram calculados à mão e conferidos por uma 
 | survey-graphs | Retângulo degenerado | Tests/AnthroFeaturesTests/SurveyAnalysisModelTests.swift | retanguloDegeneradoEIgnorado | largura zero aceita | fc2da34: SurveyAnalysisModelTests.swift:125:9: Expectation failed: (analysis.xDomain -> 0.0 ... 0.0) == (-5...5 -> -5.0 ... 5.0) | d5114e1 | green |
 | survey-graphs | Comandos presentes na interface | scripts/build-app.sh | N/A (non-executable) | comandos removidos da view | fc2da34: `scripts/build-app.sh && grep -a -c "Copiar gráfico" ... && grep -a -c "Imprimir gráfico" ...` saiu com código 1 (strings ausentes do binário) | 55d2d3f | N/A (non-executable): checagem com código 0 em 55d2d3f |
 | survey-graphs | Gráfico vazio não é copiado | Tests/AnthroFeaturesTests/SurveyAnalysisModelTests.swift | graficoVazioNaoECopiado | canCopyGraph constante | fc2da34: SurveyAnalysisModelTests.swift:132:9: Expectation failed: (analysis.graph -> .empty(title: "")) == .empty(title: "(Sem dados)") | d5114e1 | green |
+| anthropometric-computation | Empates longe de zero | Tests/AnthroCoreTests/AnthropometricComputationTests.swift | empatesArredondamLongeDeZero | empate positivo para zero | sem vermelho próprio: cenário reduzido aos empates positivos, que já passavam | 896ebf8 | green |
+| anthropometric-computation | Empate negativo vai para zero | Tests/AnthroCoreTests/AnthropometricComputationTests.swift | empateNegativoVaiParaZero | piso sobre o valor absoluto | 1aa577e: AnthropometricComputationTests.swift:238:9: Expectation failed: (r(d("-2.345"), 2) -> -2.35) == (d("-2.34") -> -2.34) | 896ebf8 | green |
+| anthropometric-computation | Valor indefinido | Tests/AnthroCoreTests/AnthropometricComputationTests.swift | valorIndefinidoContinuaIndefinido | `nil` vira 0 | sem vermelho próprio: cenário sem mudança, coberto desde port-anthro-engine | 896ebf8 | green |
 
 ## Test Changes After Red
+
+- **15/10/2026, `Tests/AnthroCoreTests/AnthropometricComputationTests.swift` (change port-anthro-engine, arquivada):** o teste `empatesArredondamLongeDeZero` perdeu o caso -2.345 (que esperava -2.35) e ganhou o irmão `empateNegativoVaiParaZero` (-2.345 dá -2.34; -1.235 dá -1.23). Motivo: a revisão com o código do original compilado em .NET mostrou que `AnthroComputation.Round` aplica o piso ao valor com sinal; a regra do requisito estava transcrita errado e mudava médias de relatório em empate. O requisito "Arredondamento clínico" é MODIFIED nesta change (`specs/anthropometric-computation/spec.md`).
+- **15/10/2026, `Tests/AnthroCoreTests/GrowthReferenceDataTests.swift` (change port-anthro-engine, arquivada):** `percentil50IgualAMediana` passou a comparar o ponto da curva com `ClinicalRounding.double(median)` em vez de `NSDecimalNumber(decimal: median).doubleValue`. O teste afirma que o percentil 50 é a mediana; a expectativa reproduzia a conversão antiga, que erra alguns ULP, e a curva agora usa o `Double` mais próximo, como o `(double)decimal` do .NET.

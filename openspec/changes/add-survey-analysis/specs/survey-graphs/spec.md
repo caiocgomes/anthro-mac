@@ -64,7 +64,7 @@ O gráfico SHALL mostrar a curva normal em verde com o rótulo dos padrões da O
 - **THEN** o gráfico fica vazio com o título "(Sem dados)"
 
 ### Requirement: Barras de média e DP por faixa etária
-O sistema SHALL gerar uma barra por faixa de `AgeGroups.groups(fromBoundaries:)`, na posição 1 a k, de 0 até a média, com haste até $\mathrm{sinal}(m)(|m| + DP)$, rótulo "inferior-superior" da faixa, contagem "n=" com N arredondado, cor tomate para média positiva e preta para negativa, como `GetValuesForCandlePlotByAge`.
+O sistema SHALL gerar uma barra por faixa de `AgeGroups.groups(fromBoundaries:)`, na posição 1 a k, de 0 até a média, com haste até $\mathrm{sinal}(m)(|m| + DP)$, rótulo "inferior-superior" da faixa, contagem "n=" com N arredondado, como `GetValuesForCandlePlotByAge`, e cor tomate para média positiva e preta para negativa (desvio visual deliberado: o original pinta toda barra de tomate).
 
 #### Scenario: Duas faixas com médias de sinais opostos
 - **WHEN** o sistema gera as barras de IMC com `SurveyOptions.default` para registros de 96 meses com z -1 e -2 e registros de 108 meses com z 1 e 2
