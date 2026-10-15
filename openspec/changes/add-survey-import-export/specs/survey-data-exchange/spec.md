@@ -330,12 +330,23 @@ A exportação SHALL escrever `ExchangeDefaults.createdBy` em todo `CreatedBy` d
 - **WHEN** um XML com `CreatedBy="obs1"` no inquérito e nos registros é lido e exportado de novo
 - **THEN** a leitura é aceita e o novo XML traz `CreatedBy="AnthroPlus"` no inquérito e nos registros
 
+### Requirement: Idade lida com as duas datas
+Na importação externa e na XML, o sistema SHALL descartar a idade em meses lida quando o registro tiver data da pesquisa e data de nascimento, como o setter de `Record.Age` do original, que zera a idade sempre que as duas datas existem; o editor de registro da change `add-nutritional-survey` só aceita idade digitada sem as duas datas.
+
+#### Scenario: Planilha com as duas datas e a idade
+- **WHEN** a tabela mapeia data da pesquisa, nascimento e idade, e um registro traz `01/04/2021`, `15/03/2016` e `70`
+- **THEN** o registro montado tem as duas datas e idade em meses `nil`
+
+#### Scenario: XML com as duas datas e a idade
+- **WHEN** um registro do XML tem `Date`, `DateOfBirth` e `Age="70"`
+- **THEN** o registro lido tem as duas datas e idade em meses `nil`
+
 ### Requirement: Ida e volta de inquérito pelo XML
-Um inquérito exportado em XML e lido de volta SHALL ter os mesmos valores de campo em cada registro, com a idade em meses preenchida pela idade calculada quando o registro original não a tinha.
+Um inquérito exportado em XML e lido de volta SHALL ter os mesmos valores de campo em cada registro; o campo `Age` do arquivo traz a idade calculada quando o registro não tem idade guardada, e essa idade é descartada na leitura quando o registro tem as duas datas.
 
 #### Scenario: Exportar e reler inquérito
-- **WHEN** um inquérito com três registros, um deles sem idade guardada, é exportado e lido por `SurveyXML.read`
-- **THEN** os registros lidos têm os mesmos campos dos exportados, e o registro sem idade passa a ter a idade calculada com 10 casas
+- **WHEN** um inquérito com três registros, um deles sem idade guardada e com as duas datas, é exportado e lido por `SurveyXML.read`
+- **THEN** o arquivo traz `Age` com a idade calculada com 10 casas para esse registro, e os registros lidos são iguais aos exportados, inclusive esse registro sem idade guardada
 
 #### Scenario: Inquérito com dados adicionais na ida e volta
 - **WHEN** o inquérito tem `AdditionalDataDef` e registros com `AdditionalData`

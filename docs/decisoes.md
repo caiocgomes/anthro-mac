@@ -37,3 +37,10 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 - **[proteção]** Exportar a criança aberta com alterações pendentes pede para salvar antes; o relatório também (D17).
 - **[forma]** XML com BOM, indentação e CRLF como o `XmlWriter` do original; rótulos do relatório no `AnthroIO` reexportados em `L10n.Exchange`; menu "Importar e exportar" na barra (D17).
 - **[forma]** Cenário "Duas crianças marcadas em CSV" corrigido depois do vermelho: o cabeçalho tem as 7 colunas do modelo padrão de dados adicionais além das 43 fixas (Test Changes After Red).
+
+## add-survey-import-export (change 8, em andamento desde 15/10/2026)
+
+- **[proteção]** Registros apagados em DBF continuam ignorados (pergunta aberta do design, decidida sem consulta): num arquivo de pesquisa, um registro apagado que reaparece é erro silencioso (D8, D18).
+- **[desvio corrigido no plano]** Idade lida com as duas datas é descartada, na planilha e no XML, como o setter de `Record.Age` do original; o cenário de ida e volta que prometia "idade calculada" foi corrigido antes do vermelho (D18).
+- **[proteção]** Lições da change 7 aplicadas ao XML de inquéritos: datas num fuso fixo, codecs aninhados decodificados depois da leitura, elementos fora do lugar recusados, caracteres de controle filtrados na escrita (D18).
+- **[proteção]** O rascunho importado só substitui o inquérito aberto depois da pergunta de salvar, se houver alterações (D18).

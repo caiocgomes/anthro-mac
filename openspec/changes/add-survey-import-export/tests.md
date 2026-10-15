@@ -4,7 +4,7 @@
 
 - **Framework**: swift-testing (`import Testing`, `@Test`, `#expect`, `#expect(throws:)`).
 - **Full-suite command**: `swift test`
-- **Conventions**: leitores, montagem e escritores testados como funções puras em `Tests/AnthroIOTests/`; modelo e gravação em `Tests/AnthroFeaturesTests/SurveyExchange/` (a falha no meio da gravação usa um trigger SQLite criado pelo teste na tabela de inquéritos da migração 3), com `RepositorySurveyExchange` real sobre `AnthroDatabase` num diretório temporário com as migrações 1, 3 e 4, e um `SurveyDraftPresenter` de teste que guarda o rascunho recebido (porta de saída da tela, não a unidade sob teste). Fixtures em `Tests/AnthroIOTests/Fixtures/` (`survey.rec`, `ns-two-surveys.xml`); DBF gerado em memória por `Tests/AnthroIOTests/Support/DBFBuilder.swift`; tabelas e CSV pequenos montados no próprio teste. Nome do teste em lowerCamelCase, prefixado pelo cenário.
+- **Conventions**: leitores, montagem e escritores testados como funções puras em `Tests/AnthroIOTests/`; modelo e gravação em `Tests/AnthroFeaturesTests/SurveyExchange/` (a falha no meio da gravação usa um trigger SQLite criado pelo teste na tabela de inquéritos da migração 3), com `RepositorySurveyExchange` real sobre `AnthroDatabase` num diretório temporário com as migrações 1, 3 e 4, e um `SurveyDraftPresenter` de teste que guarda o rascunho recebido (porta de saída da tela, não a unidade sob teste). Fixtures em `Tests/AnthroIOTests/Fixtures/` (`survey.rec`, `ns-two-surveys.xml`); DBF gerado em memória por `Tests/AnthroIOTests/Support/DBFBuilder.swift`; tabelas e CSV pequenos montados no próprio teste. Nome do teste em lowerCamelCase, prefixado pelo cenário. Datas ao meio-dia do calendário do usuário (`Calendar.current`), pelo helper `day("2021-04-01")` de cada alvo de teste, a normalização das changes 4 a 7.
 - **Stubs do red gate**: parsers devolvem `ImportedTable(columns: [], rows: [])` sem lançar; `SeparatorDetector.detect` devolve `Character("\u{0}")`; `SurveyFileKind.forFileExtension` devolve `.xml`; `TextDecoding.decode` devolve `""`; `ColumnAutoMapper.propose` devolve `[:]`; `ExternalSurveyBuilder.build` devolve `ExternalImportResult(draft: ExchangeSurvey(survey: Survey(), records: []), rowErrors: [], hadFieldWarnings: false)`; `SurveyXML.read` devolve `[]`; funções de `Data` devolvem `Data()`; métodos do modelo não mudam `phase` (fica `.idle`) e `export` devolve `nil`; mensagens devolvem `""` ou `nil`.
 - **Mutation tool**: manual.
 
@@ -474,6 +474,20 @@
 - **Breaks if**: o XML interno for reescapado ou alterado na escrita
 - **Expected red**: `expected additionalDataDefinitionXML equal to input, got no surveys`
 
+#### Scenario: Planilha com as duas datas e a idade
+- **Test name**: `idadeComAsDuasDatasEhDescartadaNaPlanilha`
+- **Test file**: `Tests/AnthroIOTests/ExternalSurveyBuilderTests.swift`
+- **Level**: unit
+- **Breaks if**: a idade mapeada for gravada mesmo com as duas datas, divergindo do setter de `Record.Age` e mudando os z na reedição.
+- **Expected red**: expected 1 record with ageInMonths nil, got 0 records (stub de `build`).
+
+#### Scenario: XML com as duas datas e a idade
+- **Test name**: `idadeComAsDuasDatasEhDescartadaNoXml`
+- **Test file**: `Tests/AnthroIOTests/SurveyXMLTests.swift`
+- **Level**: unit
+- **Breaks if**: a idade lida do XML for mantida mesmo com as duas datas.
+- **Expected red**: expected 1 record with ageInMonths nil, got 0 surveys (stub de `read`).
+
 ## Coverage Ledger
 
 | Capability | Scenario | Test file | Test name | Breaks if | Red (SHA: failure) | Green (SHA) | State |
@@ -544,6 +558,8 @@
 | survey-data-exchange | CreatedBy lido e descartado | Tests/AnthroIOTests/SurveyXMLTests.swift | createdByLidoNoXmlDeInqueritoEhDescartado | CreatedBy lido reaparece | | | planned |
 | survey-data-exchange | Exportar e reler inquérito | Tests/AnthroIOTests/SurveyXMLTests.swift | exportarERelerInqueritoPreservaCampos | atributo não lido | | | planned |
 | survey-data-exchange | Inquérito com dados adicionais na ida e volta | Tests/AnthroIOTests/SurveyXMLTests.swift | inqueritoComDadosAdicionaisNaIdaEVolta | XML interno alterado | | | planned |
+| survey-data-exchange | Planilha com as duas datas e a idade | Tests/AnthroIOTests/ExternalSurveyBuilderTests.swift | idadeComAsDuasDatasEhDescartadaNaPlanilha | idade mantida com as duas datas | | | planned |
+| survey-data-exchange | XML com as duas datas e a idade | Tests/AnthroIOTests/SurveyXMLTests.swift | idadeComAsDuasDatasEhDescartadaNoXml | idade mantida com as duas datas | | | planned |
 
 ## Test Changes After Red
 
