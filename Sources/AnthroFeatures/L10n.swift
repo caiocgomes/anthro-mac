@@ -57,6 +57,6 @@ public enum L10n {
             About.title, About.versionLabel, About.attribution, About.references, About.disclaimer,
             About.developmentVersion,
             SelfTest.ok, SelfTest.missingResources, SelfTest.missingTables, SelfTest.wrongRowCount,
-        ] + anthroStrings + individualAssessmentStrings + surveyStrings + additionalDataStrings
+        ] + anthroStrings + individualAssessmentStrings + surveyStrings + additionalDataStrings + exchangeStrings
     }
 }
