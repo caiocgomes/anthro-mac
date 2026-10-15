@@ -9,26 +9,26 @@
 
 ## 1. Leitura de texto delimitado
 
-- [ ] 1.1 Implement `SurveyFileKind.forFileExtension` portando a escolha por extensão de `NSMain.importFromFileToolStripMenuItem_Click`; verified when [tests: extensoesConhecidasEscolhemOLeitor] pass
-- [ ] 1.2 Implement `TextDecoding` (BOM UTF-8, UTF-16 LE e BE, UTF-8 estrito, Windows-1252), unit tests first (inner loop); verified when [tests: arquivoDoExcelEmWindows1252ViraJoao, arquivoUtf8ComBomRemoveOBom, arquivoUtf16LeComBomEhDecodificado] pass
-- [ ] 1.3 Implement `SeparatorDetector` (contagem fora de aspas, padrão por extensão); verified when [tests: csvComVirgulaUsaVirgulaComoSeparador, primeiraLinhaSemSeparadorUsaPadraoDaExtensao, separadorEntreAspasNaoConta] pass
-- [ ] 1.4 Implement `DelimitedParser` portando `DelimitedTextStream.GetNextItem` e `Delimited.ParseStream` (aspas, espaço inicial, CRLF/LF/CR, `ColumnN`, linhas vazias ignoradas, registros curtos completados), unit tests first; verified when [tests: campoEntreAspasComSeparadorFicaInteiro, espacoInicialEAspasDuplicadasSaoTratados, quebraDeLinhaDentroDeAspasMantemUmRegistro, nomesVaziosERepetidosViramColumnN, registroMaisLongoQueOCabecalhoCriaColuna, arquivoVazioFalhaComFormatoInvalido, linhaVaziaNoMeioDoArquivoEhIgnorada, registroCurtoCompletaComTextoVazio] pass
-- [ ] 1.5 Refactor `Sources/AnthroIO/SurveyExchange/` (leitura de texto); `swift test` stays green
+- [x] 1.1 Implement `SurveyFileKind.forFileExtension` portando a escolha por extensão de `NSMain.importFromFileToolStripMenuItem_Click`; verified when [tests: extensoesConhecidasEscolhemOLeitor] pass
+- [x] 1.2 Implement `TextDecoding` (BOM UTF-8, UTF-16 LE e BE, UTF-8 estrito, Windows-1252), unit tests first (inner loop); verified when [tests: arquivoDoExcelEmWindows1252ViraJoao, arquivoUtf8ComBomRemoveOBom, arquivoUtf16LeComBomEhDecodificado] pass
+- [x] 1.3 Implement `SeparatorDetector` (contagem fora de aspas, padrão por extensão); verified when [tests: csvComVirgulaUsaVirgulaComoSeparador, primeiraLinhaSemSeparadorUsaPadraoDaExtensao, separadorEntreAspasNaoConta] pass
+- [x] 1.4 Implement `DelimitedParser` portando `DelimitedTextStream.GetNextItem` e `Delimited.ParseStream` (aspas, espaço inicial, CRLF/LF/CR, `ColumnN`, linhas vazias ignoradas, registros curtos completados), unit tests first; verified when [tests: campoEntreAspasComSeparadorFicaInteiro, espacoInicialEAspasDuplicadasSaoTratados, quebraDeLinhaDentroDeAspasMantemUmRegistro, nomesVaziosERepetidosViramColumnN, registroMaisLongoQueOCabecalhoCriaColuna, arquivoVazioFalhaComFormatoInvalido, linhaVaziaNoMeioDoArquivoEhIgnorada, registroCurtoCompletaComTextoVazio] pass
+- [x] 1.5 Refactor `Sources/AnthroIO/SurveyExchange/` (leitura de texto); `swift test` stays green
 
 ## 2. REC, DBF e leitura externa
 
-- [ ] 2.1 Implement `RECParser` portando `External.ParseRECFile` (descritores, largura no token 8, linhas de 79 caracteres, aparo de espaço e NUL), unit tests first; verified when [tests: recComDoisRegistrosLeLargurasFixas, registroRecEmDuasLinhasFisicasEhJuntado, descritorRecIncompletoFalha] pass
-- [ ] 2.2 Implement `DBFParser` lendo por bytes a partir do tamanho do cabeçalho, com decodificação de `TextDecoding` por valor, unit tests first; verified when [tests: dbfComDoisRegistrosLeCamposEValores, dbfTruncadoFalha] pass
-- [ ] 2.3 Implement o descarte de registros DBF marcados com `*` (decisão D8, sujeita ao OK da usuária no red gate); verified when [tests: registroApagadoNoDbfEhIgnorado] pass
-- [ ] 2.4 Implement `ExternalTableReader` (decodificação, detecção de separador, despacho por tipo); verified when [tests: csvComPontoEVirgulaEVirgulaDecimalLePeso, extensaoDesconhecidaViraXmlEFalha] pass
-- [ ] 2.5 Refactor leitores externos; `swift test` stays green
+- [x] 2.1 Implement `RECParser` portando `External.ParseRECFile` (descritores, largura no token 8, linhas de 79 caracteres, aparo de espaço e NUL), unit tests first; verified when [tests: recComDoisRegistrosLeLargurasFixas, registroRecEmDuasLinhasFisicasEhJuntado, descritorRecIncompletoFalha] pass
+- [x] 2.2 Implement `DBFParser` lendo por bytes a partir do tamanho do cabeçalho, com decodificação de `TextDecoding` por valor, unit tests first; verified when [tests: dbfComDoisRegistrosLeCamposEValores, dbfTruncadoFalha] pass
+- [x] 2.3 Implement o descarte de registros DBF marcados com `*` (decisão D8, sujeita ao OK da usuária no red gate); verified when [tests: registroApagadoNoDbfEhIgnorado] pass
+- [x] 2.4 Implement `ExternalTableReader` (decodificação, detecção de separador, despacho por tipo); verified when [tests: csvComPontoEVirgulaEVirgulaDecimalLePeso, extensaoDesconhecidaViraXmlEFalha] pass
+- [x] 2.5 Refactor leitores externos; `swift test` stays green
 
 ## 3. Mapeamento e montagem do inquérito importado
 
-- [ ] 3.1 Implement `SurveyImportField` e `ColumnAutoMapper` portando a ordem de testes de `NSImportDialog`; verified when [tests: colunasUsuaisSaoMapeadasAutomaticamente, fatorDePonderacaoSemEspacoViraPeso, duasColunasParaOMesmoCampoUltimaVence] pass
-- [ ] 3.2 Implement `ExternalSurveyBuilder` portando `Survey.CreateSurveyFromExternalData` sobre `Survey` e `SurveyRecord` da change 5 (sexo obrigatório, descarte com até 10 erros, avisos, fator de ponderação, truncamento e limites de `InputLimits` para peso e altura, edema), unit tests first; verified when [tests: sexoNaoMapeadoFalhaComCampoAusente, sexoMapeadoMontaTodosOsRegistros, dozeRegistrosComSexoInvalidoListamDez, sexoComCodigoDoisEhMenina, dataDeVisitaInvalidaMantemRegistroComAviso, fatorDePonderacaoVazioViraZeroESemMapeamentoUm, edemaNaoInformadoViraFalso, pesoComTresCasasEhTruncado, pesoAbaixoDoMinimoFicaAusenteComAviso, idadeComAsDuasDatasEhDescartadaNaPlanilha] pass
-- [ ] 3.3 Implement a derivação da medida deitada por `SurveyRecordEvaluation.ageInDays` e a seção `Imported` com `AdditionalDataXML.encode` da change 6; verified when [tests: idadeAbaixoDe731DiasMarcaDeitado, semIdadeComAlturaDeCorteDecidePorOitentaESete, semIdadeESemAlturaMarcaEmPe, duasColunasExtrasViramVariaveisImportadas, todasAsColunasMapeadasNaoCriamVariaveis] pass
-- [ ] 3.4 Refactor `ExternalSurveyBuilder`; `swift test` stays green
+- [x] 3.1 Implement `SurveyImportField` e `ColumnAutoMapper` portando a ordem de testes de `NSImportDialog`; verified when [tests: colunasUsuaisSaoMapeadasAutomaticamente, fatorDePonderacaoSemEspacoViraPeso, duasColunasParaOMesmoCampoUltimaVence] pass
+- [x] 3.2 Implement `ExternalSurveyBuilder` portando `Survey.CreateSurveyFromExternalData` sobre `Survey` e `SurveyRecord` da change 5 (sexo obrigatório, descarte com até 10 erros, avisos, fator de ponderação, truncamento e limites de `InputLimits` para peso e altura, edema), unit tests first; verified when [tests: sexoNaoMapeadoFalhaComCampoAusente, sexoMapeadoMontaTodosOsRegistros, dozeRegistrosComSexoInvalidoListamDez, sexoComCodigoDoisEhMenina, dataDeVisitaInvalidaMantemRegistroComAviso, fatorDePonderacaoVazioViraZeroESemMapeamentoUm, edemaNaoInformadoViraFalso, pesoComTresCasasEhTruncado, pesoAbaixoDoMinimoFicaAusenteComAviso, idadeComAsDuasDatasEhDescartadaNaPlanilha] pass
+- [x] 3.3 Implement a derivação da medida deitada por `SurveyRecordEvaluation.ageInDays` e a seção `Imported` com `AdditionalDataXML.encode` da change 6; verified when [tests: idadeAbaixoDe731DiasMarcaDeitado, semIdadeComAlturaDeCorteDecidePorOitentaESete, semIdadeESemAlturaMarcaEmPe, duasColunasExtrasViramVariaveisImportadas, todasAsColunasMapeadasNaoCriamVariaveis] pass
+- [x] 3.4 Refactor `ExternalSurveyBuilder`; `swift test` stays green
 
 ## 4. XML e exportação delimitada de inquéritos
 
