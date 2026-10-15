@@ -41,12 +41,9 @@ struct SurveyExportSheet: View {
         panel.nameFieldStringValue = "\(L10n.SurveyExchange.defaultExportName).\(format.fileExtension)"
         panel.allowedContentTypes = [UTType(filenameExtension: format.fileExtension) ?? .data]
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        do {
-            let warning = try model.export(format: format, to: url)
-            dismiss()
-            onFinished(.success(warning))
-        } catch {
-            onFinished(.failure(error))
-        }
+        // A folha fecha antes do aviso: um alerta da tela de baixo não aparece com ela aberta.
+        let result = Result { try model.export(format: format, to: url) }
+        dismiss()
+        onFinished(result)
     }
 }

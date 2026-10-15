@@ -1,46 +1,37 @@
 /// `Delimited.ParseStream` com `DelimitedTextStream.GetNextItem` (design D5 e D6): a primeira linha é o cabeçalho;
 /// nome vazio ou repetido (sem diferenciar maiúsculas, como `DataColumnCollection.Contains`) e campo excedente viram
-/// `ColumnN` com o menor N livre; linha vazia é ignorada e registro curto é completado com texto vazio, em vez de
-/// derrubar o arquivo como no original. Texto sem nenhuma linha é formato inválido.
+/// `ColumnN` com o menor N livre; linha vazia ou só de campos vazios é ignorada e registro curto é completado com texto
+/// vazio, em vez de derrubar o arquivo como no original. Texto sem nenhuma linha e aspas abertas até o fim do texto (que
+/// engoliriam os registros seguintes) são formato inválido.
 public enum DelimitedParser {
     public static func parse(_ text: String, separator: Character) throws(ImportFailure) -> ImportedTable {
         var reader = FieldReader(scalars: Array(text.unicodeScalars), separator: separator.unicodeScalars.first ?? ";")
         var rows: [[String]] = []
         while let row = reader.nextRow() {
-            // Linha vazia (ou só de espaços) chega como um único campo vazio.
-            if row == [""] { continue }
+            // Linha vazia, só de espaços ou só de separadores (a área usada do Excel) não é registro.
+            if row.allSatisfy(\.isEmpty) { continue }
             rows.append(row)
         }
-        guard let header = rows.first else {
+        guard !reader.unclosedQuote, let header = rows.first else {
             throw .invalidStructure(ImportFailureDetail(line: nil, element: nil, attribute: nil))
         }
         var columns: [String] = []
         for name in header {
-            if !name.isEmpty, !contains(columns, name) {
+            if !name.isEmpty, !ColumnNames.contains(columns, name) {
                 columns.append(name)
             } else {
-                columns.append(nextColumnName(columns))
+                columns.append(ColumnNames.next(columns))
             }
         }
         var body: [[String]] = []
         for row in rows.dropFirst() {
-            while row.count > columns.count { columns.append(nextColumnName(columns)) }
+            while row.count > columns.count { columns.append(ColumnNames.next(columns)) }
             body.append(row)
         }
         return ImportedTable(columns: columns,
                              rows: body.map { $0 + Array(repeating: "", count: columns.count - $0.count) })
     }
 
-    private static func contains(_ columns: [String], _ name: String) -> Bool {
-        columns.contains { $0.compare(name, options: .caseInsensitive) == .orderedSame }
-    }
-
-    /// `GetNextColumnHeader`: `Column1`, `Column2`... o menor ainda não usado.
-    private static func nextColumnName(_ columns: [String]) -> String {
-        var number = 1
-        while contains(columns, "Column\(number)") { number += 1 }
-        return "Column\(number)"
-    }
 }
 
 /// `DelimitedTextStream`: lê campo a campo por escalar Unicode (CRLF é um só `Character` no Swift).
@@ -49,6 +40,8 @@ private struct FieldReader {
     let separator: Unicode.Scalar
     private var position = 0
     private var endOfLine = false
+    /// O texto acabou dentro de um campo entre aspas.
+    private(set) var unclosedQuote = false
 
     init(scalars: [Unicode.Scalar], separator: Unicode.Scalar) {
         self.scalars = scalars
@@ -75,7 +68,8 @@ private struct FieldReader {
         var value = String.UnicodeScalarView()
         while true {
             guard position < scalars.count else {
-                return value.isEmpty ? nil : String(value)
+                if inQuotes, !quoteClosed { unclosedQuote = true }
+                return value.isEmpty && !inQuotes ? nil : String(value)
             }
             let scalar = scalars[position]
             position += 1

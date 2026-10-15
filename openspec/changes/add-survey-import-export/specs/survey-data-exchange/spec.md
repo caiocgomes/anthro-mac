@@ -29,7 +29,7 @@ O sistema SHALL decodificar TXT, CSV e REC respeitando BOM de UTF-8, UTF-16 LE e
 - **THEN** o texto decodificado é `Sex`
 
 ### Requirement: Separador do texto delimitado
-O sistema SHALL contar tabulações, pontos e vírgulas e vírgulas fora de aspas na primeira linha e usar o mais frequente como separador; em empate ou sem nenhum, SHALL usar tabulação para `.txt` e ponto e vírgula para `.csv`, o padrão de `NSMain`.
+O sistema SHALL usar o padrão de `NSMain` (tabulação para `.txt`, ponto e vírgula para `.csv`) quando ele aparecer fora de aspas na primeira linha não vazia; sem ele, SHALL contar tabulações, pontos e vírgulas e vírgulas fora de aspas nessa linha e usar o mais frequente como separador, e em empate ou sem nenhum, o padrão.
 
 #### Scenario: CSV com vírgula
 - **WHEN** a primeira linha de um `.csv` é `Sex,Weight,Height`
@@ -48,7 +48,7 @@ O sistema SHALL contar tabulações, pontos e vírgulas e vírgulas fora de aspa
 - **THEN** o separador é ponto e vírgula
 
 ### Requirement: Leitura de campos delimitados
-O sistema SHALL ler cada campo como `DelimitedTextStream.GetNextItem`: ignorar espaços antes do campo, tratar aspas iniciais como delimitador com `""` valendo uma aspa, aceitar separador e quebra de linha dentro de aspas e reconhecer CRLF, LF e CR como fim de linha.
+O sistema SHALL ler cada campo como `DelimitedTextStream.GetNextItem`: ignorar espaços antes do campo, tratar aspas iniciais como delimitador com `""` valendo uma aspa, aceitar separador e quebra de linha dentro de aspas e reconhecer CRLF, LF e CR como fim de linha; aspas abertas até o fim do texto SHALL tornar o formato inválido, porque engoliriam os registros seguintes.
 
 #### Scenario: Campo entre aspas com separador
 - **WHEN** a linha é `"Silva; Ana";2` com separador ponto e vírgula
@@ -78,7 +78,7 @@ A primeira linha SHALL ser o cabeçalho, como em `Delimited.ParseStream` com `in
 - **THEN** a leitura falha com `ImportFailure.invalidStructure`
 
 ### Requirement: Linhas vazias e registros curtos
-O sistema SHALL ignorar linhas completamente vazias e SHALL completar com texto vazio os campos que faltarem num registro mais curto que o cabeçalho, em vez de falhar o arquivo inteiro como o original.
+O sistema SHALL ignorar linhas vazias ou só de campos vazios e SHALL completar com texto vazio os campos que faltarem num registro mais curto que o cabeçalho, em vez de falhar o arquivo inteiro como o original.
 
 #### Scenario: Linha vazia no meio do arquivo
 - **WHEN** um `.csv` tem cabeçalho, um registro, uma linha vazia e outro registro
@@ -89,7 +89,7 @@ O sistema SHALL ignorar linhas completamente vazias e SHALL completar com texto 
 - **THEN** o registro tem `Height` igual a texto vazio e a importação continua
 
 ### Requirement: Leitura de arquivo REC do Epi Info
-O sistema SHALL ler REC como `External.ParseRECFile`: número de campos no primeiro token da primeira linha, um descritor por campo com nome no token 1 e largura no token 8, campos de largura 0 ignorados, registros de largura fixa com linhas de 79 caracteres continuando no seguinte, valores sem espaços e NUL nas pontas.
+O sistema SHALL ler REC como `External.ParseRECFile`: número de campos no primeiro token da primeira linha, um descritor por campo com nome no token 1 e largura no token 8, campos de largura 0 ignorados, registros de largura fixa com linhas de 79 caracteres continuando no seguinte, valores sem espaços e NUL nas pontas; largura negativa ou absurda e nome de campo repetido (sem diferenciar maiúsculas, como `Columns.Add`) SHALL tornar o formato inválido.
 
 #### Scenario: REC com dois registros
 - **WHEN** a fixture `survey.rec` declara `SEX` (1), `WEIGHT` (5) e `HEIGHT` (5) e traz as linhas `116.50110.0` e `012.30 95.4`
@@ -104,7 +104,7 @@ O sistema SHALL ler REC como `External.ParseRECFile`: número de campos no prime
 - **THEN** a leitura falha com `ImportFailure.invalidStructure`
 
 ### Requirement: Leitura de arquivo DBF
-O sistema SHALL ler DBF como `External.ParseDBFFile`: número de registros no inteiro de 32 bits em 4, tamanho do cabeçalho no de 16 bits em 8, um descritor de 32 bytes por campo com nome nos 11 primeiros bytes sem NUL e largura no byte 16, valores sem espaços nas pontas, e SHALL ignorar registros marcados como apagados (`*`).
+O sistema SHALL ler DBF como `External.ParseDBFFile`: número de registros no inteiro de 32 bits em 4, tamanho do cabeçalho no de 16 bits em 8, um descritor de 32 bytes por campo com nome nos 11 primeiros bytes sem NUL e largura no byte 16, descritores até o terminador `0x0D`, valores sem espaços nas pontas, e SHALL ignorar registros marcados como apagados (`*`); cabeçalho menor que 33 bytes e nome de campo repetido SHALL tornar o formato inválido, e nome vazio SHALL virar `ColumnN`.
 
 #### Scenario: DBF com dois registros
 - **WHEN** a fixture gerada `survey.dbf` tem campos `SEX` (1) e `WEIGHT` (6) e registros `1`/`16.50` e `2`/`12.30`
@@ -234,7 +234,7 @@ O modelo SHALL avisar, com as mensagens pt-BR equivalentes a `Utils.DisplayImpor
 - **THEN** não há aviso
 
 ### Requirement: Importação de XML de inquéritos
-O sistema SHALL ler XML como `Survey.ImportSurveysFromXML`: nome, sexo, `DateOfBirthIsApprox`, `IsRecumbent`, `HasOedema` e `CreatedBy` do registro obrigatórios, peso e altura truncados e limitados, fator de ponderação sem truncamento, opções por `SurveyOptions(xml:)` e dados adicionais por `AdditionalDataXML.decode`; qualquer valor inválido SHALL rejeitar o arquivo inteiro.
+O sistema SHALL ler XML como `Survey.ImportSurveysFromXML`: nome, sexo, `DateOfBirthIsApprox`, `IsRecumbent`, `HasOedema` e `CreatedBy` do registro obrigatórios, peso e altura truncados e limitados, fator de ponderação sem truncamento, opções por `SurveyOptions(xml:)` e dados adicionais por `AdditionalDataXML.decode`; qualquer valor inválido, inclusive nome de inquérito em branco, SHALL rejeitar o arquivo inteiro, e textos cortados nos limites do original SHALL ser avisados.
 
 #### Scenario: XML com dois inquéritos
 - **WHEN** a fixture `ns-two-surveys.xml` tem dois inquéritos com 2 e 1 registros
@@ -264,7 +264,7 @@ Quando o primeiro registro do arquivo tiver o atributo `HC`, o sistema SHALL ler
 - **THEN** a idade em meses do registro é 60.55
 
 ### Requirement: Gravação da importação XML
-A importação XML aceita SHALL gravar todos os inquéritos e registros numa única transação e listá-los em seguida; falha de leitura ou de gravação SHALL deixar o banco sem nenhum inquérito novo.
+A importação XML aceita SHALL gravar todos os inquéritos e registros numa única transação e listá-los em seguida; falha de leitura ou de gravação SHALL deixar o banco sem nenhum inquérito novo, e arquivo sem nenhum `Survey` SHALL ser informado como falha.
 
 #### Scenario: Dois inquéritos gravados
 - **WHEN** `ns-two-surveys.xml` é importado pelo modelo
@@ -342,7 +342,7 @@ Na importação externa e na XML, o sistema SHALL descartar a idade em meses lid
 - **THEN** o registro lido tem as duas datas e idade em meses `nil`
 
 ### Requirement: Ida e volta de inquérito pelo XML
-Um inquérito exportado em XML e lido de volta SHALL ter os mesmos valores de campo em cada registro; o campo `Age` do arquivo traz a idade calculada quando o registro não tem idade guardada, e essa idade é descartada na leitura quando o registro tem as duas datas.
+Um inquérito exportado em XML e lido de volta SHALL ter os mesmos valores de campo em cada registro, com textos dentro dos limites do original e registro sem dados adicionais voltando com `<Data />`; o campo `Age` do arquivo traz a idade calculada quando o registro não tem idade guardada, e essa idade é descartada na leitura quando o registro tem as duas datas.
 
 #### Scenario: Exportar e reler inquérito
 - **WHEN** um inquérito com três registros, um deles sem idade guardada e com as duas datas, é exportado e lido por `SurveyXML.read`

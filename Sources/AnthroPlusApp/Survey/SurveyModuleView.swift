@@ -120,9 +120,15 @@ struct SurveyModuleView: View {
         }
         .unsavedChangesDialog(pending: Binding(get: { module.pendingAction }, set: { _ in }),
                               title: L10n.Survey.unsavedTitle, message: L10n.Survey.unsavedMessage) { decision, action in
-            // Cancelar a pergunta sobre o inquérito aberto descarta o rascunho importado, e com ele o aviso.
+            // Cancelar a pergunta sobre o inquérito aberto, ou falhar ao salvá-lo, descarta o rascunho importado, e com
+            // ele o aviso da importação.
             if decision == .cancel, case .openDraft = action { importWarning = nil }
-            perform { try module.resolvePending(decision) }
+            do {
+                try module.resolvePending(decision)
+            } catch {
+                importWarning = nil
+                show(error)
+            }
         }
         .alert(L10n.IndividualAssessment.saveFailed,
                isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
@@ -146,9 +152,10 @@ struct SurveyModuleView: View {
         case .mapping:
             mappingConfirmed = false
             showingMapping = true
-        case .finished:
+        case .finished(let warning):
             perform { try module.list.showArchive(false) }
-            exchangeAlert = ExchangeAlert(title: L10n.SurveyExchange.importedTitle, message: L10n.SurveyExchange.importedXML)
+            exchangeAlert = ExchangeAlert(title: L10n.SurveyExchange.importedTitle,
+                                          message: L10n.SurveyExchange.importedXML + (warning.map { "\n\n\($0)" } ?? ""))
         case .failed(let message):
             exchangeAlert = ExchangeAlert(title: L10n.Exchange.importFailedTitle, message: message)
         case .idle:

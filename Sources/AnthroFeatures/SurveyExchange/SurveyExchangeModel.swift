@@ -76,7 +76,8 @@ public final class SurveyExchangeModel {
         }
         do {
             let table = try ExternalTableReader.read(data, kind: kind)
-            pending = (table, fileName, url.deletingPathExtension().lastPathComponent)
+            // O nome do inquérito tem até 50 caracteres no original (`txtSurveyName.MaxLength`).
+            pending = (table, fileName, String(url.deletingPathExtension().lastPathComponent.prefix(50)))
             phase = .mapping(columns: table.columns, mapping: ColumnAutoMapper.propose(columns: table.columns))
         } catch {
             phase = .failed(message: Self.message(for: error, fileName: fileName))
@@ -150,17 +151,26 @@ public final class SurveyExchangeModel {
 
     // MARK: Privado
 
+    /// Grava tudo numa transação; sem nenhum `Survey` no arquivo, nada a gravar é falha (o original só recarregava a
+    /// lista, em silêncio); textos cortados nos limites do original viram aviso, como na Avaliação individual.
     private func importXML(_ data: Data, fileName: String) {
-        let surveys: [ExchangeSurvey]
+        let report: (surveys: [ExchangeSurvey], truncated: [ImportFieldError])
         do {
-            surveys = try SurveyXML.read(data)
+            report = try SurveyXML.readReport(data)
         } catch {
             phase = .failed(message: Self.message(for: error, fileName: fileName))
             return
         }
+        guard !report.surveys.isEmpty else {
+            phase = .failed(message: "\(Self.prefix(fileName)) \(L10n.SurveyExchange.noSurveyInFile)")
+            return
+        }
         do {
-            _ = try sink.insertAll(surveys)
-            phase = .finished(warning: nil)
+            _ = try sink.insertAll(report.surveys)
+            phase = .finished(warning: report.truncated.first.map { first in
+                "\(L10n.Exchange.truncatedPrefix) \(report.truncated.count) \(L10n.Exchange.truncatedSuffix) "
+                    + "\(L10n.Exchange.firstCase) \(L10n.Exchange.line) \(first.line), \(first.field)."
+            })
         } catch {
             phase = .failed(message: "\(Self.prefix(fileName)) \(L10n.IndividualAssessment.databaseError) \(error)")
         }

@@ -6,7 +6,9 @@ public enum ExternalTableReader {
         switch kind {
         case .delimited(let fallback):
             let text = TextDecoding.decode(data)
-            let firstLine = text.split(maxSplits: 1, whereSeparator: { $0 == "\n" || $0 == "\r\n" || $0 == "\r" }).first ?? ""
+            // A primeira linha com conteúdo, a mesma que o leitor toma como cabeçalho.
+            let firstLine = text.split(whereSeparator: { $0 == "\n" || $0 == "\r\n" || $0 == "\r" })
+                .first { !$0.trimmingCharacters(in: .whitespaces).isEmpty } ?? ""
             return try DelimitedParser.parse(text, separator: SeparatorDetector.detect(firstLine: String(firstLine),
                                                                                        fallback: fallback))
         case .rec:

@@ -23,6 +23,12 @@ public enum SurveyXML {
     /// Leitura com as regras de `ImportSurveysFromXML`: atributo inválido, obrigatório ausente ou estrutura quebrada
     /// rejeitam o arquivo inteiro com `invalidStructure`, com linha, elemento e atributo (D13).
     public static func read(_ data: Data) throws(ImportFailure) -> [ExchangeSurvey] {
+        try readReport(data).surveys
+    }
+
+    /// A leitura de `read(_:)` com os textos cortados nos limites do original (nome e notas do inquérito, nomes e notas
+    /// do registro), para avisar a usuária, como o XML da Avaliação individual; `CreatedBy` é descartado e não entra.
+    public static func readReport(_ data: Data) throws(ImportFailure) -> (surveys: [ExchangeSurvey], truncated: [ImportFieldError]) {
         let reader = SurveyXMLReader()
         let parser = XMLParser(data: data)
         parser.delegate = reader
@@ -52,7 +58,7 @@ public enum SurveyXML {
                 throw .invalidStructure(ImportFailureDetail(line: pending.line, element: "Record", attribute: "AdditionalData"))
             }
         }
-        return surveys
+        return (surveys, reader.truncated)
     }
 
     // MARK: Escrita
@@ -122,8 +128,12 @@ private final class SurveyXMLReader: NSObject, XMLParserDelegate {
     private(set) var pendingSurveys: [(survey: Int, options: String?, line: Int)] = []
     /// Registros com dados adicionais, para validar depois da leitura.
     private(set) var pendingRecords: [(survey: Int, record: Int, line: Int)] = []
+    /// Textos cortados nos limites do original, com a linha e `Elemento.Atributo`.
+    private(set) var truncated: [ImportFieldError] = []
     private var current: ExchangeSurvey?
     private var currentOptions: String?
+    private var element = ""
+    private var line = 0
     private var currentLine = 0
     /// `HC` no primeiro registro do arquivo marca o formato do WHO Anthro, com a idade em dias.
     private var ageInDays: Bool?
@@ -134,6 +144,8 @@ private final class SurveyXMLReader: NSObject, XMLParserDelegate {
 
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?,
                 attributes: [String: String] = [:]) {
+        element = elementName
+        line = parser.lineNumber
         // `Survey` dentro de `Survey` e `Records` ou `Record` fora de `Survey` são estrutura inválida (D18).
         if elementName == "Survey", current != nil {
             fail(parser, element: elementName, attribute: nil)
@@ -184,14 +196,16 @@ private final class SurveyXMLReader: NSObject, XMLParserDelegate {
     /// Nome obrigatório (50), observações (250), definição de dados adicionais e opções guardadas como texto e
     /// decodificadas depois; `CreatedBy` lido e descartado (D16).
     private func survey(_ a: [String: String]) throws(AttributeError) -> (Survey, String?) {
-        let name = try field("Name") { () throws(FieldParseError) in try FieldParser.text(a["Name"], nullable: false, maxLength: 50) }
-        let notes = try field("Notes") { () throws(FieldParseError) in try FieldParser.text(a["Notes"], nullable: true, maxLength: 250) }
+        let name = try text(a, "Name", nullable: false, limit: 50) ?? ""
+        // O banco recusa inquérito sem nome (`nameRequired`); recusar aqui aponta o atributo em vez de um erro de gravação.
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AttributeError(attribute: "Name") }
+        let notes = try text(a, "Notes", nullable: true, limit: 250)
         let definition = try field("AdditionalDataDef") { () throws(FieldParseError) in
             try FieldParser.text(a["AdditionalDataDef"], nullable: true)
         }
         let options = try field("Options") { () throws(FieldParseError) in try FieldParser.text(a["Options"], nullable: true) }
         _ = try field("CreatedBy") { () throws(FieldParseError) in try FieldParser.text(a["CreatedBy"], nullable: true, maxLength: 20) }
-        return (Survey(name: name ?? "", notes: notes, additionalDataDefinitionXML: definition), options)
+        return (Survey(name: name, notes: notes, additionalDataDefinitionXML: definition), options)
     }
 
     /// Registro com as regras de `ImportSurveysFromXML`; idade em dias no formato do WHO Anthro; idade descartada
@@ -212,10 +226,8 @@ private final class SurveyXMLReader: NSObject, XMLParserDelegate {
         let factor = try field("WeightingFactor") { () throws(FieldParseError) in
             try FieldParser.decimal(a["WeightingFactor"], nullable: true, unsigned: true, truncateToPlaces: nil)
         }
-        let firstName = try field("FirstName") { () throws(FieldParseError) in
-            try FieldParser.text(a["FirstName"], nullable: true, maxLength: 50)
-        }
-        let lastName = try field("LastName") { () throws(FieldParseError) in try FieldParser.text(a["LastName"], nullable: true, maxLength: 50) }
+        let firstName = try text(a, "FirstName", nullable: true, limit: 50)
+        let lastName = try text(a, "LastName", nullable: true, limit: 50)
         let birth = try field("DateOfBirth") { () throws(FieldParseError) in try FieldParser.date(a["DateOfBirth"], nullable: true) }
         let approx = try field("DateOfBirthIsApprox") { () throws(FieldParseError) in
             try FieldParser.boolean(a["DateOfBirthIsApprox"], nullable: false)
@@ -233,7 +245,7 @@ private final class SurveyXMLReader: NSObject, XMLParserDelegate {
         }
         let recumbent = try field("IsRecumbent") { () throws(FieldParseError) in try FieldParser.measureType(a["IsRecumbent"]) }
         let oedema = try field("HasOedema") { () throws(FieldParseError) in try FieldParser.boolean(a["HasOedema"], nullable: false) }
-        let notes = try field("Notes") { () throws(FieldParseError) in try FieldParser.text(a["Notes"], nullable: true, maxLength: 250) }
+        let notes = try text(a, "Notes", nullable: true, limit: 250)
         let additional = try field("AdditionalData") { () throws(FieldParseError) in
             try FieldParser.text(a["AdditionalData"], nullable: true)
         }
@@ -259,6 +271,13 @@ private final class SurveyXMLReader: NSObject, XMLParserDelegate {
         record.notes = notes
         record.additionalDataXML = additional
         return record
+    }
+
+    /// Texto com limite do original; o corte é registrado para o aviso da importação.
+    private func text(_ a: [String: String], _ name: String, nullable: Bool, limit: Int) throws(AttributeError) -> String? {
+        let value = try field(name) { () throws(FieldParseError) in try FieldParser.text(a[name], nullable: nullable, maxLength: limit) }
+        if let raw = a[name], raw.count > limit { truncated.append(ImportFieldError(line: line, field: "\(element).\(name)")) }
+        return value
     }
 
     private func field<T>(_ name: String, _ parse: () throws(FieldParseError) -> T) throws(AttributeError) -> T {

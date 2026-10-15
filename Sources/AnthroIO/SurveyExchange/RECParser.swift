@@ -1,7 +1,8 @@
 /// `External.ParseRECFile` do Epi Info (design D7): o primeiro token da primeira linha é o número de campos; cada
 /// descritor traz o nome no token 1 e a largura no token 8, e largura 0 é ignorada; o registro tem largura fixa, e uma
 /// linha de exatamente 79 caracteres perde o último (marcador de continuação) e continua na seguinte; linha com menos
-/// de 2 caracteres não gera registro; valores sem espaço e NUL nas pontas. Qualquer falha é formato inválido.
+/// de 2 caracteres não gera registro; valores sem espaço e NUL nas pontas. Qualquer falha é formato inválido, inclusive
+/// largura negativa ou absurda (que derrubaria o app) e nome repetido (que `Columns.Add` recusa no original).
 public enum RECParser {
     public static func parse(_ text: String) throws(ImportFailure) -> ImportedTable {
         var lines = text.split(omittingEmptySubsequences: false, whereSeparator: { $0 == "\n" || $0 == "\r\n" || $0 == "\r" })
@@ -18,12 +19,13 @@ public enum RECParser {
         var widths: [Int] = []
         for _ in 0..<max(count, 0) {
             let tokens = try nextLine().split(separator: " ").map(String.init)
-            guard tokens.count >= 8, let width = Int(tokens[7]) else { throw invalid }
+            guard tokens.count >= 8, let width = Int(tokens[7]), (0...maxWidth).contains(width) else { throw invalid }
             if width != 0 {
                 columns.append(tokens[0])
                 widths.append(width)
             }
         }
+        columns = try ColumnNames.strict(columns)
         let total = widths.reduce(0, +)
         var rows: [[String]] = []
         while index < lines.count {
@@ -49,6 +51,9 @@ public enum RECParser {
         }
         return ImportedTable(columns: columns, rows: rows)
     }
+
+    /// Bem acima de qualquer campo do Epi Info, e pequeno o bastante para a soma não estourar.
+    private static let maxWidth = 1_000_000
 
     private static let invalid = ImportFailure.invalidStructure(ImportFailureDetail(line: nil, element: nil, attribute: nil))
 }

@@ -164,4 +164,65 @@ struct SurveyExchangeUnitTests {
         #expect(m.openSurvey?.name == "escola_b")
         #expect(m.openSurvey?.hasUnsavedChanges == true)
     }
+
+    // MARK: Achados da revisão
+
+    /// XML válido sem `Survey` (o arquivo de crianças, por engano) não anuncia gravação.
+    @Test func xmlWithoutSurveysFails() throws {
+        model.beginImport(from: try file("criancas.xml", "<?xml version=\"1.0\"?><Children><Child DisplayID=\"1\" /></Children>"))
+        #expect(model.phase == .failed(message: "Não foi possível importar o arquivo 'criancas.xml': nenhum inquérito foi encontrado no arquivo."))
+    }
+
+    /// Textos cortados na leitura do XML são avisados, como na Avaliação individual.
+    @Test func xmlImportWarnsAboutCutTexts() throws {
+        let long = String(repeating: "a", count: 60)
+        let xml = SurveyExchangeTestFiles.twoSurveysXML().replacingOccurrences(of: "Name=\"Escola B\"", with: "Name=\"\(long)\"")
+        model.beginImport(from: try file("i.xml", xml))
+        guard case .finished(let warning?) = model.phase else {
+            Issue.record("expected a finished phase with a warning, got \(model.phase)")
+            return
+        }
+        #expect(warning.contains("1 texto(s) do arquivo passavam do limite do AnthroPlus e foram cortados."))
+        #expect(warning.contains("Survey.Name"))
+        #expect(try SurveyExchangeTestFiles.count(db, "surveys") == 2)
+    }
+
+    /// O nome do rascunho vem do arquivo, no limite de 50 caracteres do nome do inquérito.
+    @Test func draftNameIsCutAtTheSurveyNameLimit() throws {
+        model.beginImport(from: try file(String(repeating: "n", count: 60) + ".csv", "Sex\r\n1\r\n"))
+        model.confirmMapping()
+        #expect(presenter.drafts.first?.survey.name == String(repeating: "n", count: 50))
+    }
+
+    /// As colunas extras do rascunho chegam ao banco quando a usuária salva.
+    @Test func draftWithExtraColumnsKeepsThemWhenSaved() throws {
+        let m = try module()
+        let exchange = SurveyExchangeModel(source: self.exchange, sink: self.exchange, presenter: m, engine: try AnthroEngine.shared())
+        exchange.beginImport(from: try file("escola_c.csv", "Sex;escola\r\n1;Norte\r\n"))
+        exchange.confirmMapping()
+        try #require(m.openSurvey).save()
+        let survey = try #require(try SurveyFixtures.row(db, "surveys", where: "name = 'escola_c'"))
+        guard case .text(let definition) = survey["additional_data_def"] else {
+            Issue.record("expected a stored definition, got \(String(describing: survey["additional_data_def"]))")
+            return
+        }
+        #expect(definition.contains("escola"))
+        guard case .text(let values) = try SurveyFixtures.row(db, "records", where: "1 = 1")?["additional_data"] else {
+            Issue.record("expected stored values")
+            return
+        }
+        #expect(values.contains("Norte"))
+    }
+
+    /// Salvar o aberto falha (sem nome): o rascunho não substitui o inquérito aberto e a pendência some.
+    @Test func failedSaveBeforeTheDraftKeepsTheOpenSurvey() throws {
+        let m = try module()
+        _ = m.createSurvey()
+        try #require(m.openSurvey).name = "   "
+        #expect(m.openDraft(draft) == .needsDecision)
+        #expect(throws: (any Error).self) { try m.resolvePending(.save) }
+        #expect(m.pendingAction == nil)
+        #expect(m.openSurvey?.survey.id == nil)
+        #expect(m.openSurvey?.name == "   ")
+    }
 }

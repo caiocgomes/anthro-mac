@@ -14,7 +14,9 @@ struct SurveyTextUnitTests {
     @Test func separatorCountsTabsAndFallsBackOnTies() {
         #expect(SeparatorDetector.detect(firstLine: "Sex\tWeight\tHeight", fallback: ";") == "\t")
         #expect(SeparatorDetector.detect(firstLine: "a,b;c", fallback: "\t") == "\t")
-        #expect(SeparatorDetector.detect(firstLine: "a;b;c,d", fallback: ",") == ";")
+        #expect(SeparatorDetector.detect(firstLine: "a;b;c,d", fallback: "\t") == ";")
+        // O padrão da extensão presente na linha vence a contagem (D20).
+        #expect(SeparatorDetector.detect(firstLine: "a;b;c,d", fallback: ",") == ",")
     }
 
     @Test func fileKindIgnoresCaseAndKnowsDefaults() {
@@ -31,7 +33,8 @@ struct SurveyTextUnitTests {
         #expect(try DelimitedParser.parse("A;B\n\"x\"y;2\n", separator: ";").rows == [["xy", "2"]])
         #expect(try DelimitedParser.parse("A;B\n1;\n", separator: ";").rows == [["1", ""]])
         #expect(try DelimitedParser.parse("A\n   \n1\n", separator: ";").rows == [["1"]])
-        #expect(try DelimitedParser.parse("A;B\n;\n", separator: ";").rows == [["", ""]])
+        // Linha só de campos vazios não é registro (D20).
+        #expect(try DelimitedParser.parse("A;B\n;\n", separator: ";").rows == [])
         #expect(try DelimitedParser.parse("Column1;;A\n1;2;3\n", separator: ";").columns == ["Column1", "Column2", "A"])
     }
 

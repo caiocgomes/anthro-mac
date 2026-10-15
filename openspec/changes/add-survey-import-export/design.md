@@ -97,6 +97,16 @@ Como `Survey` e `SurveyRecord` estão em `AnthroCore`, de que `AnthroIO` depende
 - Exportar com o inquérito aberto marcado e alterado pede para salvar antes, como a exportação de crianças da change 7: a exportação lê o banco e sairia sem as alterações.
 - `HasOedema` sem valor sai `0` no XML e no TXT/CSV, porque o original guarda um booleano não anulável.
 - A exportação delimitada não lança: definição ou valores de dados adicionais ilegíveis saem sem colunas ou vazios. O banco só recebe esses textos validados (importação XML, montagem externa e editor da change 6).
+- O aviso de linhas descartadas segue `DisplayImportWarningRows`: a frase, uma linha em branco, "Detalhes:" e os itens em sequência. Com linhas descartadas e campos inválidos, o original mostra só as linhas; aqui a frase dos campos vem depois, para não esconder o segundo aviso.
+
+**D20. Correções da revisão independente (15/10/2026).**
+- Ano com dois dígitos (`01/04/21`) lido pela janela do `DateTime.Parse` do .NET (`TwoDigitYearMax` 2029): 00 a 29 viram 20xx, 30 a 99 viram 19xx. O formato estrito `dd/MM/yyyy` lia o ano 21, sem aviso, e a idade saía negativa ou de séculos. Vale para o `FieldParser` inteiro, também na change 7.
+- REC com largura negativa ou absurda derrubava o app; agora é formato inválido. REC e DBF com nome de campo repetido (sem diferenciar maiúsculas) são formato inválido, como o `Columns.Add` do original; nome vazio no DBF vira `ColumnN`. O DBF lê descritores até o terminador `0x0D` (o Visual FoxPro guarda 263 bytes depois dele) e recusa cabeçalho menor que 33 bytes.
+- Separador (emenda a D4): o padrão da extensão, quando aparece fora de aspas na primeira linha não vazia, vence a contagem. Assim todo arquivo que o original lia certo continua lido igual (um `.txt` com `Peso, kg` no cabeçalho era lido com vírgula), e a detecção fica para o arquivo que o original leria numa coluna só.
+- Texto delimitado (emenda a D6): aspas abertas até o fim do texto são formato inválido (engoliam todos os registros seguintes); linhas só de campos vazios, como a área usada do Excel (`;;;`), são ignoradas, em vez de virar registros com sexo inválido no aviso.
+- XML: nome de inquérito em branco é formato inválido com o atributo `Name` (o banco o recusaria com um erro cru); textos cortados nos limites do original são avisados, como na change 7; arquivo sem nenhum `Survey` (o XML de crianças, por engano) é informado como falha. O nome do rascunho externo é cortado em 50 caracteres, o `MaxLength` do nome no original. Registro sem dados adicionais volta com `<Data />`, o atributo sempre escrito que o leitor do Windows exige.
+- Tela: confirmar a associação só fecha a folha, e o rascunho é montado depois, para a pergunta sobre o inquérito aberto não aparecer sobre ela; falhar ao salvar o inquérito aberto nessa pergunta descarta o rascunho e o aviso da importação; a folha de exportação fecha antes do alerta de erro.
+- Ficam como risco conhecido, fiéis ao original: booleanos só em inglês (`1`, `y`, `true`, `yes`; edema `S` ou `T` vira inválido e então falso, com o aviso genérico); CSV em Mac Roman lido como Windows-1252; a "linha N" do aviso conta registros depois das linhas vazias ignoradas.
 
 ## Divergências entre ajuda e código
 

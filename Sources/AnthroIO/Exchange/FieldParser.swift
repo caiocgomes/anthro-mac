@@ -108,6 +108,7 @@ public enum FieldParser {
     /// começa o horário de verão não existe (16/10/2016 em São Paulo), e um formatador estrito recusaria a data. Ano, mês
     /// e dia saem nesse mesmo fuso e viram o meio-dia daquele dia no fuso pedido.
     static func parseDate(_ text: String, timeZone: TimeZone) -> Date? {
+        if let shortYear = twoDigitYearDate(text, timeZone: timeZone) { return shortYear }
         let utc = TimeZone(secondsFromGMT: 0)!
         var utcCalendar = Calendar(identifier: .gregorian)
         utcCalendar.timeZone = utc
@@ -129,6 +130,19 @@ public enum FieldParser {
               let year = Int(prefix.prefix(4)), let month = Int(prefix.dropFirst(4).prefix(2)),
               let day = Int(prefix.dropFirst(6)) else { return nil }
         return validDay(year, month, day, timeZone: timeZone)
+    }
+
+    /// `DateTime.Parse` lê `dd/MM/yy` (também com `-` ou `.`, e com hora depois de um espaço) pela janela do .NET,
+    /// `TwoDigitYearMax` 2029: 00 a 29 viram 20xx e 30 a 99 viram 19xx. O formato `dd/MM/yyyy` estrito leria o ano 21.
+    private static func twoDigitYearDate(_ text: String, timeZone: TimeZone) -> Date? {
+        let datePart = text.split(separator: " ", maxSplits: 1).first ?? Substring(text)
+        let parts = datePart.split(separator: "/", omittingEmptySubsequences: false).count == 3
+            ? datePart.split(separator: "/", omittingEmptySubsequences: false)
+            : datePart.split(whereSeparator: { $0 == "-" || $0 == "." })
+        guard parts.count == 3, parts[2].count == 2,
+              parts.allSatisfy({ (1...2).contains($0.count) && $0.allSatisfy { $0.isASCII && $0.isNumber } }),
+              let day = Int(parts[0]), let month = Int(parts[1]), let year = Int(parts[2]) else { return nil }
+        return validDay(year <= 29 ? 2000 + year : 1900 + year, month, day, timeZone: timeZone)
     }
 
     /// Meio-dia do dia de calendário do usuário.
