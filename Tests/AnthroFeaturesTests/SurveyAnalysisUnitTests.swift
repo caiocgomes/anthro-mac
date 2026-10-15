@@ -123,4 +123,18 @@ struct SurveyAnalysisUnitTests {
         analysis.refreshGraph()
         #expect(analysis.graph != .empty(title: "(Sem dados)"))
     }
+
+    /// Correção por cluster com a coluna completa: o original falha porque o peso para idade acima de 108 meses entra
+    /// em N antes de o cluster ser registrado; a mensagem explica isso em vez de dizer que a coluna está vazia.
+    @Test func clusterCorrectionFailureWithClustersExplainsTheCause() throws {
+        let directory = try F.directory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let records = (0..<12).map { F.record(age: 130, z: 0, cluster: $0 % 3 + 1) }
+        let model = SurveyAnalysisModel(records: records, options: .default, surveyName: "a", recordCount: 12)
+        let url = directory.appendingPathComponent("r.txt")
+        model.exportReport(.standard(improvedClusterAnalysis: true), to: url, opener: RecordingReportOpener())
+        #expect(model.errorMessage == "A análise por cluster não pode ser feita: em alguma faixa o peso para idade só tem crianças acima de 108 meses, que o AnthroPlus conta sem cluster. Use o relatório padrão sem correção.")
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+    }
 }
+

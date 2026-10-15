@@ -21,7 +21,7 @@ O módulo de Inquérito nutricional só entrega valor para a pesquisa da Suzan q
 - `survey-graphs`: densidade de Epanechnikov contra a normal padrão e barras de média com DP por faixa etária e por cluster.
 
 ### Modified Capabilities
-- Nenhuma.
+- `anthropometric-computation`: o requisito "Arredondamento clínico" passa a seguir a fórmula literal de `AnthroComputation.Round` (empate negativo vai para zero), achado pela revisão desta change contra o código do original compilado em .NET; a regra antiga mudava a média de relatórios em empate.
 
 ## Impact
 

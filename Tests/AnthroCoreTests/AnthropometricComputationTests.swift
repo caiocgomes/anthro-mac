@@ -227,10 +227,11 @@ struct AnthropometricComputationTests {
 
     // MARK: Arredondamento clínico
 
-    // Scenario: Empates longe de zero
-    @Test func empatesArredondamLongeDeZero() {
+    // Scenario: Empates para cima (MODIFIED pela change add-survey-analysis: o piso do original age sobre o valor com
+    // sinal, então o empate negativo vai para zero)
+    @Test func empatesArredondamParaCima() {
         #expect(r(d("2.345"), 2) == d("2.35"))
-        #expect(r(d("-2.345"), 2) == d("-2.35"))
+        #expect(r(d("-2.345"), 2) == d("-2.34"))
         #expect(r(d("0.125"), 2) == d("0.13"))
     }
 
