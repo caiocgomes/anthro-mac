@@ -38,7 +38,7 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 - **[forma]** XML com BOM, indentação e CRLF como o `XmlWriter` do original; rótulos do relatório no `AnthroIO` reexportados em `L10n.Exchange`; menu "Importar e exportar" na barra (D17).
 - **[forma]** Cenário "Duas crianças marcadas em CSV" corrigido depois do vermelho: o cabeçalho tem as 7 colunas do modelo padrão de dados adicionais além das 43 fixas (Test Changes After Red).
 
-## add-survey-import-export (change 8, em andamento desde 15/10/2026)
+## add-survey-import-export (change 8, arquivada em 15/10/2026)
 
 - **[proteção]** Registros apagados em DBF continuam ignorados (pergunta aberta do design, decidida sem consulta): num arquivo de pesquisa, um registro apagado que reaparece é erro silencioso (D8, D18).
 - **[desvio corrigido no plano]** Idade lida com as duas datas é descartada, na planilha e no XML, como o setter de `Record.Age` do original; o cenário de ida e volta que prometia "idade calculada" foi corrigido antes do vermelho (D18).
@@ -55,3 +55,4 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 - **[proteção]** Aspas abertas até o fim do arquivo são "formato inválido" (engoliam os registros seguintes); linhas só de separadores (`;;;`, da área usada do Excel) são ignoradas (D20).
 - **[proteção]** XML de inquéritos avisa os textos cortados nos limites do original (como o de crianças), recusa inquérito sem nome e informa quando o arquivo não tem nenhum inquérito (D20).
 - **[risco conhecido]** Fiéis ao original e não alterados: booleanos só em inglês (edema `S` ou `T` vira inválido e então "sem edema", com o aviso genérico de campos inválidos); CSV em Mac Roman lido como Windows-1252; a "linha N" do aviso conta registros depois das linhas vazias ignoradas. Se a Suzan usar planilhas com "S/N" no edema, vale reabrir (D20).
+- **[forma]** Arquivada com a spec sincronizada (`survey-data-exchange` criada), a mesma escolha das changes 5 a 7, sem perguntar.
