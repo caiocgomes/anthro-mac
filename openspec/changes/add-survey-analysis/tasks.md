@@ -24,10 +24,10 @@
 
 ## 3. Séries dos gráficos (survey-graphs)
 
-- [ ] 3.1 Implementar `DensityEstimation.normalCurve` (passo `Double` acumulado, constante 2.718281828); verified when [tests: curvaNormalComResolucao500, curvaNormalComResolucaoPequena] pass
-- [ ] 3.2 Implementar `DensityEstimation.zScores` (plausibilidade padrão do AnthroCore) e `epanechnikov` (média e DP sem ponderação, largura, grade em `Decimal`, fator não positivo vira 1, `DensityError.zeroBandwidth`); verified when [tests: dozeZComTamanhoPonderado50, dozeZComFator1, fatoresZeroContamComoUm, umUnicoZDaCurvaVazia, todosOsZIguaisLancamLarguraZero, limitePadraoDePlausibilidadeNaDensidade] pass
-- [ ] 3.3 Implementar `MeanSDBars.byAgeGroup` e `byCluster` (posições, rótulos, haste com sinal, contagem arredondada por faixa e truncada por cluster, faixa vazia sem barra); verified when [tests: duasFaixasComMediasDeSinaisOpostos, faixaVaziaENFracionado, barrasDeDoisClusters] pass
-- [ ] 3.4 Refactor `DensityEstimation` e `MeanSDBars`; `swift test` stays green
+- [x] 3.1 Implementar `DensityEstimation.normalCurve` (passo `Double` acumulado, constante 2.718281828); verified when [tests: curvaNormalComResolucao500, curvaNormalComResolucaoPequena] pass
+- [x] 3.2 Implementar `DensityEstimation.zScores` (plausibilidade padrão do AnthroCore) e `epanechnikov` (média e DP sem ponderação, largura, grade em `Decimal`, fator não positivo vira 1, `DensityError.zeroBandwidth`); verified when [tests: dozeZComTamanhoPonderado50, dozeZComFator1, fatoresZeroContamComoUm, umUnicoZDaCurvaVazia, todosOsZIguaisLancamLarguraZero, limitePadraoDePlausibilidadeNaDensidade] pass
+- [x] 3.3 Implementar `MeanSDBars.byAgeGroup` e `byCluster` (posições, rótulos, haste com sinal, contagem arredondada por faixa e truncada por cluster, faixa vazia sem barra); verified when [tests: duasFaixasComMediasDeSinaisOpostos, faixaVaziaENFracionado, barrasDeDoisClusters] pass
+- [x] 3.4 Refactor `DensityEstimation` e `MeanSDBars`; `swift test` stays green
 
 ## 4. Relatórios (survey-reports)
 
