@@ -2,10 +2,10 @@
 
 ## 0. Red gate
 
-- [ ] 0.1 Write every scenario test from tests.md and stubs with the exact signatures from Interface Under Test (neutral return values, no logic), including the fixtures `Tests/AnthroIOTests/Fixtures/survey.rec` and `ns-two-surveys.xml` and the byte builder `Tests/AnthroIOTests/Support/DBFBuilder.swift`
-- [ ] 0.2 Run the scenario tests; confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
-- [ ] 0.3 Commit tests and stubs only as `test(red): add-survey-import-export`; write the SHA in the ledger
-- [ ] 0.4 STOP: show the user the failing tests, confirm the open question on deleted DBF records, and wait for explicit approval before implementing (pergunta do DBF decidida antes do vermelho: registros apagados continuam ignorados, ver Open Questions do design)
+- [x] 0.1 Write every scenario test from tests.md and stubs with the exact signatures from Interface Under Test (neutral return values, no logic), including the fixtures `Tests/AnthroIOTests/Fixtures/survey.rec` and `ns-two-surveys.xml` and the byte builder `Tests/AnthroIOTests/Support/DBFBuilder.swift`
+- [x] 0.2 Run the scenario tests; confirm each FAILS BY ASSERTION (not import, syntax or collection errors); record each failure excerpt in the ledger
+- [x] 0.3 Commit tests and stubs only as `test(red): add-survey-import-export`; write the SHA in the ledger
+- [x] 0.4 STOP: show the user the failing tests, confirm the open question on deleted DBF records, and wait for explicit approval before implementing (registrado sem parada, por decisão do Caio de 14/10/2026 e pela meta de 15/10/2026; pergunta do DBF decidida antes do vermelho: registros apagados continuam ignorados, ver Open Questions do design)
 
 ## 1. Leitura de texto delimitado
 
