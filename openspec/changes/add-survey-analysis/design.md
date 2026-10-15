@@ -79,6 +79,12 @@ As views `SurveyResultsView` (aba de resultados com seletor de indicador e filtr
 
 **D15. Stubs do portão vermelho.** `compute` e `byAgeGroups` devolvem `PrevalenceResult` com N 0, sem prevalências e IC `.notComputed`, ou lista vazia; `ConfidenceIntervals` devolvem `.notComputed` e `tStudent` devolve `nil`; `filtered`, `byCluster`, `zScores` e `MeanSDBars` devolvem listas vazias; `epanechnikov` e `normalCurve` devolvem curva vazia com tamanho 0 sem lançar; `computeOnlyNegative` devolve `false`; `SurveyAnalysisInput.records` devolve lista vazia; `SurveyReportWriter` devolve relatório sem linhas, nome vazio e `write` não grava; `ReportFormat` devolve ""; `ReportLauncher.open` devolve `nil` sem chamar o opener; o modelo começa com `graph = .empty(title: "")`, domínios `0...0`, `canShowGraphs` e `canCopyGraph` `false` e sem mensagens. Testes que indexam linhas do relatório usam `#require` antes de indexar, para falhar por asserção e não por índice fora do intervalo.
 
+**D16. Ajustes antes do vermelho (15/10/2026).**
+- `AnthroIO` passa a depender de `AnthroAnalysis` no `Package.swift`, porque os relatórios consomem `AnalysisRecord`, `PrevalenceCalculator` e `ConfidenceInterval`; o grafo de targets continua acíclico (`AnthroAnalysis` depende só de `AnthroCore`).
+- Oráculo (emenda a D6): desenhos em que o `svyciprop` do R devolve limite não finito ficam de fora, como os de proporção extrema. Isso acontece com 2 clusters: com t de 1 grau de liberdade a meia-largura no logit é grande e o `expit` do R dá NaN. O `survey` já instalado na biblioteca do R é aceito; `.rlib/` só recebe o pacote se faltar. O cabeçalho do arquivo gerado registra R 4.5.0, `survey` 4.5 e a semente 20261015; duas execuções geram bytes idênticos.
+- Gráfico por sexo (D13 detalhado pelo `tsComboFilter_SelectedIndexChanged` do original): sexo sem nenhum z não forma série; sem nenhuma série com z, ou com largura zero em qualquer uma, o gráfico é "(Sem dados)"; série com um z só entra vazia, com o rótulo "(n=1)". O cenário "Criança abaixo de 61 meses" é verificado pelos rótulos: a menina de 50 meses entra no n de todas as crianças e não forma série de meninas.
+- O cabeçalho da tabela de peso para idade traz "Peso para idade**", como o `_Label_W4A + "**"` do original; os testes localizam as tabelas por essa linha.
+
 ## Divergências entre ajuda e código
 
 | Tema | Ajuda (`NS.htm`) ou mensagem | Código | Decisão |
