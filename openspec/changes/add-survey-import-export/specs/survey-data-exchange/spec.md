@@ -89,7 +89,7 @@ O sistema SHALL ignorar linhas vazias ou só de campos vazios e SHALL completar 
 - **THEN** o registro tem `Height` igual a texto vazio e a importação continua
 
 ### Requirement: Leitura de arquivo REC do Epi Info
-O sistema SHALL ler REC como `External.ParseRECFile`: número de campos no primeiro token da primeira linha, um descritor por campo com nome no token 1 e largura no token 8, campos de largura 0 ignorados, registros de largura fixa com linhas de 79 caracteres continuando no seguinte, valores sem espaços e NUL nas pontas; largura negativa ou absurda e nome de campo repetido (sem diferenciar maiúsculas, como `Columns.Add`) SHALL tornar o formato inválido.
+O sistema SHALL ler REC como `External.ParseRECFile`: número de campos no primeiro token da primeira linha, um descritor por campo com nome no token 1 e largura no token 8, campos de largura 0 ignorados, registros de largura fixa com linhas de 79 caracteres continuando no seguinte, valores sem espaços e NUL nas pontas; largura negativa ou absurda, nome de campo idêntico a outro (como `Columns.Add`) e arquivo sem nenhum campo SHALL tornar o formato inválido.
 
 #### Scenario: REC com dois registros
 - **WHEN** a fixture `survey.rec` declara `SEX` (1), `WEIGHT` (5) e `HEIGHT` (5) e traz as linhas `116.50110.0` e `012.30 95.4`
@@ -104,7 +104,7 @@ O sistema SHALL ler REC como `External.ParseRECFile`: número de campos no prime
 - **THEN** a leitura falha com `ImportFailure.invalidStructure`
 
 ### Requirement: Leitura de arquivo DBF
-O sistema SHALL ler DBF como `External.ParseDBFFile`: número de registros no inteiro de 32 bits em 4, tamanho do cabeçalho no de 16 bits em 8, um descritor de 32 bytes por campo com nome nos 11 primeiros bytes sem NUL e largura no byte 16, descritores até o terminador `0x0D`, valores sem espaços nas pontas, e SHALL ignorar registros marcados como apagados (`*`); cabeçalho menor que 33 bytes e nome de campo repetido SHALL tornar o formato inválido, e nome vazio SHALL virar `ColumnN`.
+O sistema SHALL ler DBF como `External.ParseDBFFile`: número de registros no inteiro de 32 bits em 4, tamanho do cabeçalho no de 16 bits em 8, um descritor de 32 bytes por campo com nome nos 11 primeiros bytes sem NUL e largura no byte 16, descritores até o terminador `0x0D`, valores sem espaços nas pontas, e SHALL ignorar registros marcados como apagados (`*`); cabeçalho menor que 33 bytes, nome de campo idêntico a outro e arquivo sem nenhum campo SHALL tornar o formato inválido, nomes SHALL ser decodificados como os valores e nome vazio SHALL virar `ColumnN`.
 
 #### Scenario: DBF com dois registros
 - **WHEN** a fixture gerada `survey.dbf` tem campos `SEX` (1) e `WEIGHT` (6) e registros `1`/`16.50` e `2`/`12.30`

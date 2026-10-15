@@ -49,8 +49,8 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 - **[desvio]** Conglomerado, equipe, ID e domicílio acima de 2147483647 são inválidos, como o `int.Parse` do original (D19).
 - **[proteção]** Exportar com o inquérito aberto marcado e alterado pede para salvar antes, como na Avaliação individual (D19).
 - **[forma]** Aviso de linhas descartadas no formato do original ("Detalhes: linha 3, campo 'Sex'. ..."); com linhas descartadas e campos inválidos, a frase dos campos vem depois, em vez de sumir como no original (D19).
-- **[proteção]** Data com ano de dois dígitos (`01/04/21`, comum no LibreOffice e no Numbers) lida pela janela do .NET (00 a 29 viram 20xx); antes virava o ano 21, sem aviso. Vale também para a importação de crianças (D20).
-- **[proteção]** REC e DBF malformados viram "formato inválido" em vez de derrubar o app; nome de campo repetido é recusado, como no original; DBF do Visual FoxPro lido (D20).
+- **[proteção]** Data com ano de dois dígitos (`01/04/21`, comum no LibreOffice e no Numbers) lida pela janela do .NET (00 a 29 viram 20xx); antes virava o ano 21, sem aviso. Dia impossível na forma curta (`29/02/21`) é inválido. Vale também para a importação de crianças. A janela do Windows pode ser 2029 ou 2049 conforme a configuração regional; só os anos 30 a 49 mudariam (D20).
+- **[proteção]** REC e DBF malformados viram "formato inválido" em vez de derrubar o app; nome de campo idêntico a outro é recusado, como no original; nomes acentuados do DBF lidos em Latin-1; DBF do Visual FoxPro lido (D20).
 - **[desvio]** Separador: o padrão da extensão vence quando aparece no cabeçalho, como no original; a detecção só entra quando o original leria o arquivo numa coluna só (D4, D20).
 - **[proteção]** Aspas abertas até o fim do arquivo são "formato inválido" (engoliam os registros seguintes); linhas só de separadores (`;;;`, da área usada do Excel) são ignoradas (D20).
 - **[proteção]** XML de inquéritos avisa os textos cortados nos limites do original (como o de crianças), recusa inquérito sem nome e informa quando o arquivo não tem nenhum inquérito (D20).

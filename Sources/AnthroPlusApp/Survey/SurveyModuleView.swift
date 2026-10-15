@@ -47,6 +47,8 @@ struct SurveyModuleView: View {
     @State private var errorMessage: String?
     @State private var showingMapping = false
     @State private var mappingConfirmed = false
+    /// Resultado da exportação, avisado depois que a folha fecha.
+    @State private var exportResult: Result<SurveyExportWarning?, Error>?
     @State private var showingExport = false
     @State private var exchangeAlert: ExchangeAlert?
     /// Aviso da importação externa, mostrado depois da pergunta sobre o inquérito aberto, se houver.
@@ -87,18 +89,9 @@ struct SurveyModuleView: View {
             SurveyImportMappingSheet(model: session.exchange) { mappingConfirmed = true }
                 .editingSheet()
         }
-        .sheet(isPresented: $showingExport) {
-            SurveyExportSheet(model: session.exchange) { result in
-                switch result {
-                case .success(.onlyFirstSurveyExported):
-                    exchangeAlert = ExchangeAlert(title: L10n.SurveyExchange.exportDone, message: L10n.SurveyExchange.onlyFirstExported)
-                case .success(nil):
-                    break
-                case .failure(let error):
-                    exchangeAlert = ExchangeAlert(title: L10n.Exchange.fileErrorTitle, message: "\(error.localizedDescription)")
-                }
-            }
-            .editingSheet()
+        .sheet(isPresented: $showingExport, onDismiss: exportClosed) {
+            SurveyExportSheet(model: session.exchange) { exportResult = $0 }
+                .editingSheet()
         }
         .alert(exchangeAlert?.title ?? "", isPresented: Binding(get: { exchangeAlert != nil }, set: { if !$0 { exchangeAlert = nil } }),
                presenting: exchangeAlert) { _ in
@@ -180,6 +173,19 @@ struct SurveyModuleView: View {
         case .failed(let message):
             exchangeAlert = ExchangeAlert(title: L10n.Exchange.importFailedTitle, message: message)
         case .idle:
+            break
+        }
+    }
+
+    /// Depois da folha de exportação: o aviso de inquérito único ou a falha ao gravar.
+    private func exportClosed() {
+        defer { exportResult = nil }
+        switch exportResult {
+        case .success(.onlyFirstSurveyExported):
+            exchangeAlert = ExchangeAlert(title: L10n.SurveyExchange.exportDone, message: L10n.SurveyExchange.onlyFirstExported)
+        case .failure(let error):
+            exchangeAlert = ExchangeAlert(title: L10n.Exchange.fileErrorTitle, message: "\(error.localizedDescription)")
+        case .success(nil), nil:
             break
         }
     }

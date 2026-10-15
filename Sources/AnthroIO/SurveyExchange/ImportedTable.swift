@@ -22,13 +22,14 @@ enum ColumnNames {
         return "Column\(number)"
     }
 
-    /// REC e DBF: `Columns.Add` dá o nome padrão ao vazio e recusa o repetido, o que derruba o arquivo no original.
+    /// REC e DBF: `Columns.Add` dá o nome padrão ao vazio e recusa o idêntico, o que derruba o arquivo no original;
+    /// nomes que só diferem em maiúsculas convivem.
     static func strict(_ names: [String]) throws(ImportFailure) -> [String] {
         var columns: [String] = []
         for name in names {
             if name.isEmpty {
                 columns.append(next(columns))
-            } else if contains(columns, name) {
+            } else if columns.contains(name) {
                 throw .invalidStructure(ImportFailureDetail(line: nil, element: nil, attribute: nil))
             } else {
                 columns.append(name)

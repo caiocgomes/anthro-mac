@@ -21,7 +21,8 @@ public enum DBFParser {
         while descriptorStart + 32 <= headerSize, bytes[descriptorStart] != 0x0D {
             let descriptor = bytes[descriptorStart..<(descriptorStart + 32)]
             let nameBytes = descriptor.prefix(11).filter { $0 != 0 }
-            names.append(String(decoding: nameBytes, as: UTF8.self))
+            // Como os valores: o original lia byte a byte (`Convert.ToChar`), e `Ç` em Latin-1 não é UTF-8.
+            names.append(TextDecoding.decode(Data(nameBytes)))
             widths.append(Int(descriptor[descriptor.startIndex + 16]))
             descriptorStart += 32
         }

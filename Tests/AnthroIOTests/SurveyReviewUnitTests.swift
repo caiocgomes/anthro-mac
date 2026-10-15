@@ -18,6 +18,14 @@ struct SurveyReviewUnitTests {
         #expect(ymd(try FieldParser.date("01-04-29", nullable: false)) == "2029-04-01")
         #expect(ymd(try FieldParser.date("01/04/30 00:00:00", nullable: false)) == "1930-04-01")
         #expect(ymd(try FieldParser.date("01/04/2021", nullable: false)) == "2021-04-01")
+        #expect(ymd(try FieldParser.date("01-04-21 10:30:00", nullable: false)) == "2021-04-01")
+    }
+
+    /// Dia impossível ou lixo depois da data recusam o campo, como o `DateTime.Parse`, em vez de cair noutro formato.
+    @Test func impossibleOrTrailingTwoDigitDatesAreInvalid() {
+        for text in ["29/02/21", "31/04/21", "32/01/21", "01/04/21 garbage", "01/04/21 25:99", "01--04-21", "-01-04-21"] {
+            #expect(throws: FieldParseError.self, "\(text)") { _ = try FieldParser.date(text, nullable: false) }
+        }
     }
 
     // MARK: REC
@@ -29,23 +37,41 @@ struct SurveyReviewUnitTests {
         }
     }
 
-    /// `DataTable.Columns.Add` recusa nome repetido (sem diferenciar maiúsculas).
-    @Test func recWithRepeatedNamesIsInvalid() {
+    /// `DataTable.Columns.Add` recusa nome idêntico; nomes que só diferem em maiúsculas convivem.
+    @Test func recWithRepeatedNamesIsInvalid() throws {
         expectInvalidStructure { () throws(ImportFailure) in
-            _ = try RECParser.parse("2\nPESO 0 0 0 0 0 0 2\npeso 0 0 0 0 0 0 2\n1020\n")
+            _ = try RECParser.parse("2\nPESO 0 0 0 0 0 0 2\nPESO 0 0 0 0 0 0 2\n1020\n")
         }
+        #expect(try RECParser.parse("2\nPESO 0 0 0 0 0 0 2\npeso 0 0 0 0 0 0 2\n1020\n").columns == ["PESO", "peso"])
     }
 
     // MARK: DBF
 
     @Test func dbfWithRepeatedNamesIsInvalidAndEmptyNameBecomesColumnN() throws {
-        let repeated = DBFBuilder.data(fields: [.init(name: "PESO", width: 2), .init(name: "Peso", width: 2)],
+        let repeated = DBFBuilder.data(fields: [.init(name: "PESO", width: 2), .init(name: "PESO", width: 2)],
                                        records: [(false, ["10", "20"])])
         expectInvalidStructure { () throws(ImportFailure) in _ = try DBFParser.parse(repeated) }
         let unnamed = DBFBuilder.data(fields: [.init(name: "SEX", width: 1), .init(name: "", width: 2)], records: [(false, ["1", "ab"])])
         let table = try DBFParser.parse(unnamed)
         #expect(table.columns == ["SEX", "Column1"])
         #expect(table.rows == [["1", "ab"]])
+    }
+
+    /// Nomes de campo em Latin-1, como o `Convert.ToChar(byte)` do original.
+    @Test func dbfFieldNamesAreDecodedLikeTheValues() throws {
+        var bytes = [UInt8](DBFBuilder.data(fields: [.init(name: "PESOA", width: 1), .init(name: "PESOB", width: 1)],
+                                            records: [(false, ["1", "2"])]))
+        bytes[32 + 4] = 0xC7
+        bytes[64 + 4] = 0xC3
+        #expect(try DBFParser.parse(Data(bytes)).columns == ["PESOÇ", "PESOÃ"])
+    }
+
+    /// Arquivo sem nenhuma coluna não abre a folha de associação vazia.
+    @Test func tablesWithoutColumnsAreInvalid() {
+        var bytes = [UInt8](DBFBuilder.data(fields: [.init(name: "SEX", width: 1)], records: [(false, ["1"])]))
+        bytes[32] = 0x0D
+        expectInvalidStructure { () throws(ImportFailure) in _ = try ExternalTableReader.read(Data(bytes), kind: .dbf) }
+        expectInvalidStructure { () throws(ImportFailure) in _ = try ExternalTableReader.read(Data("-3\nab\n".utf8), kind: .rec) }
     }
 
     @Test func dbfHeaderShorterThanOneDescriptorIsInvalid() {
@@ -96,6 +122,11 @@ struct SurveyReviewUnitTests {
         let table = try ExternalTableReader.read(Data("   \nSex,Weight\n1,18\n".utf8), kind: .delimited(fallbackSeparator: ";"))
         #expect(table.columns == ["Sex", "Weight"])
         #expect(table.rows == [["1", "18"]])
+        // Linhas só de separadores ou aspas vazias, que o leitor descarta, também não decidem o separador.
+        let separators = try ExternalTableReader.read(Data(",,,\nNome,Sexo\nAna,f\n".utf8), kind: .delimited(fallbackSeparator: ";"))
+        #expect(separators.columns == ["Nome", "Sexo"])
+        let quotes = try ExternalTableReader.read(Data("\"\"\nNome,Sexo\nAna,f\n".utf8), kind: .delimited(fallbackSeparator: ";"))
+        #expect(quotes.columns == ["Nome", "Sexo"])
     }
 
     // MARK: Montagem

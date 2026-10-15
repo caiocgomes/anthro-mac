@@ -108,6 +108,8 @@ public enum FieldParser {
     /// começa o horário de verão não existe (16/10/2016 em São Paulo), e um formatador estrito recusaria a data. Ano, mês
     /// e dia saem nesse mesmo fuso e viram o meio-dia daquele dia no fuso pedido.
     static func parseDate(_ text: String, timeZone: TimeZone) -> Date? {
+        // Na forma `d/M/yy`, o resultado é o desta leitura, inclusive dia impossível: os formatos de quatro dígitos
+        // leriam `29/02/21` como o ano 29.
         if let shortYear = twoDigitYearDate(text, timeZone: timeZone) { return shortYear }
         let utc = TimeZone(secondsFromGMT: 0)!
         var utcCalendar = Calendar(identifier: .gregorian)
@@ -132,17 +134,30 @@ public enum FieldParser {
         return validDay(year, month, day, timeZone: timeZone)
     }
 
-    /// `DateTime.Parse` lê `dd/MM/yy` (também com `-` ou `.`, e com hora depois de um espaço) pela janela do .NET,
-    /// `TwoDigitYearMax` 2029: 00 a 29 viram 20xx e 30 a 99 viram 19xx. O formato `dd/MM/yyyy` estrito leria o ano 21.
-    private static func twoDigitYearDate(_ text: String, timeZone: TimeZone) -> Date? {
-        let datePart = text.split(separator: " ", maxSplits: 1).first ?? Substring(text)
-        let parts = datePart.split(separator: "/", omittingEmptySubsequences: false).count == 3
-            ? datePart.split(separator: "/", omittingEmptySubsequences: false)
-            : datePart.split(whereSeparator: { $0 == "-" || $0 == "." })
-        guard parts.count == 3, parts[2].count == 2,
+    /// `DateTime.Parse` lê `dd/MM/yy` (separadores `/`, `-` ou `.`, e hora `H:mm` ou `H:mm:ss` depois de um espaço) pela
+    /// janela do .NET, `TwoDigitYearMax` 2029 (o padrão do Windows; a configuração regional pode levá-lo a 2049, o que só
+    /// muda os anos 30 a 49): 00 a 29 viram 20xx e 30 a 99 viram 19xx. Devolve `nil` quando o texto não tem essa forma, e
+    /// `.some(nil)` quando tem, mas o dia não existe ou sobra texto que não é hora.
+    private static func twoDigitYearDate(_ text: String, timeZone: TimeZone) -> Date?? {
+        let pieces = text.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: false)
+        let parts = pieces[0].split(omittingEmptySubsequences: false, whereSeparator: { "/-.".contains($0) })
+        func isNumber(_ part: Substring) -> Bool { !part.isEmpty && part.allSatisfy { $0.isASCII && $0.isNumber } }
+        // A forma curta: só dígitos e separadores, começando com dia de 1 ou 2 dígitos e terminando com ano de 2.
+        guard parts.count >= 2, let first = parts.first, let last = parts.last, isNumber(first), first.count <= 2,
+              isNumber(last), last.count == 2, parts.allSatisfy({ $0.isEmpty || isNumber($0) }) else { return nil }
+        guard parts.count == 3, parts[1].count <= 2, isNumber(parts[1]),
+              let day = Int(parts[0]), let month = Int(parts[1]), let year = Int(parts[2]) else { return .some(nil) }
+        if pieces.count == 2, !isTime(pieces[1]) { return .some(nil) }
+        return .some(validDay(year <= 29 ? 2000 + year : 1900 + year, month, day, timeZone: timeZone))
+    }
+
+    /// `H:mm` ou `H:mm:ss` com valores de relógio.
+    private static func isTime(_ text: Substring) -> Bool {
+        let parts = text.split(separator: ":", omittingEmptySubsequences: false)
+        guard (2...3).contains(parts.count),
               parts.allSatisfy({ (1...2).contains($0.count) && $0.allSatisfy { $0.isASCII && $0.isNumber } }),
-              let day = Int(parts[0]), let month = Int(parts[1]), let year = Int(parts[2]) else { return nil }
-        return validDay(year <= 29 ? 2000 + year : 1900 + year, month, day, timeZone: timeZone)
+              let hour = Int(parts[0]), hour < 24 else { return false }
+        return parts.dropFirst().allSatisfy { $0.count == 2 && (Int($0) ?? 60) < 60 }
     }
 
     /// Meio-dia do dia de calendário do usuário.
