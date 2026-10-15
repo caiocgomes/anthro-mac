@@ -102,4 +102,25 @@ struct SurveyAnalysisUnitTests {
         #expect(small.canShowGraphs)
         #expect(small.canCopyGraph)
     }
+
+    /// A análise usa os registros atuais do inquérito aberto, inclusive os ainda não gravados, como o original.
+    @Test func openSurveyBuildsTheAnalysisWithItsCurrentRecords() throws {
+        let db = try SurveyFixtures.makeDatabase()
+        let records = (0..<12).map { index -> SurveyRecord in
+            var record = SurveyRecord(sex: index.isMultiple(of: 2) ? .boy : .girl)
+            record.ageInMonths = 96
+            record.lengthOrHeight = 130
+            record.weight = num("26.6")
+            record.hasOedema = false
+            return record
+        }
+        let detail = SurveyDetailModel(survey: Survey(name: "Escola A"), records: records, repository: SurveyRepository(database: db),
+                                       engine: try AnthroEngine.shared(), today: { day("2026-10-15") })
+        let analysis = detail.makeAnalysisModel()
+        #expect(analysis.canShowGraphs)
+        #expect(analysis.defaultFileName(.estimates) == "Escola A_estimates.txt")
+        analysis.indicator = .bmiForAge
+        analysis.refreshGraph()
+        #expect(analysis.graph != .empty(title: "(Sem dados)"))
+    }
 }

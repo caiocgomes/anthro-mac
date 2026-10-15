@@ -37,7 +37,6 @@ extension L10n {
         public static let cancel = "Cancelar"
         public static let close = "Fechar"
         public static let reportFailedTitle = "Não foi possível gerar o relatório"
-        public static let reportNeedsSave = "Salve o inquérito antes de gerar o relatório: a análise usa os registros gravados."
         public static let zoomHint = "Arraste sobre o gráfico para ampliar."
     }
 
@@ -48,6 +47,6 @@ extension L10n {
                 s.male, s.zScore, s.children, s.meanZScore, s.ageMonths, s.cluster, s.tabRecords, s.tabResults, s.indicator, s.filter,
                 s.filterAllChildren, s.filterBySex, s.filterByCluster, s.filterByAgeGroup, s.restore, s.copyGraph, s.printGraph,
                 s.standardReport, s.estimatesReport, s.reports, s.reportTitle, s.yes, s.no, s.cancel, s.close, s.reportFailedTitle,
-                s.reportNeedsSave, s.zoomHint]
+                s.zoomHint]
     }
 }

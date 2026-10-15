@@ -218,6 +218,13 @@ public final class SurveyDetailModel {
 
     // MARK: Salvar e descartar
 
+    /// Modelo da aba de resultados e dos relatórios com os registros atuais, inclusive os ainda não gravados, como o
+    /// `_currentSurvey.Records` do original (change add-survey-analysis).
+    public func makeAnalysisModel() -> SurveyAnalysisModel {
+        SurveyAnalysisModel(records: SurveyAnalysisInput.records(from: allRecords, options: options, engine: engine), options: options,
+                            surveyName: name, recordCount: allRecords.count)
+    }
+
     /// Rascunho importado: nada dele está gravado (design D18).
     func markUnsaved() {
         hasUnsavedChanges = true

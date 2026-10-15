@@ -1,6 +1,7 @@
 import AnthroFeatures
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Editor aberto numa folha; o invólucro dá identidade a cada abertura.
 struct RecordEditorPresentation: Identifiable {
@@ -12,6 +13,18 @@ struct RecordEditorPresentation: Identifiable {
 struct OptionsEditorPresentation: Identifiable {
     let id = UUID()
     let editor: SurveyOptionsEditorModel
+}
+
+/// Relatório gravado, mostrado no app.
+struct ReportPresentation: Identifiable {
+    let id = UUID()
+    let title: String
+    let table: [[String]]
+}
+
+/// Abas do inquérito aberto (`tabNutriSurvey`).
+enum SurveyTab: Hashable {
+    case records, results
 }
 
 /// Inquérito aberto: nome e notas, ações de gravação, barra de registros, tabela e painel de resultados (`NSMain`).
@@ -27,19 +40,65 @@ struct SurveyDetailPane: View {
     @State private var showingFilter = false
     @State private var confirmingDiscard = false
     @State private var confirmingDelete = false
+    @State private var tab: SurveyTab = .records
+    /// Modelo da aba de resultados, refeito com os registros atuais ao abrir a aba e quando eles mudam.
+    @State private var analysis: SurveyAnalysisModel?
+    @State private var askingClusterAnalysis = false
+    @State private var report: ReportPresentation?
+    @State private var reportError: String?
 
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider()
-            recordBar
-            Divider()
-            VSplitView {
-                SurveyTableView(detail: detail, selection: $selection, onEdit: edit)
-                    .frame(minHeight: 220, maxHeight: .infinity)
-                results
-                    .frame(minHeight: 150, idealHeight: 220)
+            Picker("", selection: $tab) {
+                Text(L10n.SurveyAnalysis.tabRecords).tag(SurveyTab.records)
+                Text(L10n.SurveyAnalysis.tabResults).tag(SurveyTab.results)
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(maxWidth: 320)
+            .padding(.bottom, 8)
+            Divider()
+            switch tab {
+            case .records:
+                recordBar
+                Divider()
+                VSplitView {
+                    SurveyTableView(detail: detail, selection: $selection, onEdit: edit)
+                        .frame(minHeight: 220, maxHeight: .infinity)
+                    results
+                        .frame(minHeight: 150, idealHeight: 220)
+                }
+            case .results:
+                if let analysis {
+                    SurveyResultsView(model: analysis)
+                } else {
+                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        }
+        .onChange(of: tab) { _, newValue in
+            if newValue == .results { analysis = detail.makeAnalysisModel() }
+        }
+        .onChange(of: detail.allRecords) { _, _ in
+            if tab == .results { analysis = detail.makeAnalysisModel() }
+        }
+        .onChange(of: detail.options) { _, _ in
+            if tab == .results { analysis = detail.makeAnalysisModel() }
+        }
+        .confirmationDialog(L10n.SurveyAnalysis.clusterQuestion, isPresented: $askingClusterAnalysis) {
+            Button(L10n.SurveyAnalysis.yes) { exportReport(estimates: false, improved: true) }
+            Button(L10n.SurveyAnalysis.no) { exportReport(estimates: false, improved: false) }
+            Button(L10n.SurveyAnalysis.cancel, role: .cancel) {}
+        }
+        .alert(L10n.SurveyAnalysis.reportFailedTitle,
+               isPresented: Binding(get: { reportError != nil }, set: { if !$0 { reportError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(reportError ?? "")
+        }
+        .sheet(item: $report) { presentation in
+            SurveyReportTableView(title: presentation.title, table: presentation.table)
         }
         .onChange(of: selection) { _, newValue in
             detail.select(visibleIndex: newValue.count == 1 ? newValue.first : nil)
@@ -91,6 +150,14 @@ struct SurveyDetailPane: View {
             }
             VStack(alignment: .trailing, spacing: 8) {
                 HStack {
+                    Menu {
+                        Button(L10n.SurveyAnalysis.standardReport) { askingClusterAnalysis = true }
+                        Button(L10n.SurveyAnalysis.estimatesReport) { exportReport(estimates: true, improved: false) }
+                    } label: {
+                        Label(L10n.SurveyAnalysis.reports, systemImage: "tablecells")
+                    }
+                    .fixedSize()
+                    .disabled(detail.allRecords.isEmpty)
                     Button {
                         definitionEditor = AdditionalDataEditorPresentation(editor: detail.makeAdditionalDataDefinitionEditor())
                     } label: {
@@ -159,6 +226,27 @@ struct SurveyDetailPane: View {
             }
         } else {
             ContentUnavailableView(L10n.Survey.noRecordSelected, systemImage: "hand.point.up.left")
+        }
+    }
+
+    /// `tsbExportExcel_Click` e `tsbReportExcelGlobal_Click`: local do arquivo, gravação, abertura na planilha e a tabela
+    /// no app; a análise usa os registros atuais do inquérito aberto, como o original.
+    private func exportReport(estimates: Bool, improved: Bool) {
+        let model = detail.makeAnalysisModel()
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = estimates ? model.defaultFileName(.estimates)
+            : model.defaultFileName(.standard(improvedClusterAnalysis: improved))
+        panel.allowedContentTypes = [.plainText]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        if estimates {
+            model.exportReport(.estimates, to: url, opener: WorkspaceReportOpener())
+        } else {
+            model.exportReport(.standard(improvedClusterAnalysis: improved), to: url, opener: WorkspaceReportOpener())
+        }
+        if let message = model.errorMessage {
+            reportError = message
+        } else if let table = model.lastReport?.table {
+            report = ReportPresentation(title: url.lastPathComponent, table: table)
         }
     }
 
