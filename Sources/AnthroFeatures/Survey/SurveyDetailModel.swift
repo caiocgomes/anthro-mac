@@ -218,6 +218,11 @@ public final class SurveyDetailModel {
 
     // MARK: Salvar e descartar
 
+    /// Rascunho importado: nada dele está gravado (design D18).
+    func markUnsaved() {
+        hasUnsavedChanges = true
+    }
+
     /// Grava inquérito e registros numa transação (`ApplyDataChanges`); a ordem de inclusão vira `position`.
     public func save() throws {
         let saved = try repository.save(currentSurvey, records: entries.map(\.row.record))

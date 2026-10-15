@@ -39,10 +39,10 @@
 
 ## 5. Adaptador de repositório e modelo da tela
 
-- [ ] 5.1 Implement `RepositorySurveyExchange` sobre `SurveyRepository` da change 5 (leitura por `survey(id:)` e `records(surveyID:)`, gravação por `save(_:records:)` com `id` zerado), com `insertAll` dentro de um único `AnthroDatabase.transaction`, unit tests first; verified when [tests: doisInqueritosGravadosNumaTransacao, sexoInvalidoNoXmlNaoGravaNada, falhaNaGravacaoDoSegundoInqueritoDesfazTudo] pass
-- [ ] 5.2 Implement `SurveyExchangeModel` (fases, proposta de mapeamento, rascunho por `SurveyDraftPresenter`, mensagens pt-BR, exportação com aviso de inquérito único); verified when [tests: importarCsvAteORascunhoNaoGrava, cancelarOMapeamentoVoltaAoInicioSemRascunho, avisoDeRegistrosDescartadosListaLinhaECampo, avisoSoDeCamposInvalidos, importacaoLimpaTerminaSemAviso, doisInqueritosEmCsvExportaSoOPrimeiro, doisInqueritosEmXmlExportaAmbos] pass
+- [x] 5.1 Implement `RepositorySurveyExchange` sobre `SurveyRepository` da change 5 (leitura por `survey(id:)` e `records(surveyID:)`, gravação por `save(_:records:)` com `id` zerado), com `insertAll` dentro de um único `AnthroDatabase.transaction`, unit tests first; verified when [tests: doisInqueritosGravadosNumaTransacao, sexoInvalidoNoXmlNaoGravaNada, falhaNaGravacaoDoSegundoInqueritoDesfazTudo] pass
+- [x] 5.2 Implement `SurveyExchangeModel` (fases, proposta de mapeamento, rascunho por `SurveyDraftPresenter`, mensagens pt-BR, exportação com aviso de inquérito único); verified when [tests: importarCsvAteORascunhoNaoGrava, cancelarOMapeamentoVoltaAoInicioSemRascunho, avisoDeRegistrosDescartadosListaLinhaECampo, avisoSoDeCamposInvalidos, importacaoLimpaTerminaSemAviso, doisInqueritosEmCsvExportaSoOPrimeiro, doisInqueritosEmXmlExportaAmbos] pass
 - [ ] 5.3 Ligar a toolbar e o menu do Inquérito nutricional (Importar, folha de mapeamento com um seletor por campo, Exportar com escolha de formato e pergunta sobre resultados) ao `SurveyExchangeModel`, e o editor da change 5 como `SurveyDraftPresenter` (por `SurveyModuleModel.openDraft`, D18); verified when `scripts/build-app.sh` termina com código 0 (verificação visual manual registrada como N/A non-executable)
-- [ ] 5.4 Refactor `Sources/AnthroFeatures/SurveyExchange/`; `swift test` stays green
+- [x] 5.4 Refactor `Sources/AnthroFeatures/SurveyExchange/`; `swift test` stays green
 
 ## 6. Verification
 

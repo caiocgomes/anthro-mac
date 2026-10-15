@@ -1,14 +1,23 @@
 import AnthroFeatures
+import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Estado do módulo guardado no `AppModel`: sobrevive ao fechamento da janela, então o inquérito em edição não se perde.
 @MainActor
 final class SurveySession {
     let module: SurveyModuleModel
+    /// Importação e exportação (`importFromFileToolStripMenuItem_Click`, `tsbSurveyExport_Click`); o rascunho da
+    /// importação externa vai para o módulo, que pergunta antes se o inquérito aberto tem alterações.
+    let exchange: SurveyExchangeModel
     var isLoaded = false
 
     init(database: AnthroDatabase, tables: GrowthReferenceTables) {
-        module = SurveyModuleModel(repository: SurveyRepository(database: database), engine: AnthroEngine(tables: tables))
+        let repository = SurveyRepository(database: database)
+        let engine = AnthroEngine(tables: tables)
+        module = SurveyModuleModel(repository: repository, engine: engine)
+        let adapter = RepositorySurveyExchange(database: database, surveys: repository)
+        exchange = SurveyExchangeModel(source: adapter, sink: adapter, presenter: module, engine: engine)
     }
 }
 
@@ -36,6 +45,11 @@ struct SurveyModuleView: View {
     let session: SurveySession
 
     @State private var errorMessage: String?
+    @State private var showingMapping = false
+    @State private var showingExport = false
+    @State private var exchangeAlert: ExchangeAlert?
+    /// Aviso da importação externa, mostrado depois da pergunta sobre o inquérito aberto, se houver.
+    @State private var importWarning: String?
 
     private var module: SurveyModuleModel { session.module }
 
@@ -56,13 +70,57 @@ struct SurveyModuleView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(\.locale, Locale(identifier: "pt_BR"))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button(L10n.SurveyExchange.importSurvey) { importSurveys() }
+                    Button(L10n.SurveyExchange.exportSurveys) { startExport() }
+                        .disabled(module.list.checkedIDs.isEmpty)
+                } label: {
+                    Label(L10n.Exchange.menu, systemImage: "square.and.arrow.up.on.square")
+                }
+                .help(L10n.Exchange.menu)
+            }
+        }
+        .sheet(isPresented: $showingMapping, onDismiss: mappingClosed) {
+            SurveyImportMappingSheet(model: session.exchange)
+                .editingSheet()
+        }
+        .sheet(isPresented: $showingExport) {
+            SurveyExportSheet(model: session.exchange) { result in
+                switch result {
+                case .success(.onlyFirstSurveyExported):
+                    exchangeAlert = ExchangeAlert(title: L10n.SurveyExchange.exportDone, message: L10n.SurveyExchange.onlyFirstExported)
+                case .success(nil):
+                    break
+                case .failure(let error):
+                    exchangeAlert = ExchangeAlert(title: L10n.Exchange.fileErrorTitle, message: "\(error.localizedDescription)")
+                }
+            }
+            .editingSheet()
+        }
+        .alert(exchangeAlert?.title ?? "", isPresented: Binding(get: { exchangeAlert != nil }, set: { if !$0 { exchangeAlert = nil } }),
+               presenting: exchangeAlert) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { alert in
+            Text(alert.message)
+        }
+        .alert(L10n.SurveyExchange.importedTitle,
+               isPresented: Binding(get: { importWarning != nil && module.pendingAction == nil && !showingMapping },
+                                    set: { if !$0 { importWarning = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(importWarning ?? "")
+        }
         .task {
             guard !session.isLoaded else { return }
             session.isLoaded = true
             perform { try module.list.reload() }
         }
         .unsavedChangesDialog(pending: Binding(get: { module.pendingAction }, set: { _ in }),
-                              title: L10n.Survey.unsavedTitle, message: L10n.Survey.unsavedMessage) { decision, _ in
+                              title: L10n.Survey.unsavedTitle, message: L10n.Survey.unsavedMessage) { decision, action in
+            // Cancelar a pergunta sobre o inquérito aberto descarta o rascunho importado, e com ele o aviso.
+            if decision == .cancel, case .openDraft = action { importWarning = nil }
             perform { try module.resolvePending(decision) }
         }
         .alert(L10n.IndividualAssessment.saveFailed,
@@ -71,6 +129,55 @@ struct SurveyModuleView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+    }
+
+    // MARK: Importação e exportação
+
+    /// `importFromFileToolStripMenuItem_Click`: XML grava direto e recarrega a lista; TXT, CSV, REC e DBF abrem a
+    /// associação de colunas e terminam num rascunho não salvo no editor.
+    private func importSurveys() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = ["xml", "txt", "csv", "rec", "dbf"].compactMap { UTType(filenameExtension: $0) }
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        session.exchange.beginImport(from: url)
+        switch session.exchange.phase {
+        case .mapping:
+            showingMapping = true
+        case .finished:
+            perform { try module.list.showArchive(false) }
+            exchangeAlert = ExchangeAlert(title: L10n.SurveyExchange.importedTitle, message: L10n.SurveyExchange.importedXML)
+        case .failed(let message):
+            exchangeAlert = ExchangeAlert(title: L10n.Exchange.importFailedTitle, message: message)
+        case .idle:
+            break
+        }
+    }
+
+    /// Depois da folha: o rascunho já foi entregue ao módulo; resta o aviso ou a falha da montagem.
+    private func mappingClosed() {
+        switch session.exchange.phase {
+        case .mapping:
+            session.exchange.cancelImport()
+        case .finished(let warning):
+            importWarning = warning
+        case .failed(let message):
+            exchangeAlert = ExchangeAlert(title: L10n.Exchange.importFailedTitle, message: message)
+        case .idle:
+            break
+        }
+    }
+
+    /// Os inquéritos marcados, na ordem da lista. A exportação lê o banco: o inquérito aberto com alterações pendentes
+    /// sairia sem elas, então pede para salvar antes.
+    private func startExport() {
+        let selected = module.list.surveys.compactMap(\.id).filter(module.list.checkedIDs.contains)
+        if module.openSurvey?.hasUnsavedChanges == true, let openID = module.openSurvey?.survey.id, selected.contains(openID) {
+            exchangeAlert = ExchangeAlert(title: L10n.SurveyExchange.exportTitle, message: L10n.SurveyExchange.exportNeedsSave)
+            return
+        }
+        session.exchange.selectedSurveyIDs = selected
+        showingExport = true
     }
 
     private func perform(_ action: () throws -> Void) {

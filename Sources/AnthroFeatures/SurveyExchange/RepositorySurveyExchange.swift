@@ -12,7 +12,26 @@ public struct RepositorySurveyExchange: SurveyExchangeSource, SurveyImportSink {
         self.surveys = surveys
     }
 
-    public func surveysForExport(ids: [Int64]) throws -> [ExchangeSurvey] { [] }
+    /// Os inquéritos na ordem pedida, com os registros na ordem da tabela.
+    public func surveysForExport(ids: [Int64]) throws -> [ExchangeSurvey] {
+        try ids.map { ExchangeSurvey(survey: try surveys.survey(id: $0), records: try surveys.records(surveyID: $0)) }
+    }
 
-    public func insertAll(_ surveys: [ExchangeSurvey]) throws -> Int { 0 }
+    /// Todos os inquéritos numa só transação, como novos: um erro em qualquer um desfaz os anteriores (D12).
+    public func insertAll(_ imported: [ExchangeSurvey]) throws -> Int {
+        try database.transaction {
+            for exchange in imported {
+                var survey = exchange.survey
+                survey.id = nil
+                survey.isArchived = false
+                let records = exchange.records.map { record -> SurveyRecord in
+                    var copy = record
+                    copy.id = nil
+                    return copy
+                }
+                _ = try surveys.save(survey, records: records)
+            }
+            return imported.count
+        }
+    }
 }

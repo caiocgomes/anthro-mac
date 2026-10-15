@@ -1,4 +1,5 @@
 import AnthroCore
+import AnthroIO
 import AnthroStore
 import Foundation
 import Observation
@@ -14,6 +15,7 @@ public enum PendingSurveyAction: Equatable, Sendable {
     case create
     case close
     case archive
+    case openDraft(ExchangeSurvey)
 }
 
 /// Módulo Inquérito nutricional: lista, inquérito aberto e pergunta de alterações pendentes antes de abrir outro,
@@ -50,6 +52,14 @@ public final class SurveyModuleModel {
         return .done
     }
 
+    /// Rascunho da importação externa (design D12 e D18): abre como inquérito novo com alterações não salvas, depois da
+    /// pergunta de salvar se o aberto tiver pendências.
+    public func openDraft(_ draft: ExchangeSurvey) -> SurveyOpenOutcome {
+        guard !needsDecision(.openDraft(draft)) else { return .needsDecision }
+        openImported(draft)
+        return .done
+    }
+
     public func requestClose() -> SurveyOpenOutcome {
         guard !needsDecision(.close) else { return .needsDecision }
         openSurvey = nil
@@ -67,6 +77,7 @@ public final class SurveyModuleModel {
         case .create: openNew()
         case .close: openSurvey = nil
         case .archive: try archive()
+        case .openDraft(let draft): openImported(draft)
         }
     }
 
@@ -119,6 +130,18 @@ public final class SurveyModuleModel {
                                        engine: engine, today: today)
     }
 
+    private func openImported(_ draft: ExchangeSurvey) {
+        var survey = draft.survey
+        survey.id = nil
+        let detail = SurveyDetailModel(survey: survey, records: draft.records.map { record -> SurveyRecord in
+            var copy = record
+            copy.id = nil
+            return copy
+        }, repository: repository, engine: engine, today: today)
+        detail.markUnsaved()
+        openSurvey = detail
+    }
+
     private func load(_ id: Int64) throws {
         openSurvey = SurveyDetailModel(survey: try repository.survey(id: id), records: try repository.records(surveyID: id),
                                        repository: repository, engine: engine, today: today)
@@ -142,5 +165,13 @@ extension SurveyModuleModel: UnsavedChangesGuard {
     public func proceedAfterUnsavedChanges(_ decision: UnsavedChangesDecision) throws -> Bool {
         guard hasUnsavedChanges else { return true }
         return try settle(decision)
+    }
+}
+
+/// O editor da change 5 recebe o rascunho da importação externa (design D12 e D18); com pendências, a pergunta de
+/// salvar fica em `pendingAction`.
+extension SurveyModuleModel: SurveyDraftPresenter {
+    public func presentDraft(_ draft: ExchangeSurvey) {
+        _ = openDraft(draft)
     }
 }
