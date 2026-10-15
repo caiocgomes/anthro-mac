@@ -78,6 +78,14 @@ Os dados de criança, mãe, pai, endereço e visita pertencem à change `add-ind
 
 **D16. Níveis SALB descartados (desvio deliberado).** `AddressRecord` da change 4 não tem `SALBLevel1` e `SALBLevel2`, porque as listas geográficas SALB estão fora de escopo. A importação lê e descarta os dois atributos; a exportação escreve as colunas e atributos vazios, preservando o layout.
 
+**D17. Decisões tomadas na implementação.**
+- Os rótulos do relatório ficam em `ChildReport.Labels`, no `AnthroIO`, que não enxerga o `L10n` do `AnthroFeatures`; `L10n.Exchange.Report` os reexporta e eles entram no catálogo de textos verificado pela change 1.
+- O XML sai como o `XmlWriter` de `XML.GetWriter`: UTF-8 com BOM, indentação de dois espaços e CRLF. Nos atributos, tabulação e quebras de linha são escritas como referências de caractere, porque a releitura de atributos troca esses caracteres por espaço; caracteres fora do XML 1.0 saem, com U+000B e U+000C como espaço, a mesma regra do XML de dados adicionais. O escritor delimitado compara caracteres especiais por escalar, porque no Swift CRLF é um só `Character`.
+- O `XMLParser` não é reentrante: o texto de `AdditionalData` de cada visita é guardado durante a leitura e decodificado depois dela, com a linha da visita no detalhe da falha.
+- A importação também informa arquivo ilegível e falha do banco, com o mesmo prefixo da mensagem do original. O relatório usa a ficha gravada e por isso pede para salvar antes quando há alterações pendentes; depois de gravado, abre com o aplicativo padrão, como o `Utils.OpenExcel` do original.
+- Na tela, um menu "Importar e exportar" na barra da Avaliação individual reúne importar (XML), exportar as crianças marcadas na ordem da lista (folha com formato e a pergunta sobre resultados, depois o local do arquivo) e o relatório da criança aberta.
+- Cenário "Duas crianças marcadas em CSV" corrigido depois do vermelho (ver Test Changes After Red em tests.md): o cabeçalho tem os 43 campos fixos seguidos das 7 colunas do modelo padrão de dados adicionais.
+
 ## Divergências entre ajuda e código
 
 | Tema | Ajuda (`reference/original-help/IA.htm`) | Código | Decisão |

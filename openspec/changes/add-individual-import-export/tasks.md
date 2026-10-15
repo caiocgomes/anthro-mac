@@ -39,15 +39,15 @@
 
 - [x] 5.1 Implement `ChildExchangeMapping` e `RepositoryChildExchange` sobre `ChildRepository`, `VisitRepository`, `ParentRepository`, `AddressRepository` e `AdditionalDataTemplateRepository`, com `insertAll` dentro de um único `AnthroDatabase.transaction`, unit tests first (conversões ida e volta entre `ExchangeChild` e os registros da change 4); verified when [tests: duasCriancasImportadasPreservamDisplayID, falhaNoMeioDaGravacaoDesfazTudo] pass
 - [x] 5.2 Implement `ChildExchangeModel` (seleção, `includeResults`, exportação nos três formatos, importação com tradução de falha, relatório) e `ChildExchangeModel.message`; verified when [tests: exportacaoSoComCriancaMarcadaEResultadosDesligados, duasCriancasMarcadasEmCsvGeramTresLinhas, pesoAcimaDoLimiteRejeitaSemGravar, mensagemDeFormatoInvalidoTrazDetalhe, mensagemDeValorInvalidoEmPtBr] pass
-- [ ] 5.3 Ligar a toolbar e o menu da Avaliação individual (Importar, Exportar com escolha de formato e pergunta sobre resultados, Relatório da criança) ao `ChildExchangeModel` com `NSOpenPanel` e `NSSavePanel`; verified when `scripts/build-app.sh` termina com código 0 (verificação visual manual registrada como N/A non-executable)
-- [ ] 5.4 Refactor `Sources/AnthroFeatures/IndividualExchange/`; `swift test` stays green
+- [x] 5.3 Ligar a toolbar e o menu da Avaliação individual (Importar, Exportar com escolha de formato e pergunta sobre resultados, Relatório da criança) ao `ChildExchangeModel` com `NSOpenPanel` e `NSSavePanel`; verified when `scripts/build-app.sh` termina com código 0 (verificação visual manual registrada como N/A non-executable)
+- [x] 5.4 Refactor `Sources/AnthroFeatures/IndividualExchange/`; `swift test` stays green
 
 ## 6. Verification
 
-- [ ] 6.1 Mutation check for individual-data-exchange (formato): trocar o separador do CSV para `,` em `DelimitedFormat.semicolonCSV`, see `cabecalhoSemResultadosTem43ColunasNaOrdemOriginal` fail, revert
-- [ ] 6.2 Mutation check for individual-data-exchange (importação): trocar `<=` por `<` na checagem de datas de visita, see `duasVisitasNaMesmaDataRejeitaComValorInvalido` fail, revert
-- [ ] 6.3 Mutation check for individual-data-exchange (gravação): remover o `transaction` de `RepositoryChildExchange.insertAll`, see `falhaNoMeioDaGravacaoDesfazTudo` fail, revert
-- [ ] 6.4 Run the full suite fresh (`swift test`); all green, output free of errors and warnings
+- [x] 6.1 Mutation check for individual-data-exchange (formato): trocar o separador do CSV para `,` em `DelimitedFormat.semicolonCSV`, see `cabecalhoSemResultadosTem43ColunasNaOrdemOriginal` fail, revert
+- [x] 6.2 Mutation check for individual-data-exchange (importação): trocar `<=` por `<` na checagem de datas de visita, see `duasVisitasNaMesmaDataRejeitaComValorInvalido` fail, revert
+- [x] 6.3 Mutation check for individual-data-exchange (gravação): remover o `transaction` de `RepositoryChildExchange.insertAll`, see `falhaNoMeioDaGravacaoDesfazTudo` fail, revert
+- [x] 6.4 Run the full suite fresh (`swift test`); all green, output free of errors and warnings
 
 ## Workflow follow-up
 
