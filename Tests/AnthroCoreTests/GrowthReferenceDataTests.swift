@@ -120,7 +120,8 @@ struct GrowthReferenceDataTests {
                 ? tables.standardsLMS(.bmiForAge, sex: .boy, ageInDays: index * 4)
                 : tables.referenceLMS(.bmiForAge, sex: .boy, ageInMonths: Decimal(60 + index - 465))
             let median = try #require(source).m
-            #expect(point.values[2] == NSDecimalNumber(decimal: median).doubleValue, "ponto \(index)")
+            // A curva converte a mediana pelo `(double)decimal` do motor (o `Double` mais próximo, change add-survey-analysis).
+            #expect(point.values[2] == ClinicalRounding.double(median), "ponto \(index)")
         }
     }
 

@@ -110,9 +110,11 @@ public final class SurveyAnalysisModel {
             guard series.count > 1 else { return showNoData() }
             showDensity(series)
         case .byCluster:
-            showBars(MeanSDBars.byCluster(records, indicator: indicator, options: options), axis: L10n.SurveyAnalysis.cluster)
+            showBars(MeanSDBars.byCluster(records, indicator: indicator, options: options), axis: L10n.SurveyAnalysis.cluster,
+                     margins: (1, 2))
         case .byAgeGroup:
-            showBars(MeanSDBars.byAgeGroup(records, indicator: indicator, options: options), axis: L10n.SurveyAnalysis.ageMonths)
+            showBars(MeanSDBars.byAgeGroup(records, indicator: indicator, options: options), axis: L10n.SurveyAnalysis.ageMonths,
+                     margins: (1, 1))
         }
     }
 
@@ -146,7 +148,10 @@ public final class SurveyAnalysisModel {
                 report = try SurveyReportWriter.estimatesReport(records: records, options: options)
             }
         } catch AnalysisError.noClusterData {
-            errorMessage = L10n.SurveyAnalysis.missingCluster
+            // Com registros que têm cluster, a falha vem do peso para idade acima de 108 meses, que o original soma a N
+            // antes de registrar o cluster (D17); a mensagem do original ("variável cluster vazia") enganaria.
+            errorMessage = records.contains { $0.cluster != nil }
+                ? L10n.SurveyAnalysis.clusterCorrectionUnavailable : L10n.SurveyAnalysis.missingCluster
             return
         } catch {
             errorMessage = "\(error)"
@@ -183,14 +188,15 @@ public final class SurveyAnalysisModel {
         show(.density(series), x: Self.densityX, y: Self.densityY)
     }
 
-    /// Barras com soma de contagens menor que 1 não têm dados; o eixo x vai de uma posição antes da primeira a duas depois
-    /// da última, como os `WorldMin` e `WorldMax` do original.
-    private func showBars(_ bars: [MeanSDBar], axis: String) {
+    /// Barras com soma de contagens menor que 1 não têm dados. Nos clusters o eixo x vai de uma posição antes da primeira
+    /// a duas depois da última, como os `WorldMin` e `WorldMax` do original; nas faixas, uma de cada lado.
+    private func showBars(_ bars: [MeanSDBar], axis: String, margins: (before: Int, after: Int)) {
         guard bars.reduce(0, { $0 + $1.count }) >= 1, let first = bars.first, let last = bars.last else { return showNoData() }
         let ends: [Double] = bars.flatMap { bar -> [Double] in [bar.mean, bar.whiskerEnd].compactMap { $0 } } + [0]
         let low = (ends.min() ?? 0) - 0.5
         let high = (ends.max() ?? 0) + 0.5
-        show(.bars(bars, axisLabel: axis), x: Double(first.position - 1)...Double(last.position + 2), y: low...high)
+        show(.bars(bars, axisLabel: axis), x: Double(first.position - margins.before)...Double(last.position + margins.after),
+             y: low...high)
     }
 
     private func show(_ graph: Graph, x: ClosedRange<Double>, y: ClosedRange<Double>) {

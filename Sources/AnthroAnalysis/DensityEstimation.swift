@@ -47,12 +47,15 @@ public enum DensityEstimation {
         let deviation = decimal15(AnalysisMath.double(squares / Decimal(zScores.count - 1)).squareRoot())
         let bandwidth = Decimal(string: "0.9")! * deviation / decimal15(pow(Double(zScores.count), 0.2))
         guard bandwidth != 0 else { throw DensityError.zeroBandwidth }
-        let step = 10 / min(size, 50)
+        // Passo, limite e abscissa no `decimal` de 96 bits do .NET: acima de 7,92 ele perde uma casa, e isso decide se
+        // a grade ganha o último ponto.
+        let step = AnalysisMath.dotNetDecimal(10 / min(size, 50))
+        let limit = AnalysisMath.dotNetDecimal(5 + step)
         let rootFive = decimal15(5.0.squareRoot())
         var xs: [Double] = []
         var ys: [Double] = []
         var x: Decimal = -5
-        while x < 5 + step {
+        while x < limit {
             var sum: Decimal = 0
             for (z, factor) in zip(zScores, factors) {
                 let u = (x - z) / bandwidth
@@ -63,7 +66,7 @@ public enum DensityEstimation {
             }
             ys.append(AnalysisMath.double(sum / (size * bandwidth)))
             xs.append(AnalysisMath.double(x))
-            x += step
+            x = AnalysisMath.dotNetDecimal(x + step)
         }
         return DensityCurve(x: xs, y: ys, sampleSize: size)
     }

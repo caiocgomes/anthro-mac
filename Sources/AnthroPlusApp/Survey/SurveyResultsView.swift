@@ -21,7 +21,8 @@ struct SurveyResultsView: View {
             }
         }
         .padding(12)
-        .onAppear { model.refreshGraph() }
+        // Um modelo novo (registros ou opções mudaram) refaz o gráfico mesmo com a aba já montada.
+        .task(id: ObjectIdentifier(model)) { model.refreshGraph() }
         .onChange(of: model.indicator) { _, _ in model.refreshGraph() }
         .onChange(of: model.filter) { _, _ in model.refreshGraph() }
     }
@@ -127,7 +128,7 @@ struct SurveyGraphChart: View {
                     LineMark(x: .value(L10n.SurveyAnalysis.zScore, point.0), y: .value(L10n.SurveyAnalysis.children, point.1),
                              series: .value("Série", line.label))
                         .foregroundStyle(by: .value("Série", line.label))
-                        .lineStyle(StrokeStyle(lineWidth: index == 0 ? 3 : 2))
+                        .lineStyle(StrokeStyle(lineWidth: 3))
                 }
             }
         }
@@ -169,14 +170,15 @@ struct SurveyGraphChart: View {
     private func barMarks(_ bar: MeanSDBar, axisLabel: String) -> some ChartContent {
         let x = Double(bar.position)
         let yLabel = L10n.SurveyAnalysis.meanZScore
+        if bar.mean != nil, let end = bar.whiskerEnd {
+            // Haste preta de 0 até a ponta, como Low e High do `CandlePlot`, por baixo da barra.
+            RuleMark(x: .value(axisLabel, x), yStart: .value(yLabel, 0), yEnd: .value(yLabel, end))
+                .foregroundStyle(Color.black)
+        }
         if let range = bar.barRange {
             RectangleMark(xStart: .value(axisLabel, x - 0.35), xEnd: .value(axisLabel, x + 0.35),
                           yStart: .value(yLabel, range.lowerBound), yEnd: .value(yLabel, range.upperBound))
                 .foregroundStyle(bar.isPositive ? Self.tomato : Color.black)
-        }
-        if let mean = bar.mean, let end = bar.whiskerEnd {
-            RuleMark(x: .value(axisLabel, x), yStart: .value(yLabel, mean), yEnd: .value(yLabel, end))
-                .foregroundStyle(Color.gray)
         }
         PointMark(x: .value(axisLabel, x), y: .value(yLabel, bar.whiskerEnd ?? 0))
             .opacity(0)

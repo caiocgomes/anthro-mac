@@ -78,13 +78,13 @@ struct SurveyDetailPane: View {
             }
         }
         .onChange(of: tab) { _, newValue in
-            if newValue == .results { analysis = detail.makeAnalysisModel() }
+            if newValue == .results { rebuildAnalysis() }
         }
         .onChange(of: detail.allRecords) { _, _ in
-            if tab == .results { analysis = detail.makeAnalysisModel() }
+            if tab == .results { rebuildAnalysis() }
         }
         .onChange(of: detail.options) { _, _ in
-            if tab == .results { analysis = detail.makeAnalysisModel() }
+            if tab == .results { rebuildAnalysis() }
         }
         .confirmationDialog(L10n.SurveyAnalysis.clusterQuestion, isPresented: $askingClusterAnalysis) {
             Button(L10n.SurveyAnalysis.yes) { exportReport(estimates: false, improved: true) }
@@ -227,6 +227,18 @@ struct SurveyDetailPane: View {
         } else {
             ContentUnavailableView(L10n.Survey.noRecordSelected, systemImage: "hand.point.up.left")
         }
+    }
+
+    /// Novo modelo com os registros e opções atuais, mantendo indicador e filtro escolhidos, como o original refaz o
+    /// gráfico sem mexer nos combos.
+    private func rebuildAnalysis() {
+        let rebuilt = detail.makeAnalysisModel()
+        if let analysis {
+            rebuilt.indicator = analysis.indicator
+            rebuilt.filter = analysis.filter
+        }
+        rebuilt.refreshGraph()
+        analysis = rebuilt
     }
 
     /// `tsbExportExcel_Click` e `tsbReportExcelGlobal_Click`: local do arquivo, gravação, abertura na planilha e a tabela

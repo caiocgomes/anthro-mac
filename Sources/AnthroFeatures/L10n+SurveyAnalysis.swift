@@ -4,6 +4,7 @@ extension L10n {
         public static let recordsRequired = "A análise requer que o inquérito contenha pelo menos 12 registros válidos."
         public static let noData = "(Sem dados)"
         public static let missingCluster = "Erro: a variável cluster está vazia."
+        public static let clusterCorrectionUnavailable = "A análise por cluster não pode ser feita: em alguma faixa o peso para idade só tem crianças acima de 108 meses, que o AnthroPlus conta sem cluster. Use o relatório padrão sem correção."
         public static let fileError = "Não foi possível salvar no arquivo indicado. Verifique se o arquivo existente não está em uso."
         public static let clusterQuestion = "Deseja realizar a análise por cluster?"
         public static let normalCurve = "Padrões de crescimento da OMS (nascimento a 60 meses), referência OMS 2007 (61 meses a 19 anos)"
@@ -43,7 +44,7 @@ extension L10n {
     /// Strings desta extensão, somadas a `L10n.allStrings`.
     static var surveyAnalysisStrings: [String] {
         let s = SurveyAnalysis.self
-        return [s.recordsRequired, s.noData, s.missingCluster, s.fileError, s.clusterQuestion, s.normalCurve, s.allChildren, s.female,
+        return [s.recordsRequired, s.noData, s.missingCluster, s.clusterCorrectionUnavailable, s.fileError, s.clusterQuestion, s.normalCurve, s.allChildren, s.female,
                 s.male, s.zScore, s.children, s.meanZScore, s.ageMonths, s.cluster, s.tabRecords, s.tabResults, s.indicator, s.filter,
                 s.filterAllChildren, s.filterBySex, s.filterByCluster, s.filterByAgeGroup, s.restore, s.copyGraph, s.printGraph,
                 s.standardReport, s.estimatesReport, s.reports, s.reportTitle, s.yes, s.no, s.cancel, s.close, s.reportFailedTitle,

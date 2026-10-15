@@ -11,9 +11,21 @@ enum AnalysisMath {
         return NSDecimalNumber(decimal: result).intValue
     }
 
-    /// `(double)decimal`.
+    /// `(double)decimal`, a mesma conversão do motor.
     static func double(_ value: Decimal) -> Double {
-        NSDecimalNumber(decimal: value).doubleValue
+        ClinicalRounding.double(value)
+    }
+
+    /// O valor como o `decimal` do .NET o guarda: mantissa abaixo de $2^{96}$ e no máximo 28 casas, com arredondamento
+    /// bancário. O `Decimal` do Swift guarda 38 dígitos, e a diferença muda a parada da grade da densidade.
+    static func dotNetDecimal(_ value: Decimal) -> Decimal {
+        let limit = Decimal(string: "79228162514264337593543950335")!
+        var scale = 28
+        while scale > 0, abs(value) * pow(Decimal(10), scale) > limit { scale -= 1 }
+        var input = value
+        var result = Decimal()
+        NSDecimalRound(&result, &input, scale, .bankers)
+        return result
     }
 
     /// `Round1` do original.
