@@ -56,3 +56,11 @@ Legenda: **[desvio]** muda um comportamento observável do original; **[proteç�
 - **[proteção]** XML de inquéritos avisa os textos cortados nos limites do original (como o de crianças), recusa inquérito sem nome e informa quando o arquivo não tem nenhum inquérito (D20).
 - **[risco conhecido]** Fiéis ao original e não alterados: booleanos só em inglês (edema `S` ou `T` vira inválido e então "sem edema", com o aviso genérico de campos inválidos); CSV em Mac Roman lido como Windows-1252; a "linha N" do aviso conta registros depois das linhas vazias ignoradas. Se a Suzan usar planilhas com "S/N" no edema, vale reabrir (D20).
 - **[forma]** Arquivada com a spec sincronizada (`survey-data-exchange` criada), a mesma escolha das changes 5 a 7, sem perguntar.
+
+## add-survey-analysis (change 9, em andamento desde 15/10/2026)
+
+- **[forma]** `AnthroIO` passa a depender de `AnthroAnalysis`, porque os relatórios consomem o cálculo das prevalências (D16).
+- **[forma]** O oráculo do IC por cluster (pacote R `survey` 4.5) deixa de fora os desenhos em que o próprio R não devolve limites finitos (2 clusters, t com 1 grau de liberdade); o arquivo gerado é idêntico em duas execuções (D16).
+- **[forma]** Gráfico por sexo como o original: sexo sem z não forma série, e sem nenhuma série o gráfico mostra "(Sem dados)" (D16).
+- **Parada obrigatória no vermelho** (tarefa 0.4): change de números clínicos; aguardando o Caio aprovar os testes e decidir a regra de peso para idade acima de 108 meses.
+
