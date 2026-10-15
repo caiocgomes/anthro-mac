@@ -13,7 +13,7 @@ let package = Package(
             resources: [.copy("Resources/who")]
         ),
         .target(name: "AnthroStore", dependencies: ["AnthroCore"]),
-        .target(name: "AnthroIO", dependencies: ["AnthroCore"]),
+        .target(name: "AnthroIO", dependencies: ["AnthroCore", "AnthroAnalysis"]),
         .target(name: "AnthroAnalysis", dependencies: ["AnthroCore"]),
         .target(
             name: "AnthroFeatures",
