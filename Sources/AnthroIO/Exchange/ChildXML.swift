@@ -235,7 +235,7 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
         let approx = try field("DateOfBirthIsApprox") { () throws(FieldParseError) in try FieldParser.boolean(a["DateOfBirthIsApprox"], nullable: false) }
         let sex = try field("Sex") { () throws(FieldParseError) in try FieldParser.sex(a["Sex"]) }
         let notes = try text(a, "Notes", nullable: true, limit: 250)
-        _ = try text(a, "CreatedBy", nullable: true, limit: 20)
+        try discarded(a, "CreatedBy", nullable: true, limit: 20)
         guard let birth else { throw AttributeError(attribute: "DateOfBirth") }
         return ExchangeChild(displayID: displayID, firstName: firstName, lastName: lastName, dateOfBirth: birth,
                              dateOfBirthIsApprox: approx ?? false, sex: sex, notes: notes)
@@ -250,7 +250,7 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
         let birth = try field("DateOfBirth") { () throws(FieldParseError) in try FieldParser.date(a["DateOfBirth"], nullable: true) }
         let approx = try field("DateOfBirthIsApprox") { () throws(FieldParseError) in try FieldParser.boolean(a["DateOfBirthIsApprox"], nullable: true) }
         let notes = try text(a, "Notes", nullable: true, limit: 250)
-        _ = try text(a, "CreatedBy", nullable: true, limit: 20)
+        try discarded(a, "CreatedBy", nullable: true, limit: 20)
         return ExchangePerson(firstName: firstName, lastName: lastName, height: height, weight: weight, dateOfBirth: birth,
                               dateOfBirthIsApprox: approx ?? false, notes: notes)
     }
@@ -262,9 +262,9 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
                                      province: try text(a, "Province", nullable: true, limit: 50), state: try text(a, "State", nullable: true, limit: 50),
                                      country: try text(a, "Country", nullable: true, limit: 50), phoneNumber: try text(a, "PhoneNumber", nullable: true, limit: 20),
                                      email: try text(a, "Email", nullable: true, limit: 50))
-        _ = try text(a, "SALBLevel1", nullable: true, limit: 3)
-        _ = try text(a, "SALBLevel2", nullable: true, limit: 3)
-        _ = try text(a, "CreatedBy", nullable: true, limit: 20)
+        try discarded(a, "SALBLevel1", nullable: true, limit: 3)
+        try discarded(a, "SALBLevel2", nullable: true, limit: 3)
+        try discarded(a, "CreatedBy", nullable: true, limit: 20)
         return result
     }
 
@@ -283,7 +283,7 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
         let oedema = try field("HasOedema") { () throws(FieldParseError) in try FieldParser.boolean(a["HasOedema"], nullable: false) }
         let notes = try text(a, "Notes", nullable: true, limit: 250)
         let additionalText = try field("AdditionalData") { () throws(FieldParseError) in try FieldParser.text(a["AdditionalData"], nullable: true) }
-        _ = try text(a, "CreatedBy", nullable: false, limit: 20)
+        try discarded(a, "CreatedBy", nullable: false, limit: 20)
         guard let date else { throw AttributeError(attribute: "Date") }
         return (ExchangeVisit(date: date, weight: weight, height: height, isRecumbent: recumbent,
                               hasOedema: oedema ?? false, notes: notes), additionalText)
@@ -294,6 +294,11 @@ private final class ChildXMLReader: NSObject, XMLParserDelegate {
         let value = try field(name) { () throws(FieldParseError) in try FieldParser.text(a[name], nullable: nullable, maxLength: limit) }
         if let raw = a[name], raw.count > limit { truncated.append(ImportFieldError(line: line, field: "\(element).\(name)")) }
         return value
+    }
+
+    /// Campo lido só para validar como o original (`CreatedBy`, níveis SALB) e descartado: não entra no aviso de corte.
+    private func discarded(_ a: [String: String], _ name: String, nullable: Bool, limit: Int) throws(AttributeError) {
+        _ = try field(name) { () throws(FieldParseError) in try FieldParser.text(a[name], nullable: nullable, maxLength: limit) }
     }
 
     private func field<T>(_ name: String, _ parse: () throws(FieldParseError) -> T) throws(AttributeError) -> T {

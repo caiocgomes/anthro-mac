@@ -65,5 +65,14 @@ struct ChildXMLUnitTests {
         #expect(report.truncated == [ImportFieldError(line: 3, field: "Child.Notes"), ImportFieldError(line: 3, field: "Visit.Notes")])
         #expect(try ChildXML.readReport(F.xml(F.child())).truncated.isEmpty)
     }
+
+    @Test func discardedFieldsDoNotCountAsTruncatedTexts() throws {
+        let longAuthor = String(repeating: "o", count: 30)
+        let address = "<Address StreetInfo=\"\" Place=\"\" ZIP=\"\" District=\"\" Province=\"\" State=\"\" Country=\"\" SALBLevel1=\"12345\" SALBLevel2=\"6789\" PhoneNumber=\"\" Email=\"\" CreatedBy=\"\(longAuthor)\" />"
+        let report = try ChildXML.readReport(F.xml(F.child(["CreatedBy": longAuthor],
+                                                           inner: address + F.visits(F.visitXML("01-04-2021 00:00:00", ["CreatedBy": longAuthor])))))
+        #expect(report.children.count == 1)
+        #expect(report.truncated.isEmpty)
+    }
 }
 

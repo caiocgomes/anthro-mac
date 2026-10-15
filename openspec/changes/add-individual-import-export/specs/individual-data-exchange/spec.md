@@ -218,7 +218,7 @@ Na exportação, todo `CreatedBy` (criança, mãe, pai, endereço e visita) SHAL
 - **THEN** a leitura é aceita e o novo XML traz `CreatedBy="AnthroPlus"` em todos os elementos e `SALBLevel1=""`
 
 ### Requirement: Ida e volta pelo XML
-Um conjunto de crianças exportado em XML e importado de volta SHALL produzir crianças, pais, endereços e visitas com os mesmos valores de campo.
+Um conjunto de crianças exportado em XML e importado de volta SHALL produzir crianças, pais, endereços e visitas com os mesmos valores de campo; a visita sem dados adicionais volta com dados adicionais vazios, porque o atributo `AdditionalData` é sempre escrito.
 
 #### Scenario: Exportar e reimportar
 - **WHEN** três crianças com visitas, mãe, pai e endereço são exportadas em XML e o arquivo é lido por `ChildXML.read`
