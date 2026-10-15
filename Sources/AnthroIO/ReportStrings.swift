@@ -1,0 +1,38 @@
+/// Textos dos relatórios do inquérito em pt-BR, traduzidos de `Texts.resx` (design D11); ficam no `AnthroIO` porque ele
+/// não depende de `AnthroFeatures`.
+enum ReportStrings {
+    static let standardTitle = "Análise padrão do inquérito nutricional"
+    static let ciTables = "Tabelas detalhadas com intervalos de confiança de 95%"
+    static let set1 = "Conjunto 1: Sexos combinados"
+    static let set2 = "Conjunto 2: Masculino"
+    static let set3 = "Conjunto 3: Feminino"
+    static let set4 = "Conjunto 4: Geral, sexos combinados por cluster"
+    static let ageGroups = "Faixas etárias"
+    static let count = "N"
+    static let years = "Anos"
+    static let months = "Meses"
+    static let sd = "DP"
+    static let ci = "(IC 95%)"
+    static let mean = "Média"
+    static let total = "Total"
+    static let cluster = "Cluster"
+    static let weightForAge = "Peso para idade"
+    static let lengthOrHeightForAge = "Comprimento/estatura para idade"
+    static let bmiForAge = "IMC para idade"
+    static let globalTitle = "Relatório de crescimento e estado nutricional de crianças e adolescentes"
+    static let country = "País"
+    static let reference = "Referência"
+    static let adminLevel = "Nível administrativo"
+    static let surveyMonthYear = "Mês e ano do inquérito"
+    static let valuesBasedOnStandards = "Valores baseados nos padrões da OMS (nascimento a 60 meses) e na referência OMS 2007 (61 meses a 19 anos)."
+    static let noteValidZ = "Para cada indicador, entram na avaliação todas as crianças com z-score plausível (conforme as opções do inquérito)."
+    static let noteOedema = "Os percentuais abaixo da mediana dos indicadores que dependem do peso são definidos como < -3 DP ou edema e < -2 DP ou edema. Os casos de edema ficam fora do cálculo da média e do DP dos z-scores."
+    static let noteSD = "% < -2DP inclui % < -3DP; % > +2DP inclui % > +3DP; % > +1DP inclui % > +2DP e % > +3DP."
+    static func oedemaCases(_ count: Int) -> String {
+        "Número de crianças com edema: \(count) (este número pode ser usado para calcular a prevalência de desnutrição edematosa na amostra)"
+    }
+    static let noteWeightForAge = "Não há dados de referência de peso para idade depois dos 10 anos, porque este indicador não distingue altura de massa corporal numa idade em que muitas crianças estão no estirão puberal e podem parecer ter excesso de peso (pelo peso para idade) quando na verdade são apenas altas."
+    static let extremePrevalencesNote = "Não há IC 95% para prevalências (p) \u{2264} 0,00005 ou \u{2265} 0,99995."
+    static let singleClusterNote = "Nº de clusters = 1; o IC não pode ser calculado."
+    static let defaultFileName = "Relatório"
+}

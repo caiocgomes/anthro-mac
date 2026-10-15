@@ -17,7 +17,13 @@ public struct SurveyReport: Sendable, Equatable {
         self.lines = lines
     }
 
-    public var text: String { "" }
+    /// Cada linha terminada em CRLF, como `StringBuilder.AppendLine` no Windows.
+    public var text: String {
+        lines.map { $0 + "\r\n" }.joined()
+    }
 
-    public var table: [[String]] { [] }
+    /// Uma linha por linha do texto e uma célula por campo separado por tabulação; linha vazia tem uma célula vazia.
+    public var table: [[String]] {
+        lines.map { $0.split(separator: "\t", omittingEmptySubsequences: false).map(String.init) }
+    }
 }
